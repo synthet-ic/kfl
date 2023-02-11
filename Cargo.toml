@@ -1,0 +1,37 @@
+[workspace]
+members = [
+    ".",
+    "derive",
+]
+
+[package]
+name = "kfl"
+version = "0.1.0"
+edition = "2021"
+description = "Another KDL language implementation"
+license = "MIT/Apache-2.0"
+keywords = ["kdl", "configuration", "parser"]
+categories = ["parser-implementations", "config", "encoding"]
+homepage = "https://github.com/synthet-ic/kfl"
+documentation = "https://docs.rs/kfl"
+rust-version = "1.62.0"
+readme = "README.md"
+
+[dependencies]
+chumsky = { version = "*", default-features = false }
+knuffel-derive = { path = "./derive", optional = true }
+base64 = { version = "*", optional = true }
+unicode-width = { version = "*", optional = true }
+minicbor = { version = "*", optional = true, features = ["std", "derive"] }
+miette = "*"
+thiserror = "*"
+
+[dev-dependencies]
+miette = { version = "*", features = ["fancy"] }
+assert-json-diff = "*"
+serde_json = "*"
+
+[features]
+default = ["derive", "base64", "line-numbers"]
+derive = ["knuffel-derive"]
+line-numbers = ["unicode-width"]

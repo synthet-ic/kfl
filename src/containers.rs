@@ -12,7 +12,6 @@ use crate::{
     traits::{ErrorSpan, DecodeSpan, Span}
 };
 
-
 impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Box<T> {
     fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>

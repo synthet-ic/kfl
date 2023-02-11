@@ -7,7 +7,6 @@ use crate::errors::{DecodeError, ExpectedType};
 use crate::span::{Spanned};
 use crate::traits::{ErrorSpan, DecodeScalar};
 
-
 macro_rules! impl_integer {
     ($typ: ident, $marker: ident) => {
         impl TryFrom<&Integer> for $typ {

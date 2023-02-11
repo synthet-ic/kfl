@@ -17,7 +17,7 @@ impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Box<T> {
     fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        <T as Decode>::decode_node(node, ctx).map(Box::new)
+        <T as Decode<S>>::decode_node(node, ctx).map(Box::new)
     }
 }
 
@@ -52,7 +52,7 @@ impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Box<T> {
     fn raw_decode(value: &Spanned<Literal, S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        DecodeScalar::raw_decode(value, ctx).map(Box::new)
+        <T as DecodeScalar<S>>::raw_decode(value, ctx).map(Box::new)
     }
 }
 
@@ -60,7 +60,7 @@ impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Arc<T> {
     fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        <T as Decode>::decode_node(node, ctx).map(Arc::new)
+        <T as Decode<S>>::decode_node(node, ctx).map(Arc::new)
     }
 }
 
@@ -98,7 +98,7 @@ impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Arc<T> {
     fn raw_decode(value: &Spanned<Literal, S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        <T as DecodeScalar>::raw_decode(value, ctx).map(Arc::new)
+        <T as DecodeScalar<S>>::raw_decode(value, ctx).map(Arc::new)
     }
 }
 
@@ -106,7 +106,7 @@ impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Rc<T> {
     fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        <T as Decode>::decode_node(node, ctx).map(Rc::new)
+        <T as Decode<S>>::decode_node(node, ctx).map(Rc::new)
     }
 }
 
@@ -144,7 +144,7 @@ impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Rc<T> {
     fn raw_decode(value: &Spanned<Literal, S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        DecodeScalar::raw_decode(value, ctx).map(Rc::new)
+        <T as DecodeScalar<S>>::raw_decode(value, ctx).map(Rc::new)
     }
 }
 

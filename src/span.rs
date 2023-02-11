@@ -15,7 +15,7 @@ use std::{
     borrow::Borrow,
     fmt::Display,
     hash::Hash,
-    ops::{DerefMut, Range}
+    ops::{Deref, DerefMut, Range}
 };
 
 use crate::{

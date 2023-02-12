@@ -8,6 +8,9 @@ use std::{
     fmt::Display
 };
 
+#[cfg(feature="base64")] 
+use base64::{Engine as _, engine::general_purpose::STANDARD};
+
 use crate::{
     ast::{Literal, BuiltinType, Value, SpannedNode},
     errors::{DecodeError, ExpectedType},
@@ -56,7 +59,7 @@ pub fn bytes<S: ErrorSpan>(value: &Value<S>, ctx: &mut Context<S>) -> Vec<u8> {
                 #[cfg(feature="base64")] {
                     match &*value.literal {
                         Literal::String(s) => {
-                            match base64::decode(s.as_bytes()) {
+                            match STANDARD.decode(s.as_bytes()) {
                                 Ok(vec) => vec,
                                 Err(e) => {
                                     ctx.emit_error(DecodeError::conversion(
@@ -197,7 +200,7 @@ impl<S: ErrorSpan> Context<S> {
 }
 
 impl Display for Kind {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.write_str(self.as_str())
     }
 }

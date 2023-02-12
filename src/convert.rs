@@ -1,11 +1,16 @@
-use std::path::PathBuf;
-use std::default::Default;
+use std::{
+    default::Default,
+    path::PathBuf,
+    str::FromStr
+};
 
-use crate::ast::{Literal, Integer, Decimal, Radix, TypeName, BuiltinType};
-use crate::decode::{Context, Kind};
-use crate::errors::{DecodeError, ExpectedType};
-use crate::span::{Spanned};
-use crate::traits::{ErrorSpan, DecodeScalar};
+use crate::{
+    ast::{Literal, Integer, Decimal, Radix, TypeName, BuiltinType},
+    decode::{Context, Kind},
+    errors::{DecodeError, ExpectedType},
+    span::Spanned,
+    traits::{ErrorSpan, DecodeScalar}
+};
 
 macro_rules! impl_integer {
     ($typ: ident, $marker: ident) => {

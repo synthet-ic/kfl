@@ -7,11 +7,12 @@
 use std::fmt;
 
 use crate::{
-    ast::{SpannedNode, Literal, Value, TypeName};
+    ast::{SpannedNode, Literal, Value, TypeName},
     span::Spanned,
     errors::DecodeError,
     decode::Context
 };
+
 
 /// Trait to decode KDL node from the AST
 pub trait Decode<S: ErrorSpan>: Sized {
@@ -21,10 +22,12 @@ pub trait Decode<S: ErrorSpan>: Sized {
 }
 
 /// Trait to decode children of the KDL node, mostly used for root document
-pub trait DecodeChildren<S: ErrorSpan>: Sized {
+pub trait DecodeChildren<S: ErrorSpan>: Sized + FromIterator<Self::Item> {
+    type Item: Decode<S>;
+    
     /// Decodes from a list of chidren ASTs
-    fn decode_children(nodes: &[SpannedNode<S>], ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>;
+    fn decode_children(node: &SpannedNode<S>, ctx: &mut Context<S>)
+        -> Result<Self::Item, DecodeError<S>>;
 }
 
 /// The trait is implemented for structures that can be used as part of other

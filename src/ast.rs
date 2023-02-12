@@ -287,7 +287,7 @@ impl Deref for TypeName {
 
 impl Display for TypeName {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        self.as_str().fmt(f)
+        std::fmt::Display::fmt(&self.as_str(), f)
     }
 }
 

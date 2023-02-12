@@ -65,6 +65,7 @@ struct MyNode {
 ```
 
 Arguments can be optional:
+
 ```rust
 #[derive(kfl::Decode)]
 struct MyNode {
@@ -75,18 +76,22 @@ struct MyNode {
 }
 ```
 
-In this case attribute may not exists:
+In this case arguments may not exist:
+
 ```kdl
 node "arg1"  // no `second` argument is okay
 ```
+
 Or may be `null`:
+
 ```kdl
 node null null
 ```
 
 Note: due to limitations of the procedural macros in Rust, optional arguments
 must use `Option` in this specific notation. Other variations like these:
-```
+
+```rust
 use std::option::Option as Opt;
 #[derive(kfl::Decode)]
 struct MyNode {
@@ -96,6 +101,7 @@ struct MyNode {
     second: Opt<bool>,
 }
 ```
+
 Do not work (they will always require `null` arguments).
 
 The field marked as `arguments` can have any type that implements `FromIterator<T> where T: DecodeScalar`.
@@ -111,6 +117,7 @@ although if the same argument is specified twice the latter value overrides
 former.
 
 The two Rust attributes to parse properties are:
+
 * `property` -- to parse single argument
 * `properties` -- to parse sequence of arguments
 
@@ -118,6 +125,7 @@ Note: order of the structure fields matter. Fields marked as `properties` can
 be used only once and cannot be followed by `property`.
 
 For example, the following node:
+
 ```kdl
 node name="arg1" enabled=true a=1 b=2 c=3
 ```
@@ -137,6 +145,7 @@ struct MyNode {
 ```
 
 Properties can be optional:
+
 ```rust
 #[derive(kfl::Decode)]
 struct MyNode {
@@ -147,13 +156,15 @@ struct MyNode {
 }
 ```
 
-In this case property may not exists or may be set to `null`:
+In this case properties may not exist or may be set to `null`:
+
 ```kdl
 node name=null
 ```
 
 Note: due to limitations of the procedural macros in Rust, optional properties
 must use `Option` in this specific notation. Other variations like this:
+
 ```rust
 use std::option::Option as Opt;
 #[derive(kfl::Decode)]

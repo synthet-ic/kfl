@@ -3,10 +3,12 @@ use std::mem;
 use proc_macro2::{TokenStream, Span};
 use proc_macro_error::emit_error;
 use quote::quote;
-use syn::ext::IdentExt;
-use syn::parse::{Parse, ParseStream};
-use syn::punctuated::Punctuated;
-use syn::spanned::Spanned;
+use syn::{
+    ext::IdentExt,
+    parse::{Parse, ParseStream},
+    punctuated::Punctuated,
+    spanned::Spanned
+};
 
 use crate::kw;
 

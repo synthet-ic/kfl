@@ -10,145 +10,145 @@ use kfl::{Decode, span::Span};
 use kfl::traits::DecodeChildren;
 
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct Arg1 {
-    #[kfl(argument)]
-    name: String,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct Arg1 {
+//     #[kfl(argument)]
+//     name: String,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct Arg1RawIdent {
-    #[kfl(argument)]
-    r#type: String,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct Arg1RawIdent {
+//     #[kfl(argument)]
+//     r#type: String,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct ArgDefOptValue {
-    #[kfl(argument, default = Some("unnamed".into()))]
-    name: Option<String>,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct ArgDefOptValue {
+//     #[kfl(argument, default = Some("unnamed".into()))]
+//     name: Option<String>,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct OptArg {
-    #[kfl(argument)]
-    name: Option<String>,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct OptArg {
+//     #[kfl(argument)]
+//     name: Option<String>,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct Extra {
-    field: String,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct Extra {
+//     field: String,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct VarArg {
-    #[kfl(arguments)]
-    params: Vec<u64>,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct VarArg {
+//     #[kfl(arguments)]
+//     params: Vec<u64>,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq, Default)]
-struct Prop1 {
-    #[kfl(property)]
-    label: String,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq, Default)]
+// struct Prop1 {
+//     #[kfl(property)]
+//     label: String,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq, Default)]
-struct Prop1RawIdent {
-    #[kfl(property)]
-    r#type: String,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq, Default)]
+// struct Prop1RawIdent {
+//     #[kfl(property)]
+//     r#type: String,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct PropDef {
-    #[kfl(property, default)]
-    label: String,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct PropDef {
+//     #[kfl(property, default)]
+//     label: String,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct PropDefValue {
-    #[kfl(property, default="unknown".into())]
-    label: String,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct PropDefValue {
+//     #[kfl(property, default="unknown".into())]
+//     label: String,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct PropDefOptValue {
-    #[kfl(property, default=Some("unknown".into()))]
-    label: Option<String>,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct PropDefOptValue {
+//     #[kfl(property, default=Some("unknown".into()))]
+//     label: Option<String>,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct PropNamed {
-    #[kfl(property(name="x"))]
-    label: String,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct PropNamed {
+//     #[kfl(property(name="x"))]
+//     label: String,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct OptProp {
-    #[kfl(property)]
-    label: Option<String>,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct OptProp {
+//     #[kfl(property)]
+//     label: Option<String>,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct VarProp {
-    #[kfl(properties)]
-    scores: BTreeMap<String, u64>,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct VarProp {
+//     #[kfl(properties)]
+//     scores: BTreeMap<String, u64>,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct FilteredChildren {
-    #[kfl(children)]
-    left: Vec<OptArg>,
-    #[kfl(children)]
-    right: Vec<OptArg>,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct FilteredChildren {
+//     #[kfl(children)]
+//     left: Vec<OptArg>,
+//     #[kfl(children)]
+//     right: Vec<OptArg>,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-enum Variant {
-    Arg1(Arg1),
-    Prop1(Prop1),
-    #[kfl(skip)]
-    #[allow(dead_code)]
-    Var3(u32),
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// enum Variant {
+//     Arg1(Arg1),
+//     Prop1(Prop1),
+//     #[kfl(skip)]
+//     #[allow(dead_code)]
+//     Var3(u32),
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct Child {
-    #[kfl(child)]
-    main: Prop1,
-    #[kfl(child, default)]
-    extra: Option<Prop1>,
-    #[kfl(child)]
-    flag: bool,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct Child {
+//     #[kfl(child)]
+//     main: Prop1,
+//     #[kfl(child, default)]
+//     extra: Option<Prop1>,
+//     #[kfl(child)]
+//     flag: bool,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct ChildDef {
-    #[kfl(child, default)]
-    main: Prop1,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct ChildDef {
+//     #[kfl(child, default)]
+//     main: Prop1,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct ChildDefValue {
-    #[kfl(child, default=Prop1 { label: String::from("prop1") })]
-    main: Prop1,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct ChildDefValue {
+//     #[kfl(child, default=Prop1 { label: String::from("prop1") })]
+//     main: Prop1,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct ParseOpt {
-    #[kfl(property, str)]
-    listen: Option<std::net::SocketAddr>,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct ParseOpt {
+//     #[kfl(property, str)]
+//     listen: Option<std::net::SocketAddr>,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct Bytes {
-    #[kfl(argument, bytes)]
-    data: Vec<u8>,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct Bytes {
+//     #[kfl(argument, bytes)]
+//     data: Vec<u8>,
+// }
 
-#[derive(kfl_derive::Decode, Debug, PartialEq)]
-struct OptBytes {
-    #[kfl(property, bytes)]
-    data: Option<Vec<u8>>,
-}
+// #[derive(kfl_derive::Decode, Debug, PartialEq)]
+// struct OptBytes {
+//     #[kfl(property, bytes)]
+//     data: Option<Vec<u8>>,
+// }
 
 // fn parse<T: Decode<Span>>(text: &str) -> T {
 //     let mut nodes: Vec<T> = kfl::parse("<test>", text).unwrap();
@@ -553,18 +553,31 @@ fn parse_child() {
     #[derive(kfl_derive::Decode, Debug, PartialEq)]
     struct Parent {
         #[kfl(child)]
-        main: Prop1,
+        child1: Child1,
         #[kfl(child, default)]
-        extra: Option<Prop1>,
+        child2: Option<Child2>,
         // #[kfl(child)]
         // flag: bool,
     }
-//     assert_eq!(parse::<Child>(r#"parent { main label="val1"; }"#),
-//                Child {
-//                    main: Prop1 { label: "val1".into() },
-//                    extra: None,
-//                    flag: false,
-//                });
+    #[derive(kfl_derive::Decode, Debug, PartialEq, Default)]
+    struct Child1 {
+        #[kfl(property)]
+        name: String,
+    }
+    #[derive(kfl_derive::Decode, Debug, PartialEq, Default)]
+    struct Child2 {
+        #[kfl(property)]
+        name: String,
+    }
+
+    assert_parse::<Parent>(
+        r#"parent { child1 name="val1"; }"#,
+        Parent {
+            child1: Child1 { name: "val1".into() },
+            child2: None,
+            // flag: false,
+        }
+    );
 //     assert_eq!(parse::<Child>(r#"parent {
 //                     main label="primary";
 //                     extra label="replica";

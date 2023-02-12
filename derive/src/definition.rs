@@ -150,7 +150,6 @@ pub enum ChildMode {
 
 pub struct Child {
     pub field: Field,
-    pub option: bool,
     pub mode: ChildMode,
     pub unwrap: Option<Box<FieldAttrs>>,
     pub default: Option<Option<syn::Expr>>,
@@ -456,7 +455,6 @@ impl StructBuilder {
             Some(FieldMode::Child) => {
                 self.children.push(Child {
                     field,
-                    option: is_option,
                     mode: if attrs.unwrap.is_none() && is_bool {
                         ChildMode::Bool
                     } else {
@@ -469,7 +467,6 @@ impl StructBuilder {
             Some(FieldMode::Children) => {
                 self.children.push(Child {
                     field,
-                    option: is_option,
                     mode: ChildMode::Multi,
                     unwrap: attrs.unwrap.clone(),
                     default: attrs.default.clone(),
@@ -499,7 +496,6 @@ impl StructBuilder {
                 if flatten.child {
                     self.children.push(Child {
                         field: field.clone(),
-                        option: is_option,
                         mode: ChildMode::Flatten,
                         unwrap: None,
                         default: None,

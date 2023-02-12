@@ -14,7 +14,7 @@ pub(crate) struct Common<'a> {
 fn child_can_partial(child: &Child) -> bool {
     use ChildMode::*;
 
-    child.option || matches!(child.mode, Bool | Flatten)
+    matches!(child.mode, Bool | Flatten)
 }
 
 pub fn emit_struct(s: &Struct, named: bool) -> syn::Result<TokenStream> {
@@ -133,7 +133,7 @@ pub fn emit_struct(s: &Struct, named: bool) -> syn::Result<TokenStream> {
     }
     Ok(quote! {
         #(#extra_traits)*
-        impl #impl_gen ::kfl::Decode #trait_gen for #s_name #type_gen
+        impl #impl_gen ::kfl::traits::Decode #trait_gen for #s_name #type_gen
             #bounds
         {
             fn decode_node(#node: &::kfl::ast::SpannedNode<#span_ty>,
@@ -159,7 +159,7 @@ pub fn emit_new_type(s: &NewType) -> syn::Result<TokenStream> {
     let ctx = syn::Ident::new("ctx", Span::mixed_site());
     Ok(quote! {
         impl<S: ::kfl::traits::ErrorSpan>
-            ::kfl::Decode<S> for #s_name
+            ::kfl::traits::Decode<S> for #s_name
         {
             fn decode_node(#node: &::kfl::ast::SpannedNode<S>,
                            #ctx: &mut ::kfl::decode::Context<S>)
@@ -169,7 +169,7 @@ pub fn emit_new_type(s: &NewType) -> syn::Result<TokenStream> {
                     #node.properties.len() > 0 ||
                     #node.children.is_some()
                 {
-                    ::kfl::Decode::decode_node(#node, #ctx)
+                    ::kfl::traits::Decode::decode_node(#node, #ctx)
                         .map(Some)
                         .map(#s_name)
                 } else {
@@ -635,7 +635,7 @@ fn decode_node(common: &Common, child_def: &Child, in_partial: bool,
         let unwrap_fn = unwrap_fn(common, &func, fld, &child_def.field.ty, unwrap)?;
         (unwrap_fn, quote!(#func))
     } else {
-        (quote!(), quote!(::kfl::Decode::decode_node))
+        (quote!(), quote!(::kfl::traits::Decode::decode_node))
     };
     let value = syn::Ident::new("value", Span::mixed_site());
     let assign = if matches!(child_def.mode, ChildMode::Multi) {
@@ -819,29 +819,11 @@ fn decode_children(s: &Common, children: &syn::Ident,
                     } else {
                         quote!(::std::default::Default::default())
                     };
-                    if child_def.option {
-                        postprocess.push(quote! {
-                            let #fld = if #fld.is_empty() {
-                                #default
-                            } else {
-                                Some(#fld.into_iter().collect())
-                            };
-                        });
-                    } else {
-                        postprocess.push(quote! {
-                            let #fld = if #fld.is_empty() {
-                                #default
-                            } else {
-                                #fld.into_iter().collect()
-                            };
-                        });
-                    }
-                } else if child_def.option {
                     postprocess.push(quote! {
                         let #fld = if #fld.is_empty() {
-                            None
+                            #default
                         } else {
-                            Some(#fld.into_iter().collect())
+                            #fld.into_iter().collect()
                         };
                     });
                 } else {
@@ -859,7 +841,7 @@ fn decode_children(s: &Common, children: &syn::Ident,
                     child_name.escape_default());
                 // let decode = decode_node(s, &child_def, false, &child)?;
                 branches.push(quote! {
-                    else if let Ok(value) = <#ty as ::kfl::Decode<_>>
+                    else if let Ok(value) = <#ty as ::kfl::traits::Decode<_>>
                         ::decode_node(#child, #ctx)
                     {
                         if #fld.is_some() {
@@ -883,7 +865,7 @@ fn decode_children(s: &Common, children: &syn::Ident,
                     postprocess.push(quote! {
                         let #fld = #fld.unwrap_or_else(|| #default);
                     });
-                } else if !child_def.option {
+                } else {
                     if let Some(span) = &err_span {
                         postprocess.push(quote! {
                             let #fld = #fld.ok_or_else(|| {

@@ -21,4 +21,4 @@ proc-macro-error = "1"
 
 [dev-dependencies]
 kfl = { path = ".." }
-miette = { version = "*", features = ["fancy"] }
+miette = { version = "5", features = ["fancy"] }

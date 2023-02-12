@@ -18,13 +18,13 @@ rust-version = "1.62.0"
 readme = "README.md"
 
 [dependencies]
-base64 = { version = "*", optional = true }
-chumsky = { version = "0.8.0", default-features = false }
+base64 = { version = "0.21", optional = true }
+chumsky = { version = "0.8", default-features = false }
 kfl-derive = { path = "./derive", optional = true }
-miette = "*"
-minicbor = { version = "*", optional = true, features = ["std", "derive"] }
-thiserror = "*"
-unicode-width = { version = "*", optional = true }
+miette = "5"
+minicbor = { version = "0.19", optional = true, features = ["std", "derive"] }
+thiserror = "1"
+unicode-width = { version = "0.1", optional = true }
 
 [dev-dependencies]
 miette = { version = "*", features = ["fancy"] }

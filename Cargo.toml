@@ -27,9 +27,9 @@ thiserror = "1"
 unicode-width = { version = "0.1", optional = true }
 
 [dev-dependencies]
-miette = { version = "*", features = ["fancy"] }
-assert-json-diff = "*"
-serde_json = "*"
+miette = { version = "5", features = ["fancy"] }
+assert-json-diff = "2"
+serde_json = "1"
 
 [features]
 default = ["derive", "base64", "line-numbers"]

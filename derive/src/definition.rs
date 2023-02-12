@@ -35,7 +35,7 @@ pub enum FieldMode {
     Property { name: Option<String> },
     Arguments,
     Properties,
-    Children { name: Option<String> },
+    Children,
     Child,
     Flatten(Flatten),
     Span,
@@ -96,6 +96,7 @@ pub struct Field {
     pub span: Span,
     pub attr: AttrAccess,
     pub tmp_name: syn::Ident,
+    pub ty: syn::Type
 }
 
 pub struct SpanField {
@@ -147,16 +148,10 @@ pub enum ChildMode {
 
 pub struct Child {
     pub field: Field,
-    pub name: String,
     pub option: bool,
     pub mode: ChildMode,
     pub unwrap: Option<Box<FieldAttrs>>,
     pub default: Option<Option<syn::Expr>>,
-}
-
-pub struct VarChildren {
-    pub field: Field,
-    pub unwrap: Option<Box<FieldAttrs>>,
 }
 
 pub enum ExtraKind {
@@ -188,7 +183,6 @@ pub struct Struct {
     pub has_arguments: bool,
     pub has_properties: bool,
     pub children: Vec<Child>,
-    pub var_children: Option<VarChildren>,
     pub extra_fields: Vec<ExtraField>,
 }
 
@@ -204,7 +198,6 @@ pub struct StructBuilder {
     pub properties: Vec<Prop>,
     pub var_props: Option<VarProps>,
     pub children: Vec<Child>,
-    pub var_children: Option<VarChildren>,
     pub extra_fields: Vec<ExtraField>,
 }
 
@@ -369,7 +362,6 @@ impl StructBuilder {
             properties: Vec::new(),
             var_props: None::<VarProps>,
             children: Vec::new(),
-            var_children: None::<VarChildren>,
             extra_fields: Vec::new(),
         }
     }
@@ -390,7 +382,6 @@ impl StructBuilder {
             properties: self.properties,
             var_props: self.var_props,
             children: self.children,
-            var_children: self.var_children,
             extra_fields: self.extra_fields,
         }
     }
@@ -461,22 +452,7 @@ impl StructBuilder {
                 });
             }
             Some(FieldMode::Child) => {
-                if let Some(prev) = &self.var_children {
-                    return Err(err_pair(&field, &prev.field,
-                        "extra `child` after capture all `children`",
-                        "capture all `children` is defined here"));
-                }
-                let name = match &field.attr {
-                    AttrAccess::Named(n) => {
-                        heck::ToKebabCase::to_kebab_case(&n.unraw().to_string()[..])
-                    }
-                    AttrAccess::Indexed(_) => {
-                        return Err(syn::Error::new(field.span,
-                            "`child` is not allowed for tuple structs"));
-                    }
-                };
                 self.children.push(Child {
-                    name,
                     field,
                     option: is_option,
                     mode: if attrs.unwrap.is_none() && is_bool {
@@ -488,30 +464,13 @@ impl StructBuilder {
                     default: attrs.default.clone(),
                 });
             }
-            Some(FieldMode::Children { name: Some(name) }) => {
-                if let Some(prev) = &self.var_children {
-                    return Err(err_pair(&field, &prev.field,
-                        "extra `children(name=` after capture all `children`",
-                        "capture all `children` is defined here"));
-                }
+            Some(FieldMode::Children) => {
                 self.children.push(Child {
-                    name: name.clone(),
                     field,
                     option: is_option,
                     mode: ChildMode::Multi,
                     unwrap: attrs.unwrap.clone(),
                     default: attrs.default.clone(),
-                });
-            }
-            Some(FieldMode::Children { name: None }) => {
-                if let Some(prev) = &self.var_children {
-                    return Err(err_pair(&field, &prev.field,
-                        "only single catch all `children` is allowed",
-                        "previous `children` is defined here"));
-                }
-                self.var_children = Some(VarChildren {
-                    field,
-                    unwrap: attrs.unwrap.clone(),
                 });
             }
             Some(FieldMode::Flatten(flatten)) => {
@@ -536,14 +495,7 @@ impl StructBuilder {
                     });
                 }
                 if flatten.child {
-                    if let Some(prev) = &self.var_children {
-                        return Err(err_pair(&field, &prev.field,
-                            "extra `flatten(child)` after \
-                            capture all `children`",
-                            "capture all `children` is defined here"));
-                    }
                     self.children.push(Child {
-                        name: "".into(), // unused
                         field: field.clone(),
                         option: is_option,
                         mode: ChildMode::Flatten,
@@ -601,7 +553,6 @@ impl Struct {
         res.extend(self.properties.iter().map(|p| &p.field));
         res.extend(self.var_props.iter().map(|p| &p.field));
         res.extend(self.children.iter().map(|c| &c.field));
-        res.extend(self.var_children.iter().map(|c| &c.field));
         res.extend(self.extra_fields.iter().map(|f| &f.field));
         return res;
     }
@@ -797,7 +748,6 @@ impl Attr {
             Ok(Attr::FieldMode(FieldMode::Properties))
         } else if lookahead.peek(kw::children) {
             let _kw: kw::children = input.parse()?;
-            let mut name = None;
             if !input.is_empty() && !input.lookahead1().peek(syn::Token![,]) {
                 let parens;
                 syn::parenthesized!(parens in input);
@@ -805,13 +755,11 @@ impl Attr {
                 if lookahead.peek(kw::name) {
                     let _kw: kw::name = parens.parse()?;
                     let _eq: syn::Token![=] = parens.parse()?;
-                    let name_lit: syn::LitStr = parens.parse()?;
-                    name = Some(name_lit.value());
                 } else {
                     return Err(lookahead.error())
                 }
             }
-            Ok(Attr::FieldMode(FieldMode::Children { name }))
+            Ok(Attr::FieldMode(FieldMode::Children))
         } else if lookahead.peek(kw::child) {
             let _kw: kw::child = input.parse()?;
             Ok(Attr::FieldMode(FieldMode::Child))
@@ -894,11 +842,12 @@ impl Parse for FlattenItem {
 }
 
 impl Field {
-    pub fn new_named(name: &syn::Ident) -> Field {
+    pub fn new_named(name: &syn::Ident, ty: &syn::Type) -> Field {
         Field {
             span: name.span(),
             attr: AttrAccess::Named(name.clone()),
             tmp_name: name.clone(),
+            ty: ty.clone()
         }
     }
     fn new(field: &syn::Field, idx: usize) -> Field {
@@ -907,6 +856,7 @@ impl Field {
                 span: field.span(),
                 attr: AttrAccess::Named(id.clone()),
                 tmp_name: id.clone(),
+                ty: field.ty.clone()
             })
             .unwrap_or_else(|| Field {
                 span: field.span(),
@@ -915,6 +865,7 @@ impl Field {
                     &format!("field{}", idx),
                     Span::mixed_site(),
                 ),
+                ty: field.ty.clone()
             })
     }
     pub fn from_self(&self) -> TokenStream {

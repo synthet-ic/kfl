@@ -46,7 +46,7 @@ impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Box<T> {
 impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Box<T> {
     fn type_check(type_name: &Option<Spanned<TypeName, S>>,
                   ctx: &mut Context<S>) {
-        T::type_check(type_name, ctx)
+        <T as DecodeScalar<S>>::type_check(type_name, ctx)
     }
     fn raw_decode(value: &Spanned<Literal, S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
@@ -92,7 +92,7 @@ impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Arc<T> {
     fn type_check(type_name: &Option<Spanned<TypeName, S>>,
                   ctx: &mut Context<S>)
     {
-        T::type_check(type_name, ctx)
+        <T as DecodeScalar<S>>::type_check(type_name, ctx)
     }
     fn raw_decode(value: &Spanned<Literal, S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
@@ -138,7 +138,7 @@ impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Rc<T> {
     fn type_check(type_name: &Option<Spanned<TypeName, S>>,
                   ctx: &mut Context<S>)
     {
-        T::type_check(type_name, ctx)
+        <T as DecodeScalar<S>>::type_check(type_name, ctx)
     }
     fn raw_decode(value: &Spanned<Literal, S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
@@ -147,13 +147,13 @@ impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Rc<T> {
     }
 }
 
-// impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Vec<T> {
-//     fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
-//         -> Result<Self, DecodeError<S>>
-//     {
-//         <T as Decode>::decode_node(node, ctx)
-//     }
-// }
+impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Vec<T> {
+    fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
+        -> Result<Self, DecodeError<S>>
+    {
+        <T as Decode<S>>::decode_node(node, ctx).map(|node| vec![node])
+    }
+}
 
 impl<S: ErrorSpan, T: Decode<S>> DecodeChildren<S> for Vec<T> {
     type Item = T;

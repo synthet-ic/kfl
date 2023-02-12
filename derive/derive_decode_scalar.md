@@ -22,7 +22,7 @@ This will match scalar values in `kebab-case`. For example, this node decoder:
 #[derive(kfl::Decode)]
 struct Document {
     #[kfl(child, unwrap(arguments))]
-    all_colors: Vec<Colour>,
+    all_colours: Vec<Colour>,
 }
 ```
 

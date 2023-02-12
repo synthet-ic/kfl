@@ -697,7 +697,7 @@ fn parse_attr_list(attrs: &[syn::Attribute]) -> Vec<(Attr, Span)> {
     let mut all = Vec::new();
     for attr in attrs {
         if matches!(attr.style, syn::AttrStyle::Outer) &&
-            attr.path.is_ident("knuffel")
+            attr.path.is_ident("kfl")
 
         {
             match attr.parse_args_with(parse_attrs) {

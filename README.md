@@ -42,9 +42,9 @@ use kfl::Decode;
 
 #[derive(Decode)]
 struct Config {
-    #[kfl(child)]
+    #[kfl(children)]
     routes: Vec<Route>,
-    #[kfl(child)]
+    #[kfl(children)]
     plugins: Vec<Plugin>,
 }
 

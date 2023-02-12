@@ -21,14 +21,21 @@ pub trait Decode<S: ErrorSpan>: Sized {
         -> Result<Self, DecodeError<S>>;
 }
 
-/// Trait to decode children of the KDL node, mostly used for root document
-pub trait DecodeChildren<S: ErrorSpan>: Sized + FromIterator<Self::Item> {
+///
+pub trait DecodeIterator<S: ErrorSpan>: Sized + FromIterator<Self::Item> {
     /// 
     type Item: Decode<S>;
     
-    /// Decodes from a list of chidren ASTs
-    fn decode_children(node: &SpannedNode<S>, ctx: &mut Context<S>)
+    ///
+    fn decode_item(node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<Self::Item, DecodeError<S>>;
+}
+
+/// Trait to decode children of the KDL node, mostly used for root document
+pub trait DecodeChildren<S: ErrorSpan>: Sized {
+    /// Decodes from a list of chidren ASTs
+    fn decode_children(nodes: &[SpannedNode<S>], ctx: &mut Context<S>)
+        -> Result<Self, DecodeError<S>>;
 }
 
 /// The trait is implemented for structures that can be used as part of other

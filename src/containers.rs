@@ -8,7 +8,7 @@ use crate::{
     decode::Context,
     errors::DecodeError,
     span::Spanned,
-    traits::{Decode, DecodeChildren, DecodeScalar, DecodePartial},
+    traits::{Decode, DecodeChildren, DecodeIterator, DecodeScalar, DecodePartial},
     traits::{ErrorSpan, DecodeSpan, Span}
 };
 
@@ -155,13 +155,28 @@ impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Vec<T> {
     }
 }
 
-impl<S: ErrorSpan, T: Decode<S>> DecodeChildren<S> for Vec<T> {
+impl<S: ErrorSpan, T: Decode<S>> DecodeIterator<S> for Vec<T> {
     type Item = T;
 
-    fn decode_children(node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn decode_item(node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<Self::Item, DecodeError<S>>
     {
         <Self::Item as Decode<S>>::decode_node(node, ctx)
+    }
+}
+
+impl<S: ErrorSpan, T: Decode<S>> DecodeChildren<S> for Vec<T> {
+    fn decode_children(nodes: &[SpannedNode<S>], ctx: &mut Context<S>)
+        -> Result<Self, DecodeError<S>>
+    {
+        let mut result = Vec::with_capacity(nodes.len());
+        for node in nodes {
+            match <T as Decode<S>>::decode_node(node, ctx) {
+                Ok(node) => result.push(node),
+                Err(e) => ctx.emit_error(e),
+            }
+        }
+        Ok(result)
     }
 }
 

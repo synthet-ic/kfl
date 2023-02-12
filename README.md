@@ -65,7 +65,7 @@ struct Plugin {
 }
 
 # fn main() -> miette::Result<()> {
-let config = kfl::parse::<Vec<Config>>("example.kdl", r#"
+let config = kfl::parse::<Config>("example.kdl", r#"
     route "/api" {
         route "/api/v1"
     }

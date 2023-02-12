@@ -110,27 +110,27 @@ pub fn emit_struct(s: &Struct, named: bool) -> syn::Result<TokenStream> {
             }
         });
     }
-    // if !s.has_arguments && !s.has_properties &&
-    //     s.spans.is_empty() && s.node_names.is_empty() && s.type_names.is_empty()
-    // {
-    //     let decode_children = decode_children(&common, &children, None)?;
-    //     extra_traits.push(quote! {
-    //         impl #impl_gen ::kfl::traits::DecodeChildren #trait_gen
-    //             for #s_name #type_gen
-    //             #bounds
-    //         {
-    //             fn decode_children(
-    //                 #children: &[::kfl::ast::SpannedNode<#span_ty>],
-    //                 #ctx: &mut ::kfl::decode::Context<#span_ty>)
-    //                 -> Result<Self, ::kfl::errors::DecodeError<#span_ty>>
-    //             {
-    //                 #decode_children
-    //                 #assign_extra
-    //                 Ok(#struct_val)
-    //             }
-    //         }
-    //     });
-    // }
+    if !s.has_arguments && !s.has_properties &&
+        s.spans.is_empty() && s.node_names.is_empty() && s.type_names.is_empty()
+    {
+        let decode_children = decode_children(&common, &children, None)?;
+        extra_traits.push(quote! {
+            impl #impl_gen ::kfl::traits::DecodeChildren #trait_gen
+                for #s_name #type_gen
+                #bounds
+            {
+                fn decode_children(
+                    #children: &[::kfl::ast::SpannedNode<#span_ty>],
+                    #ctx: &mut ::kfl::decode::Context<#span_ty>)
+                    -> Result<Self, ::kfl::errors::DecodeError<#span_ty>>
+                {
+                    #decode_children
+                    #assign_extra
+                    Ok(#struct_val)
+                }
+            }
+        });
+    }
     Ok(quote! {
         #(#extra_traits)*
         impl #impl_gen ::kfl::Decode #trait_gen for #s_name #type_gen
@@ -806,8 +806,8 @@ fn decode_children(s: &Common, children: &syn::Ident,
                 // let decode = decode_node(s, &child_def, false, &child)?;
                 let ctx = &s.ctx;
                 branches.push(quote! {
-                    else if let Ok(value) = <#ty as ::kfl::DecodeChildren<_>>
-                        ::decode_children(#child, #ctx)
+                    else if let Ok(value) = <#ty as ::kfl::traits::DecodeIterator<_>>
+                        ::decode_item(#child, #ctx)
                     {
                         #fld.push(value);
                         None

@@ -299,6 +299,7 @@ node {
 }
 ```
 ... can be parsed by into the following structures:
+
 ```rust
 #[derive(kfl::Decode)]
 enum Setting {
@@ -321,6 +322,7 @@ struct MyNode {
 
 There is another form of children which is `children(name="something")`, that
 allows filtering nodes by name:
+
 ```rust
 #[derive(kfl::Decode)]
 struct NamedNode {
@@ -345,13 +347,16 @@ out their children into the right buckets. Also see [Enums](#enums).
 Sometimes you want to track just the presence of the child in the node.
 
 For example this document:
+
 ```kdl
 plugin "first" {
     auto-start
 }
 plugin "second"
 ```
+
 ... can be parsed into the list of the following structures:
+
 ```rust
 #[derive(kfl::Decode)]
 struct Plugin {
@@ -377,6 +382,7 @@ document that aren't represented in the final structure, but they play
 important role in making document readable.
 
 It works by transforming the following:
+
 ```rust,ignore
 #[derive(kfl::Decode)]
 struct Node {
@@ -384,7 +390,9 @@ struct Node {
     field: String,
 }
 ```
+
 ... into something like this:
+
 ```
 #[derive(kfl::Decode)]
 struct TmpChild {
@@ -397,6 +405,7 @@ struct Node {
     field: TmpChild,
 }
 ```
+
 ... and then unpacks `TmpChild` to put target type into the field.
 
 Most of the attributes can be used in place of `/* attributes */`. Including:
@@ -413,10 +422,13 @@ Following are some nice examples of using `unwrap`.
 In nodes with many properties it might be convenient to put them into children instead.
 
 So instead of this:
+
 ```kdl
 plugin name="my-plugin" url="https://example.com" {}
 ```
+
 ... users can write this:
+
 ```kdl
 plugin {
     name "my-plugin"
@@ -425,6 +437,7 @@ plugin {
 ```
 
 Here is the respective Rust structure:
+
 ```rust
 #[derive(kfl::Decode)]
 struct Plugin {

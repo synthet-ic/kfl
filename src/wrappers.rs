@@ -43,40 +43,22 @@ pub fn parse_with_context<T, S, F>(file_name: &str, text: &str, set_ctx: F)
 
     let mut ctx = Context::new();
     set_ctx(&mut ctx);
-    let mut output = Vec::new();
-    for node in ast.nodes {
-        let result = <T as DecodeChildren<S>>::decode_children(&node, &mut ctx);
-        match result {
-            Ok(value) => output.push(value),
-            Err(e) => {
-                return Err(Error {
-                    source_code: NamedSource::new(file_name, text.to_string()),
-                    errors: vec![e.into()]
-                });
-            }
+    let errors = match <T as DecodeChildren<S>>
+        ::decode_children(&ast.nodes, &mut ctx)
+    {
+        Ok(_) if ctx.has_errors() => {
+            ctx.into_errors()
         }
-    }
-    Ok(output.into_iter().collect())
-    // ast.nodes.into_iter().map(|node|
-    //     if let Ok(node) = <T as DecodeChildren<S>>::decode_children(&node, &mut ctx) {
-    //         node
-    //     } else {
-    //         return Err(Error {
-    //             source_code: NamedSource::new(file_name, text.to_string()),
-    //             errors: errors.into_iter().map(Into::into).collect(),
-    //         });
-    //     }
-    // ).collect()
-    // let errors = match DecodeChildren::decode_children(&ast.nodes, &mut ctx) {
-    //     Ok(_) if ctx.has_errors() => {
-    //         ctx.into_errors()
-    //     }
-    //     Err(e) => {
-    //         ctx.emit_error(e);
-    //         ctx.into_errors()
-    //     }
-    //     Ok(v) => return Ok(v)
-    // };
+        Err(e) => {
+            ctx.emit_error(e);
+            ctx.into_errors()
+        }
+        Ok(v) => return Ok(v)
+    };
+    Err(Error {
+        source_code: NamedSource::new(file_name, text.to_string()),
+        errors: errors.into_iter().map(Into::into).collect(),
+    })
 }
 
 #[test]

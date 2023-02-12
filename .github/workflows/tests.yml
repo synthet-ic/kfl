@@ -9,7 +9,7 @@ jobs:
         rust_version: [1.62.0, stable]
     steps:
       - uses: actions/checkout@v3
-      - uses: synthet-ic/action-toolchain@main
+      - uses: synthet-ic/action-rustup@main
         with:
           profile: minimal
           toolchain: ${{ matrix.rust_version }}

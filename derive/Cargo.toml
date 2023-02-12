@@ -13,11 +13,11 @@ readme = "README.md"
 proc_macro = true
 
 [dependencies]
-heck = "*"
-syn = { version = "*", features = ["full", "extra-traits"] }
-quote = "*"
-proc-macro2 = "*"
-proc-macro-error = "*"
+heck = "0.4"
+syn = { version = "1", features = ["full", "extra-traits"] }
+quote = "1"
+proc-macro2 = "1"
+proc-macro-error = "1"
 
 [dev-dependencies]
 kfl = { path = ".." }

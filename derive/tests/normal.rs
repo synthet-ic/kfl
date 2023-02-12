@@ -1,6 +1,8 @@
-use std::fmt;
-use std::collections::BTreeMap;
-use std::default::Default;
+use std::{
+    fmt,
+    collections::BTreeMap,
+    default::Default
+};
 
 use miette::Diagnostic;
 
@@ -8,90 +10,90 @@ use kfl::{Decode, span::Span};
 use kfl::traits::DecodeChildren;
 
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct Arg1 {
     #[kfl(argument)]
     name: String,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct Arg1RawIdent {
     #[kfl(argument)]
     r#type: String,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct ArgDefOptValue {
-    #[kfl(argument, default=Some("unnamed".into()))]
+    #[kfl(argument, default = Some("unnamed".into()))]
     name: Option<String>,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct OptArg {
     #[kfl(argument)]
     name: Option<String>,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct Extra {
     field: String,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct VarArg {
     #[kfl(arguments)]
     params: Vec<u64>,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq, Default)]
+#[derive(kfl_derive::Decode, Debug, PartialEq, Default)]
 struct Prop1 {
     #[kfl(property)]
     label: String,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq, Default)]
+#[derive(kfl_derive::Decode, Debug, PartialEq, Default)]
 struct Prop1RawIdent {
     #[kfl(property)]
     r#type: String,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct PropDef {
     #[kfl(property, default)]
     label: String,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct PropDefValue {
     #[kfl(property, default="unknown".into())]
     label: String,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct PropDefOptValue {
     #[kfl(property, default=Some("unknown".into()))]
     label: Option<String>,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct PropNamed {
     #[kfl(property(name="x"))]
     label: String,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct OptProp {
     #[kfl(property)]
     label: Option<String>,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct VarProp {
     #[kfl(properties)]
     scores: BTreeMap<String, u64>,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct FilteredChildren {
     #[kfl(children)]
     left: Vec<OptArg>,
@@ -99,7 +101,7 @@ struct FilteredChildren {
     right: Vec<OptArg>,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 enum Variant {
     Arg1(Arg1),
     Prop1(Prop1),
@@ -108,7 +110,7 @@ enum Variant {
     Var3(u32),
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct Child {
     #[kfl(child)]
     main: Prop1,
@@ -118,31 +120,31 @@ struct Child {
     flag: bool,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct ChildDef {
     #[kfl(child, default)]
     main: Prop1,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct ChildDefValue {
     #[kfl(child, default=Prop1 { label: String::from("prop1") })]
     main: Prop1,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct ParseOpt {
     #[kfl(property, str)]
     listen: Option<std::net::SocketAddr>,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct Bytes {
     #[kfl(argument, bytes)]
     data: Vec<u8>,
 }
 
-#[derive(knuffel_derive::Decode, Debug, PartialEq)]
+#[derive(kfl_derive::Decode, Debug, PartialEq)]
 struct OptBytes {
     #[kfl(property, bytes)]
     data: Option<Vec<u8>>,
@@ -192,7 +194,7 @@ fn parse_doc_err<T: DecodeChildren<Span>+fmt::Debug>(text: &str) -> String {
 
 #[test]
 fn parse_argument_named() {
-    #[derive(knuffel_derive::Decode, Debug, PartialEq)]
+    #[derive(kfl_derive::Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument)]
         name: String,
@@ -214,7 +216,7 @@ fn parse_argument_named() {
 
 #[test]
 fn parse_argument_unnamed() {
-    #[derive(knuffel_derive::Decode, Debug, PartialEq)]
+    #[derive(kfl_derive::Decode, Debug, PartialEq)]
     struct Node(
         #[kfl(argument)]
         String
@@ -249,7 +251,7 @@ fn parse_argument_unnamed() {
 
 #[test]
 fn parse_argument_default_named() {
-    #[derive(knuffel_derive::Decode, Debug, PartialEq)]
+    #[derive(kfl_derive::Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument, default)]
         name: String,
@@ -268,7 +270,7 @@ fn parse_argument_default_named() {
 
 #[test]
 fn parse_argument_default_unnamed() {
-    #[derive(knuffel_derive::Decode, Debug, PartialEq)]
+    #[derive(kfl_derive::Decode, Debug, PartialEq)]
     struct Node(
         #[kfl(argument, default)]
         String,
@@ -290,7 +292,7 @@ fn parse_argument_default_unnamed() {
 
 #[test]
 fn parse_argument_default_value_named() {
-    #[derive(knuffel_derive::Decode, Debug, PartialEq)]
+    #[derive(kfl_derive::Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument, default = "unnamed".into())]
         name: String,
@@ -321,7 +323,7 @@ fn parse_argument_default_value_named() {
 
 #[test]
 fn parse_option_argument() {
-    #[derive(knuffel_derive::Decode, Debug, PartialEq)]
+    #[derive(kfl_derive::Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument)]
         name: Option<String>,
@@ -340,7 +342,7 @@ fn parse_option_argument() {
 
 #[test]
 fn parse_property_named() {
-    #[derive(knuffel_derive::Decode, Debug, PartialEq, Default)]
+    #[derive(kfl_derive::Decode, Debug, PartialEq, Default)]
     struct Node {
         #[kfl(property)]
         name: String,
@@ -359,7 +361,7 @@ fn parse_property_named() {
 
 #[test]
 fn parse_property_unnamed() {
-    #[derive(knuffel_derive::Decode, Debug, PartialEq, Default)]
+    #[derive(kfl_derive::Decode, Debug, PartialEq, Default)]
     struct Node(
         #[kfl(property(name = "name"))]
         String,
@@ -450,12 +452,12 @@ fn parse_property_unnamed() {
 
 #[test]
 fn parse_children() {
-    #[derive(knuffel_derive::Decode, Debug, PartialEq)]
+    #[derive(kfl_derive::Decode, Debug, PartialEq)]
     struct Parent {
         #[kfl(children)]
         children: Vec<Child>,
     }
-    #[derive(knuffel_derive::Decode, Debug, PartialEq)]
+    #[derive(kfl_derive::Decode, Debug, PartialEq)]
     struct Child {
         #[kfl(argument)]
         name: String,
@@ -483,19 +485,19 @@ fn parse_children() {
 
 #[test]
 fn parse_filtered_children() {
-    #[derive(knuffel_derive::Decode, Debug, PartialEq)]
+    #[derive(kfl_derive::Decode, Debug, PartialEq)]
     struct Parent {
         #[kfl(children)]
         lefts: Vec<Left>,
         #[kfl(children)]
         rights: Vec<Right>,
     }
-    #[derive(knuffel_derive::Decode, Debug, PartialEq)]
+    #[derive(kfl_derive::Decode, Debug, PartialEq)]
     struct Left {
         #[kfl(argument)]
         name: Option<String>,
     }
-    #[derive(knuffel_derive::Decode, Debug, PartialEq)]
+    #[derive(kfl_derive::Decode, Debug, PartialEq)]
     struct Right {
         #[kfl(argument)]
         name: Option<String>,
@@ -548,7 +550,7 @@ fn parse_filtered_children() {
 
 #[test]
 fn parse_child() {
-    #[derive(knuffel_derive::Decode, Debug, PartialEq)]
+    #[derive(kfl_derive::Decode, Debug, PartialEq)]
     struct Parent {
         #[kfl(child)]
         main: Prop1,

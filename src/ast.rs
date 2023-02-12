@@ -12,10 +12,13 @@
 //! contain line and column numbers for things, use
 //! [`LineSpan`](crate::span::LineSpan) for that.
 
-use std::collections::BTreeMap;
-use std::convert::Infallible;
-use std::fmt::{Debug, Display};
-use std::str::FromStr;
+use std::{
+    collections::BTreeMap,
+    convert::Infallible,
+    fmt::{Debug, Display},
+    ops::Deref,
+    str::FromStr
+};
 
 use crate::span::Spanned;
 
@@ -31,73 +34,73 @@ pub type SpannedNode<S> = Spanned<Node<S>, S>;
 #[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
 pub struct Node<S> {
     /// A type name if specified in parenthesis
-    #[cfg_attr(feature="minicbor", n(0))]
+    #[cfg_attr(feature = "minicbor", n(0))]
     pub type_name: Option<Spanned<TypeName, S>>,
     /// A node name
-    #[cfg_attr(feature="minicbor", n(1))]
+    #[cfg_attr(feature = "minicbor", n(1))]
     pub node_name: SpannedName<S>,
     /// Positional arguments
-    #[cfg_attr(feature="minicbor", n(2))]
+    #[cfg_attr(feature = "minicbor", n(2))]
     pub arguments: Vec<Value<S>>,
     /// Named properties
-    #[cfg_attr(feature="minicbor", n(3))]
+    #[cfg_attr(feature = "minicbor", n(3))]
     pub properties: BTreeMap<SpannedName<S>, Value<S>>,
     /// Node's children. This field is not none if there are braces `{..}`
-    #[cfg_attr(feature="minicbor", n(4))]
+    #[cfg_attr(feature = "minicbor", n(4))]
     pub children: Option<SpannedChildren<S>>,
 }
 
 /// KDL document root
 #[derive(Debug, Clone)]
-#[cfg_attr(feature="minicbor", derive(minicbor::Encode, minicbor::Decode))]
+#[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
 pub struct Document<S> {
     /// Nodes of the document
-    #[cfg_attr(feature="minicbor", n(0))]
+    #[cfg_attr(feature = "minicbor", n(0))]
     pub nodes: Vec<SpannedNode<S>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature="minicbor", derive(minicbor::Encode, minicbor::Decode))]
-#[cfg_attr(feature="minicbor", cbor(index_only))]
+#[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
+#[cfg_attr(feature = "minicbor", cbor(index_only))]
 pub(crate) enum Radix {
-    #[cfg_attr(feature="minicbor", n(2))]
+    #[cfg_attr(feature = "minicbor", n(2))]
     Bin,
-    #[cfg_attr(feature="minicbor", n(16))]
+    #[cfg_attr(feature = "minicbor", n(16))]
     Hex,
-    #[cfg_attr(feature="minicbor", n(8))]
+    #[cfg_attr(feature = "minicbor", n(8))]
     Oct,
-    #[cfg_attr(feature="minicbor", n(10))]
+    #[cfg_attr(feature = "minicbor", n(10))]
     Dec,
 }
 
 /// Potentially unlimited size integer value
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature="minicbor", derive(minicbor::Encode, minicbor::Decode))]
+#[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
 pub struct Integer(
-    #[cfg_attr(feature="minicbor", n(0))]
+    #[cfg_attr(feature = "minicbor", n(0))]
     pub(crate) Radix,
-    #[cfg_attr(feature="minicbor", n(1))]
+    #[cfg_attr(feature = "minicbor", n(1))]
     pub(crate) Box<str>,
 );
 
 /// Potentially unlimited precision decimal value
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature="minicbor", derive(minicbor::Encode, minicbor::Decode))]
-#[cfg_attr(feature="minicbor", cbor(transparent))]
+#[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
+#[cfg_attr(feature = "minicbor", cbor(transparent))]
 pub struct Decimal(
-    #[cfg_attr(feature="minicbor", n(0))]
+    #[cfg_attr(feature = "minicbor", n(0))]
     pub(crate) Box<str>,
 );
 
 /// Possibly typed KDL scalar value
 #[derive(Debug, Clone)]
-#[cfg_attr(feature="minicbor", derive(minicbor::Encode, minicbor::Decode))]
+#[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
 pub struct Value<S> {
     /// A type name if specified in parenthesis
-    #[cfg_attr(feature="minicbor", n(0))]
+    #[cfg_attr(feature = "minicbor", n(0))]
     pub type_name: Option<Spanned<TypeName, S>>,
     /// The actual value literal
-    #[cfg_attr(feature="minicbor", n(1))]
+    #[cfg_attr(feature = "minicbor", n(1))]
     pub literal: Spanned<Literal, S>,
 }
 
@@ -145,33 +148,33 @@ pub enum BuiltinType {
 
 /// Scalar KDL value
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature="minicbor", derive(minicbor::Encode, minicbor::Decode))]
+#[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
 pub enum Literal {
     /// Null value
-    #[cfg_attr(feature="minicbor", n(0))]
+    #[cfg_attr(feature = "minicbor", n(0))]
     Null,
     /// Boolean value
-    #[cfg_attr(feature="minicbor", n(1))]
+    #[cfg_attr(feature = "minicbor", n(1))]
     Bool(
-        #[cfg_attr(feature="minicbor", n(0))]
+        #[cfg_attr(feature = "minicbor", n(0))]
         bool
     ),
     /// Integer value
-    #[cfg_attr(feature="minicbor", n(2))]
+    #[cfg_attr(feature = "minicbor", n(2))]
     Int(
-        #[cfg_attr(feature="minicbor", n(0))]
+        #[cfg_attr(feature = "minicbor", n(0))]
         Integer
     ),
     /// Decimal (or floating point) value
-    #[cfg_attr(feature="minicbor", n(3))]
+    #[cfg_attr(feature = "minicbor", n(3))]
     Decimal(
-        #[cfg_attr(feature="minicbor", n(0))]
+        #[cfg_attr(feature = "minicbor", n(0))]
         Decimal
     ),
     /// String value
-    #[cfg_attr(feature="minicbor", n(4))]
+    #[cfg_attr(feature = "minicbor", n(4))]
     String(
-        #[cfg_attr(feature="minicbor", n(0))]
+        #[cfg_attr(feature = "minicbor", n(0))]
         Box<str>
     ),
 }
@@ -275,7 +278,7 @@ impl FromStr for TypeName {
     }
 }
 
-impl std::ops::Deref for TypeName {
+impl Deref for TypeName {
     type Target = str;
     fn deref(&self) -> &str {
         self.as_str()
@@ -283,7 +286,7 @@ impl std::ops::Deref for TypeName {
 }
 
 impl Display for TypeName {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.as_str().fmt(f)
     }
 }
@@ -301,19 +304,19 @@ mod cbor {
     use minicbor::encode::Encode;
     use minicbor::decode::Decode;
 
-    impl<'d> Decode<'d> for TypeName {
-        fn decode(d: &mut Decoder<'d>)
+    impl<'d, C> Decode<'d, C> for TypeName {
+        fn decode(d: &mut Decoder<'d>, _: &mut C)
             -> Result<Self, minicbor::decode::Error>
         {
             d.str().and_then(|s| s.parse().map_err(|e| match e {}))
         }
     }
-    impl Encode for TypeName {
-        fn encode<W>(&self, e: &mut Encoder<W>)
+    impl<C> Encode<C> for TypeName {
+        fn encode<W>(&self, e: &mut Encoder<W>, ctx: &mut C)
             -> Result<(), minicbor::encode::Error<W::Error>>
             where W: minicbor::encode::write::Write
         {
-            self.as_str().encode(e)
+            self.as_str().encode(e, ctx)
         }
     }
 }

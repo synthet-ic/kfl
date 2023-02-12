@@ -23,8 +23,8 @@ use crate::{
 /// Implements [`miette::Diagnostic`] so can be used to print nice error
 /// output with code snippets.
 ///
-/// See [crate documentation](crate#Errors) and [miette} documentation to
-/// find out how deal with them.
+/// See [crate documentation](crate#Errors) and [miette] documentation to
+/// find out how to deal with them.
 #[derive(Debug, Diagnostic, Error)]
 #[error("error parsing KDL")]
 pub struct Error {
@@ -100,7 +100,7 @@ pub enum DecodeError<S: ErrorSpan> {
     /// Unexpected entity encountered
     ///
     /// This is emitted for entities (arguments, properties, children) that have
-    /// to matching structure field to put into, and also for nodes that aren
+    /// to matching structure field to put into, and also for nodes that aren't
     /// expected to be encountered twice.
     #[diagnostic()]
     #[error("{}", message)]

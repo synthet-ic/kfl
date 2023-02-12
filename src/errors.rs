@@ -13,11 +13,10 @@ use miette::{Diagnostic, NamedSource};
 
 use crate::{
     ast::{TypeName, Literal, SpannedNode},
-    span::{Spanned},
+    span::Spanned,
     decode::Kind,
     traits::{ErrorSpan, Span}
 };
-
 
 /// Main error that is returned from KDL parsers
 ///

@@ -18,13 +18,13 @@ rust-version = "1.62.0"
 readme = "README.md"
 
 [dependencies]
+base64 = { version = "*", optional = true }
 chumsky = { version = "*", default-features = false }
 kfl-derive = { path = "./derive", optional = true }
-base64 = { version = "*", optional = true }
-unicode-width = { version = "*", optional = true }
-minicbor = { version = "*", optional = true, features = ["std", "derive"] }
 miette = "*"
+minicbor = { version = "*", optional = true, features = ["std", "derive"] }
 thiserror = "*"
+unicode-width = { version = "*", optional = true }
 
 [dev-dependencies]
 miette = { version = "*", features = ["fancy"] }
@@ -33,5 +33,5 @@ serde_json = "*"
 
 [features]
 default = ["derive", "base64", "line-numbers"]
-derive = ["knuffel-derive"]
+derive = ["kfl-derive"]
 line-numbers = ["unicode-width"]

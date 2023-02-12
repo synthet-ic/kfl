@@ -16,7 +16,7 @@ enum Colour {
 
 This will match scalar values in `kebab-case`. For example, this node decoder:
 
-```
+```rust
 # #[derive(kfl::DecodeScalar)]
 # enum Colour { Red, Blue, Green, InfraRed }
 #[derive(kfl::Decode)]

@@ -589,6 +589,7 @@ Similarly to `flatten` flag in `serde`, this allows factoring out some
 properties or children into another structure.
 
 For example:
+
 ```rust
 #[derive(kfl::Decode, Default)]
 struct Common {
@@ -605,7 +606,9 @@ struct Plugin {
     url: String,
 }
 ```
+
 This will parse the following:
+
 ```kdl
 plugin {
     name "my-plugin"
@@ -615,6 +618,7 @@ plugin {
 ```
 
 There are few limitations of the `flatten`:
+
 1. All fields in target structure must be optional.
 2. The target structure must implement [`Default`](std::default::Default).
 3. Only children or properties can be factored out, not arguments in current

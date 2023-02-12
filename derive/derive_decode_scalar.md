@@ -5,8 +5,10 @@ Currently `DecodeScalar` derive is only implemented for enums
 Only enums that contain no data are supported:
 
 ```rust
-#[derive(kfl::DecodeScalar)]
-enum Colour {
+use kfl::DecodeScalar;
+
+#[derive(DecodeScalar)]
+enum ColourKind {
     Red,
     Blue,
     Green,
@@ -17,17 +19,24 @@ enum Colour {
 This will match scalar values in `kebab-case`. For example, this node decoder:
 
 ```rust
-# #[derive(kfl::DecodeScalar)]
+# use kfl::{Decode, DecodeScalar};
+# #[derive(DecodeScalar)]
 # enum Colour { Red, Blue, Green, InfraRed }
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct Document {
-    #[kfl(child, unwrap(arguments))]
-    all_colours: Vec<Colour>,
+    #[kfl(children)]
+    colour: Vec<Colour>,
 }
+
+#[derive(Decode)]
+struct Colour(#[kfl(argument)] Colour);
 ```
 
 Can be populated from the following text:
 
 ```kdl
-all-colours "red" "blue" "green" "infra-red"
+colour "red"
+colour "blue"
+colour "green"
+colour "infra-red"
 ```

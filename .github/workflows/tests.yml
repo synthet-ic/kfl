@@ -9,14 +9,14 @@ jobs:
         rust_version: [1.62.0, stable]
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: synthet-ic/action-toolchain@main
         with:
           profile: minimal
           toolchain: ${{ matrix.rust_version }}
           default: true
 
       - name: All feature tests
-        uses: actions-rs/cargo@v1
+        uses: synthet-ic/action-cargo@main
         with:
           command: test
           args: --workspace --all-features

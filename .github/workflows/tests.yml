@@ -22,13 +22,13 @@ jobs:
           args: --workspace --all-features
 
       - name: Build without features
-        uses: actions-rs/cargo@v1
+        uses: synthet-ic/action-cargo@main
         with:
           command: build
           args: --workspace --no-default-features
 
       - name: Normal tests without extra features (but derive is enabled)
-        uses: actions-rs/cargo@v1
+        uses: synthet-ic/action-cargo@main
         with:
           command: test
           args: --workspace --no-default-features --features=derive

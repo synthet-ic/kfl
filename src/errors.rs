@@ -1,6 +1,6 @@
-//! Error types for the knuffel library
+//! Error types for the kfl library
 //!
-//! You only need [`Error`](enum@Error) exposed as `knuffel::Error` unless you
+//! You only need [`Error`](enum@Error) exposed as `kfl::Error` unless you
 //! do manual implementations of any of the `Decode*` traits.
 use std::{
     borrow::Cow,
@@ -119,7 +119,7 @@ pub enum DecodeError<S: ErrorSpan> {
     /// converted to the Rust value. Including, but not limited to:
     /// 1. Integer value out of range
     /// 2. `FromStr` returned error for the value parse by
-    ///    `#[knuffel(.., str)]`
+    ///    `#[kfl(.., str)]`
     #[error("{}", source)]
     #[diagnostic()]
     Conversion {
@@ -144,7 +144,7 @@ pub enum DecodeError<S: ErrorSpan> {
     },
     /// Custom error that can be emitted during decoding
     ///
-    /// This is not used by the knuffel itself. Note most of the time it's
+    /// This is not used by the kfl itself. Note most of the time it's
     /// better to use [`DecodeError::Conversion`] as that will associate
     /// source code span to the error.
     #[error(transparent)]

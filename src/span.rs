@@ -1,4 +1,4 @@
-//! Knuffel supports to kinds of the span for parsing
+//! kfl supports to kinds of the span for parsing
 //!
 //! 1. [`Span`] which only tracks byte offset from the start of the source code
 //! 2. [`LineSpan`] which also track line numbers

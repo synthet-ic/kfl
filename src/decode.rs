@@ -50,7 +50,7 @@ pub enum Kind {
 
 /// Decodes KDL value as bytes
 ///
-/// Used internally by `#[knuffel(..., bytes)]` attribute. But can be used
+/// Used internally by `#[kfl(..., bytes)]` attribute. But can be used
 /// manually for implementing [`DecodeScalar`](crate::traits::DecodeScalar).
 pub fn bytes<S: ErrorSpan>(value: &Value<S>, ctx: &mut Context<S>) -> Vec<u8> {
     if let Some(typ) = &value.type_name {
@@ -108,7 +108,7 @@ pub fn bytes<S: ErrorSpan>(value: &Value<S>, ctx: &mut Context<S>) -> Vec<u8> {
 ///
 /// Flag node is a node that has no arguments, properties or children.
 ///
-/// Used internally by `#[knuffel(child)] x: bool,`. But can be used
+/// Used internally by `#[kfl(child)] x: bool,`. But can be used
 /// manually for implementing [`DecodeScalar`](crate::traits::DecodeScalar).
 pub fn check_flag_node<S: ErrorSpan>(
     node: &SpannedNode<S>, ctx: &mut Context<S>)
@@ -178,7 +178,7 @@ impl<S: ErrorSpan> Context<S> {
     }
     /// Set context value
     ///
-    /// These values aren't used by the knuffel itself. But can be used by
+    /// These values aren't used by the kfl itself. But can be used by
     /// user-defined decoders to get some value. Each type can have a single but
     /// separate value set. So users are encouraged to use [new type idiom
     /// ](https://doc.rust-lang.org/rust-by-example/generics/new_types.html)

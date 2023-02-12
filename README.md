@@ -80,7 +80,7 @@ This parses into a vector of nodes as enums `Config`, but you also use some node
 ```rust,ignore
 #[derive(Decode)]
 struct Document {
-    #[knuffel(child, unwrap(argument))]
+    #[kfl(child, unwrap(argument))]
     version: Option<String>,
     #[kfl(children)]
     routes: Vec<Route>,

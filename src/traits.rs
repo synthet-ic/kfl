@@ -23,6 +23,7 @@ pub trait Decode<S: ErrorSpan>: Sized {
 
 /// Trait to decode children of the KDL node, mostly used for root document
 pub trait DecodeChildren<S: ErrorSpan>: Sized + FromIterator<Self::Item> {
+    /// 
     type Item: Decode<S>;
     
     /// Decodes from a list of chidren ASTs
@@ -33,8 +34,8 @@ pub trait DecodeChildren<S: ErrorSpan>: Sized + FromIterator<Self::Item> {
 /// The trait is implemented for structures that can be used as part of other
 /// structs
 ///
-/// The type of field that `#[knuffel(flatten)]` is used for should implement
-/// this trait. It is automatically implemented by `#[derive(knuffel::Decode)]`
+/// The type of field that `#[kfl(flatten)]` is used for should implement
+/// this trait. It is automatically implemented by `#[derive(kfl::Decode)]`
 /// by structures that have only optional properties and children (no
 /// arguments).
 pub trait DecodePartial<S: ErrorSpan>: Sized {

@@ -2,12 +2,13 @@ use std::collections::{BTreeSet, BTreeMap};
 
 use chumsky::prelude::*;
 
-use crate::ast::{Literal, TypeName, Node, Value, Integer, Decimal, Radix};
-use crate::ast::{SpannedName, SpannedNode, Document};
-use crate::span::{Spanned};
-use crate::traits::{Span};
-use crate::errors::{ParseError as Error, TokenFormat};
-
+use crate::{
+    ast::{Literal, TypeName, Node, Value, Integer, Decimal, Radix},
+    ast::{SpannedName, SpannedNode, Document},
+    span::Spanned,
+    traits::Span,
+    errors::{ParseError as Error, TokenFormat}
+};
 
 fn begin_comment<S: Span>(which: char)
     -> impl Parser<char, (), Error=Error<S>> + Clone

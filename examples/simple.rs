@@ -1,8 +1,9 @@
 use std::io::Read;
 
+use kfl::Decode;
 use miette::IntoDiagnostic;
 
-#[derive(kfl::Decode, Debug)]
+#[derive(Decode, Debug)]
 #[allow(dead_code)]
 struct Plugin {
     #[kfl(argument)]
@@ -13,7 +14,7 @@ struct Plugin {
     version: String,
 }
 
-#[derive(kfl::Decode, Debug)]
+#[derive(Decode, Debug)]
 #[allow(dead_code)]
 struct Config {
     #[kfl(child, unwrap(argument))]
@@ -26,7 +27,7 @@ fn main() -> miette::Result<()> {
     let mut buf = String::new();
     println!("Please type KDL document, press Return, Ctrl+D to finish");
     std::io::stdin().read_to_string(&mut buf).into_diagnostic()?;
-    let cfg: Config = kfl::parse("<stdin>", &buf)?;
+    let cfg: Vec<Config> = kfl::parse("<stdin>", &buf)?;
     println!("{:#?}", cfg);
     Ok(())
 }

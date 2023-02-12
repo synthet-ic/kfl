@@ -11,6 +11,7 @@
 //! On the other hand, on the decode stage you can convert your span types into
 //! more elaborate thing that includes file name or can refer to the defaults
 //! as a separate kind of span. See [`traits::DecodeSpan`].
+
 use std::{
     borrow::Borrow,
     fmt::Display,
@@ -388,7 +389,7 @@ impl<S, T: Hash> Hash for Spanned<T, S> {
 }
 
 impl Display for Span {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         self.0.fmt(f)?;
         "..".fmt(f)?;
         self.1.fmt(f)?;

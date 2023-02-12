@@ -20,7 +20,7 @@ readme = "README.md"
 [dependencies]
 base64 = { version = "0.21", optional = true }
 chumsky = { version = "0.8", default-features = false }
-kfl-derive = { path = "./derive", optional = true }
+kfl-derive = { version = "0" path = "./derive", optional = true }
 miette = "5"
 minicbor = { version = "0.19", optional = true, features = ["std", "derive"] }
 thiserror = "1"

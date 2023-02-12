@@ -22,7 +22,7 @@ pub struct Variant {
 
 impl Enum {
     fn new(ident: syn::Ident, _attrs: Vec<syn::Attribute>,
-           src_variants: impl Iterator<Item = syn::Variant>)
+           src_variants: impl Iterator<Item=syn::Variant>)
         -> syn::Result<Self>
     {
         let mut variants = Vec::new();
@@ -97,40 +97,40 @@ pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
             quote!(#name => Ok(#e_name::#ident))
         });
     Ok(quote! {
-        impl<S: ::knuffel::traits::ErrorSpan> ::knuffel::DecodeScalar<S>
+        impl<S: ::kfl::traits::ErrorSpan> ::kfl::DecodeScalar<S>
                 for #e_name {
-            fn raw_decode(val: &::knuffel::span::Spanned<
-                          ::knuffel::ast::Literal, S>,
-                          ctx: &mut ::knuffel::decode::Context<S>)
-                -> Result<#e_name, ::knuffel::errors::DecodeError<S>>
+            fn raw_decode(val: &::kfl::span::Spanned<
+                          ::kfl::ast::Literal, S>,
+                          ctx: &mut ::kfl::decode::Context<S>)
+                -> Result<#e_name, ::kfl::errors::DecodeError<S>>
             {
                 match &**val {
-                    ::knuffel::ast::Literal::String(ref s) => {
+                    ::kfl::ast::Literal::String(ref s) => {
                         match &s[..] {
                             #(#match_branches,)*
                             _ => {
-                                Err(::knuffel::errors::DecodeError::conversion(
+                                Err(::kfl::errors::DecodeError::conversion(
                                         val, #value_err))
                             }
                         }
                     }
                     _ => {
-                        Err(::knuffel::errors::DecodeError::scalar_kind(
-                            ::knuffel::decode::Kind::String,
+                        Err(::kfl::errors::DecodeError::scalar_kind(
+                            ::kfl::decode::Kind::String,
                             &val,
                         ))
                     }
                 }
             }
-            fn type_check(type_name: &Option<::knuffel::span::Spanned<
-                          ::knuffel::ast::TypeName, S>>,
-                          ctx: &mut ::knuffel::decode::Context<S>)
+            fn type_check(type_name: &Option<::kfl::span::Spanned<
+                          ::kfl::ast::TypeName, S>>,
+                          ctx: &mut ::kfl::decode::Context<S>)
             {
                 if let Some(typ) = type_name {
-                    ctx.emit_error(::knuffel::errors::DecodeError::TypeName {
+                    ctx.emit_error(::kfl::errors::DecodeError::TypeName {
                         span: typ.span().clone(),
                         found: Some((**typ).clone()),
-                        expected: ::knuffel::errors::ExpectedType::no_type(),
+                        expected: ::kfl::errors::ExpectedType::no_type(),
                         rust_type: stringify!(#e_name),
                     });
                 }

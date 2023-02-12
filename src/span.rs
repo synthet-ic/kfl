@@ -19,8 +19,8 @@ use std::{
 };
 
 use crate::{
-    traits,
-    decode::Context
+    decode::Context,
+    traits
 };
 
 /// Reexport of [miette::SourceSpan] trait that we use for parsing
@@ -38,42 +38,43 @@ pub struct Spanned<T, S> {
 
 /// Normal byte offset span
 #[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature="minicbor", derive(minicbor::Encode, minicbor::Decode))]
+#[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
 pub struct Span(
     #[cfg_attr(feature = "minicbor", n(0))]
     pub usize,
-    #[cfg_attr(feature="minicbor", n(1))]
+    #[cfg_attr(feature = "minicbor", n(1))]
     pub usize,
 );
 
 /// Line and column position of the datum in the source code
 // TODO(tailhook) optimize Eq to check only offset
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-#[cfg_attr(feature="minicbor", derive(minicbor::Encode, minicbor::Decode))]
+#[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
 pub struct LinePos {
     /// Zero-based byte offset
-    #[cfg_attr(feature="minicbor", n(0))]
+    #[cfg_attr(feature = "minicbor", n(0))]
     pub offset: usize,
     /// Zero-based line number
-    #[cfg_attr(feature="minicbor", n(1))]
+    #[cfg_attr(feature = "minicbor", n(1))]
     pub line: usize,
     /// Zero-based column number
-    #[cfg_attr(feature="minicbor", n(2))]
+    #[cfg_attr(feature = "minicbor", n(2))]
     pub column: usize,
 }
 
 /// Span with line and column number
 #[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature="minicbor", derive(minicbor::Encode, minicbor::Decode))]
+#[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
 pub struct LineSpan(
-    #[cfg_attr(feature="minicbor", n(0))]
+    #[cfg_attr(feature = "minicbor", n(0))]
     pub LinePos,
-    #[cfg_attr(feature="minicbor", n(1))]
+    #[cfg_attr(feature = "minicbor", n(1))]
     pub LinePos,
 );
 
 #[allow(missing_debug_implementations)]
 mod sealed {
+
     pub struct OffsetTracker {
         pub(crate) offset: usize,
     }
@@ -85,6 +86,7 @@ mod sealed {
         pub(crate) line: usize,
         pub(crate) column: usize,
     }
+
 }
 
 impl Span {
@@ -116,6 +118,7 @@ impl chumsky::Span for Span {
     fn start(&self) -> usize { self.0 }
     fn end(&self) -> usize { self.1 }
 }
+
 impl traits::sealed::SpanTracker for sealed::OffsetTracker {
     type Span = Span;
     fn next_span(&mut self, c: char) -> Span {
@@ -322,7 +325,7 @@ impl<U: ?Sized, T: AsMut<U>, S> AsMut<U> for Spanned<T, S> {
     }
 }
 
-impl<T, S> std::ops::Deref for Spanned<T, S> {
+impl<T, S> Deref for Spanned<T, S> {
     type Target = T;
     fn deref(&self) -> &T {
         &self.value
@@ -376,7 +379,7 @@ impl<S, T: Ord> Ord for Spanned<T, S> {
 
 impl<S, T: Eq> Eq for Spanned<T, S> {}
 
-impl<S, T: std::hash::Hash> std::hash::Hash for Spanned<T, S> {
+impl<S, T: Hash> Hash for Spanned<T, S> {
     fn hash<H>(&self, state: &mut H)
         where H: std::hash::Hasher,
     {

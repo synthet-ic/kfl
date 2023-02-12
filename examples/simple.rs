@@ -10,15 +10,15 @@ struct Plugin {
     name: String,
     #[kfl(property)]
     url: String,
-    #[kfl(child, unwrap(argument))]
-    version: String,
+//     #[kfl(child, unwrap(argument))]
+//     version: String,
 }
 
 #[derive(Decode, Debug)]
 #[allow(dead_code)]
 struct Config {
-    #[kfl(child, unwrap(argument))]
-    version: String,
+//     #[kfl(child, unwrap(argument))]
+//     version: String,
     #[kfl(children)]
     plugins: Vec<Plugin>,
 }

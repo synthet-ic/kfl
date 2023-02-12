@@ -21,7 +21,7 @@ This will match scalar values in `kebab-case`. For example, this node decoder:
 ```rust
 # use kfl::{Decode, DecodeScalar};
 # #[derive(DecodeScalar)]
-# enum Colour { Red, Blue, Green, InfraRed }
+# enum ColourKind { Red, Blue, Green, InfraRed }
 #[derive(Decode)]
 struct Document {
     #[kfl(children)]
@@ -29,7 +29,7 @@ struct Document {
 }
 
 #[derive(Decode)]
-struct Colour(#[kfl(argument)] Colour);
+struct Colour(#[kfl(argument)] ColourKind);
 ```
 
 Can be populated from the following text:

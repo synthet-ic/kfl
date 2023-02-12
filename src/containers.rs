@@ -20,13 +20,13 @@ impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Box<T> {
     }
 }
 
-// impl<S: ErrorSpan, T: DecodeChildren<S>> DecodeChildren<S> for Box<T> {
-//     fn decode_children(nodes: &[SpannedNode<S>], ctx: &mut Context<S>)
-//         -> Result<Self, DecodeError<S>>
-//     {
-//         DecodeChildren::decode_children(nodes, ctx).map(Box::new)
-//     }
-// }
+impl<S: ErrorSpan, T: DecodeChildren<S>> DecodeChildren<S> for Box<T> {
+    fn decode_children(nodes: &[SpannedNode<S>], ctx: &mut Context<S>)
+        -> Result<Self, DecodeError<S>>
+    {
+        <T as DecodeChildren<S>>::decode_children(nodes, ctx).map(Box::new)
+    }
+}
 
 impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Box<T> {
     fn insert_child(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
@@ -63,13 +63,13 @@ impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Arc<T> {
     }
 }
 
-// impl<S: ErrorSpan, T: DecodeChildren<S>> DecodeChildren<S> for Arc<T> {
-//     fn decode_children(nodes: &[SpannedNode<S>], ctx: &mut Context<S>)
-//         -> Result<Self, DecodeError<S>>
-//     {
-//         DecodeChildren::decode_children(nodes, ctx).map(Arc::new)
-//     }
-// }
+impl<S: ErrorSpan, T: DecodeChildren<S>> DecodeChildren<S> for Arc<T> {
+    fn decode_children(nodes: &[SpannedNode<S>], ctx: &mut Context<S>)
+        -> Result<Self, DecodeError<S>>
+    {
+        <T as DecodeChildren<S>>::decode_children(nodes, ctx).map(Arc::new)
+    }
+}
 
 impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Arc<T> {
     fn insert_child(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
@@ -109,13 +109,13 @@ impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Rc<T> {
     }
 }
 
-// impl<S: ErrorSpan, T: DecodeChildren<S>> DecodeChildren<S> for Rc<T> {
-//     fn decode_children(nodes: &[SpannedNode<S>], ctx: &mut Context<S>)
-//         -> Result<Self, DecodeError<S>>
-//     {
-//         DecodeChildren::decode_children(nodes, ctx).map(Rc::new)
-//     }
-// }
+impl<S: ErrorSpan, T: DecodeChildren<S>> DecodeChildren<S> for Rc<T> {
+    fn decode_children(nodes: &[SpannedNode<S>], ctx: &mut Context<S>)
+        -> Result<Self, DecodeError<S>>
+    {
+        <T as DecodeChildren<S>>::decode_children(nodes, ctx).map(Rc::new)
+    }
+}
 
 impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Rc<T> {
     fn insert_child(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)

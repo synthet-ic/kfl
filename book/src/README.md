@@ -15,6 +15,7 @@
   - TypeName
   - bool child
 - Option vs Default
+  - benefit: form of type path doesn't matter 
 - unwrap
 - `NewType` for structs and `Nested` for enums
 

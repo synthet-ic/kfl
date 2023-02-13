@@ -22,6 +22,6 @@
 # TODO
 
 - [ ] Implement `DecodeScalar` for struct as the replacement of `flatten(properties)` and support `flatten(arguments)` equivalent as well
-- [ ] Allow distinguish variant nodes by `(type-name)`
 - [ ] Span
-- [ ] Remove `ChildMode::Bool`
+- [ ] Detect name conflicts between fields in the same struct
+- [ ] Encode

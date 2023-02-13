@@ -22,13 +22,9 @@ pub enum Definition {
 
 pub enum VariantKind {
     Unit,
-    Nested { option: bool },
+    Nested { ty: syn::Ident },
     Tuple(Struct),
     Named(Struct),
-}
-
-pub enum ArgKind {
-    Value { option: bool },
 }
 
 #[derive(Debug, Clone)]
@@ -100,15 +96,13 @@ pub struct NodeNameField {
 
 pub struct TypeNameField {
     pub field: Field,
-    pub option: bool,
 }
 
 pub struct Arg {
     pub field: Field,
-    pub kind: ArgKind,
+    // pub kind: ArgKind,
     pub decode: DecodeMode,
     pub default: Option<Option<syn::Expr>>,
-    pub option: bool,
 }
 
 pub struct VarArgs {
@@ -149,7 +143,6 @@ pub enum ExtraKind {
 pub struct ExtraField {
     pub field: Field,
     pub kind: ExtraKind,
-    pub option: bool,
 }
 
 #[derive(Clone)]
@@ -193,7 +186,7 @@ pub struct NewType {
     pub ident: syn::Ident,
     pub trait_props: TraitProps,
     pub generics: syn::Generics,
-    pub option: bool,
+    // pub option: bool,
 }
 
 pub struct Variant {
@@ -234,19 +227,6 @@ fn err_pair(s1: &Field, s2: &Field, t1: &str, t2: &str)
     return err;
 }
 
-fn is_option(ty: &syn::Type) -> bool {
-    matches!(ty,
-        syn::Type::Path(syn::TypePath {
-            qself: None,
-            path: syn::Path {
-                leading_colon: None,
-                segments,
-            },
-        })
-        if segments.len() == 1 && segments[0].ident == "Option"
-    )
-}
-
 fn is_bool(ty: &syn::Type) -> bool {
     matches!(ty,
         syn::Type::Path(syn::TypePath { qself: None, path })
@@ -270,7 +250,7 @@ impl Variant {
 impl Enum {
     fn new(ident: syn::Ident, attrs: Vec<syn::Attribute>,
            generics: syn::Generics,
-           src_variants: impl Iterator<Item=syn::Variant>)
+           src_variants: impl Iterator<Item = syn::Variant>)
         -> syn::Result<Self>
     {
         let mut attrs = parse_attr_list(&attrs);
@@ -310,9 +290,7 @@ impl Enum {
                         // Single tuple variant without any defition means
                         // the first field inside is meant to be full node
                         // parser.
-                        VariantKind::Nested {
-                            option: tup.extra_fields[0].option,
-                        }
+                        VariantKind::Nested { ty: tup.ident.clone() }
                     } else {
                         VariantKind::Tuple(tup)
                     }
@@ -373,8 +351,7 @@ impl StructBuilder {
             extra_fields: self.extra_fields,
         }
     }
-    pub fn add_field(&mut self, field: Field, is_option: bool, is_bool: bool,
-                     attrs: &FieldAttrs)
+    pub fn add_field(&mut self, field: Field, is_bool: bool, attrs: &FieldAttrs)
         -> syn::Result<&mut Self>
     {
         match &attrs.mode {
@@ -386,10 +363,8 @@ impl StructBuilder {
                 }
                 self.arguments.push(Arg {
                     field,
-                    kind: ArgKind::Value { option: is_option },
                     decode: attrs.decode.clone().unwrap_or(DecodeMode::Normal),
                     default: attrs.default.clone(),
-                    option: is_option,
                 });
             }
             Some(FieldMode::Arguments) => {
@@ -458,10 +433,6 @@ impl StructBuilder {
                 });
             }
             Some(FieldMode::Flatten) => {
-                if is_option {
-                    return Err(syn::Error::new(field.span,
-                        "optional flatten fields are not supported yet"));
-                }
                 self.children.push(Child {
                     field: field.clone(),
                     mode: ChildMode::Flatten,
@@ -478,14 +449,12 @@ impl StructBuilder {
             Some(FieldMode::TypeName) => {
                 self.type_names.push(TypeNameField {
                     field,
-                    option: is_option,
                 });
             }
             None => {
                 self.extra_fields.push(ExtraField {
                     field,
                     kind: ExtraKind::Auto,
-                    option: is_option,
                 });
             }
         }
@@ -503,7 +472,7 @@ impl Struct {
             let mut attrs = FieldAttrs::new();
             attrs.update(parse_attr_list(&fld.attrs));
             let field = Field::new(&fld, idx);
-            bld.add_field(field, is_option(&fld.ty), is_bool(&fld.ty), &attrs)?;
+            bld.add_field(field, is_bool(&fld.ty), &attrs)?;
         }
 
         Ok(bld.build())
@@ -563,7 +532,7 @@ impl Parse for Definition {
                             ident: item.ident,
                             trait_props,
                             generics: item.generics,
-                            option: tup.extra_fields[0].option,
+                            // option: tup.extra_fields[0].option,
                         }))
                     } else {
                         Ok(Definition::TupleStruct(tup))

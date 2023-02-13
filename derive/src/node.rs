@@ -2,7 +2,7 @@ use proc_macro2::{TokenStream, Span};
 use quote::{format_ident, quote, ToTokens};
 use syn::ext::IdentExt;
 
-use crate::definition::{Struct, StructBuilder, ArgKind, FieldAttrs, DecodeMode};
+use crate::definition::{Struct, StructBuilder, FieldAttrs, DecodeMode};
 use crate::definition::{Child, Field, NewType, ExtraKind, ChildMode};
 
 pub(crate) struct Common<'a> {
@@ -217,8 +217,7 @@ pub(crate) fn decode_enum_item(s: &Common,
     })
 }
 
-fn decode_value(val: &syn::Ident, ctx: &syn::Ident, mode: &DecodeMode,
-                optional: bool)
+fn decode_value(val: &syn::Ident, ctx: &syn::Ident, mode: &DecodeMode)
     -> syn::Result<TokenStream>
 {
     match mode {
@@ -227,37 +226,37 @@ fn decode_value(val: &syn::Ident, ctx: &syn::Ident, mode: &DecodeMode,
                 ::kfl::traits::DecodeScalar::decode(#val, #ctx)
             })
         }
-        DecodeMode::Str if optional => {
-            Ok(quote![{
-                if let Some(typ) = &#val.type_name {
-                    #ctx.emit_error(::kfl::errors::DecodeError::TypeName {
-                        span: typ.span().clone(),
-                        found: Some((**typ).clone()),
-                        expected: ::kfl::errors::ExpectedType::no_type(),
-                        rust_type: "str", // TODO(tailhook) show field type
-                    });
-                }
-                match *#val.literal {
-                    ::kfl::ast::Literal::String(ref s) => {
-                        ::std::str::FromStr::from_str(s).map_err(|e| {
-                            ::kfl::errors::DecodeError::conversion(
-                                &#val.literal, e)
-                        })
-                        .map(Some)
-                    }
-                    ::kfl::ast::Literal::Null => Ok(None),
-                    _ => {
-                        #ctx.emit_error(
-                            ::kfl::errors::DecodeError::scalar_kind(
-                                ::kfl::decode::Kind::String,
-                                &#val.literal,
-                            )
-                        );
-                        Ok(None)
-                    }
-                }
-            }])
-        }
+        // DecodeMode::Str if optional => {
+        //     Ok(quote![{
+        //         if let Some(typ) = &#val.type_name {
+        //             #ctx.emit_error(::kfl::errors::DecodeError::TypeName {
+        //                 span: typ.span().clone(),
+        //                 found: Some((**typ).clone()),
+        //                 expected: ::kfl::errors::ExpectedType::no_type(),
+        //                 rust_type: "str", // TODO(tailhook) show field type
+        //             });
+        //         }
+        //         match *#val.literal {
+        //             ::kfl::ast::Literal::String(ref s) => {
+        //                 ::std::str::FromStr::from_str(s).map_err(|e| {
+        //                     ::kfl::errors::DecodeError::conversion(
+        //                         &#val.literal, e)
+        //                 })
+        //                 .map(Some)
+        //             }
+        //             ::kfl::ast::Literal::Null => Ok(None),
+        //             _ => {
+        //                 #ctx.emit_error(
+        //                     ::kfl::errors::DecodeError::scalar_kind(
+        //                         ::kfl::decode::Kind::String,
+        //                         &#val.literal,
+        //                     )
+        //                 );
+        //                 Ok(None)
+        //             }
+        //         }
+        //     }])
+        // }
         DecodeMode::Str => {
             Ok(quote![{
                 if let Some(typ) = &#val.type_name {
@@ -282,23 +281,23 @@ fn decode_value(val: &syn::Ident, ctx: &syn::Ident, mode: &DecodeMode,
                 }
             }])
         }
-        DecodeMode::Bytes if optional => {
-            Ok(quote! {
-                if matches!(&*#val.literal, ::kfl::ast::Literal::Null) {
-                    Ok(None)
-                } else {
-                    match ::kfl::decode::bytes(#val, #ctx).try_into() {
-                        Ok(v) => Ok(Some(v)),
-                        Err(e) => {
-                            #ctx.emit_error(
-                                ::kfl::errors::DecodeError::conversion(
-                                    &#val.literal, e));
-                            Ok(None)
-                        }
-                    }
-                }
-            })
-        }
+        // DecodeMode::Bytes if optional => {
+        //     Ok(quote! {
+        //         if matches!(&*#val.literal, ::kfl::ast::Literal::Null) {
+        //             Ok(None)
+        //         } else {
+        //             match ::kfl::decode::bytes(#val, #ctx).try_into() {
+        //                 Ok(v) => Ok(Some(v)),
+        //                 Err(e) => {
+        //                     #ctx.emit_error(
+        //                         ::kfl::errors::DecodeError::conversion(
+        //                             &#val.literal, e));
+        //                     Ok(None)
+        //                 }
+        //             }
+        //         }
+        //     })
+        // }
         DecodeMode::Bytes => {
             Ok(quote! {
                 ::kfl::decode::bytes(#val, #ctx).try_into()
@@ -347,29 +346,17 @@ fn decode_specials(s: &Common, node: &syn::Ident)
     });
     let type_names = s.object.type_names.iter().flat_map(|type_name| {
         let fld = &type_name.field.tmp_name;
-        if type_name.option {
-            quote! {
-                let #fld = #node.type_name.as_ref().map(|tn| {
-                    tn.as_str()
-                        .parse()
-                        .map_err(|e| {
-                            ::kfl::errors::DecodeError::conversion(tn, e)
-                        })
-                }).transpose()?;
-            }
-        } else {
-            quote! {
-                let #fld = if let Some(tn) = #node.type_name.as_ref() {
-                    tn.as_str()
-                        .parse()
-                        .map_err(|e| {
-                            ::kfl::errors::DecodeError::conversion(tn, e)
-                        })?
-                } else {
-                    return Err(::kfl::errors::DecodeError::missing(
-                        #node, "type name required"));
-                };
-            }
+        quote! {
+            let #fld = if let Some(tn) = #node.type_name.as_ref() {
+                tn.as_str()
+                    .parse()
+                    .map_err(|e| {
+                        ::kfl::errors::DecodeError::conversion(tn, e)
+                    })?
+            } else {
+                return Err(::kfl::errors::DecodeError::missing(
+                    #node, "type name required"));
+            };
         }
     });
     let validate_type = if s.object.type_names.is_empty() {
@@ -401,17 +388,9 @@ fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     for arg in &s.object.arguments {
         let fld = &arg.field.tmp_name;
         let val = syn::Ident::new("val", Span::mixed_site());
-        let decode_value = decode_value(&val, ctx, &arg.decode,
-                                        arg.option)?;
-        match (&arg.default, &arg.kind) {
-            (None, ArgKind::Value { option: true }) => {
-                decoder.push(quote! {
-                    let #fld = #iter_args.next().map(|#val| {
-                        #decode_value
-                    }).transpose()?.and_then(|v| v);
-                });
-            }
-            (None, ArgKind::Value { option: false }) => {
+        let decode_value = decode_value(&val, ctx, &arg.decode)?;
+        match &arg.default {
+            None => {
                 let error = if arg.field.is_indexed() {
                     "additional argument is required".into()
                 } else {
@@ -426,7 +405,7 @@ fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                     let #fld = #decode_value?;
                 });
             }
-            (Some(default_value), ArgKind::Value {..}) => {
+            Some(default_value) => {
                 let default = if let Some(expr) = default_value {
                     quote!(#expr)
                 } else {
@@ -445,7 +424,7 @@ fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     if let Some(var_args) = &s.object.var_args {
         let fld = &var_args.field.tmp_name;
         let val = syn::Ident::new("val", Span::mixed_site());
-        let decode_value = decode_value(&val, ctx, &var_args.decode, false)?;
+        let decode_value = decode_value(&val, ctx, &var_args.decode)?;
         decoder.push(quote! {
             let #fld = #iter_args.map(|#val| {
                 #decode_value
@@ -479,7 +458,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
         let fld = &prop.field.tmp_name;
         let prop_name = &prop.name;
         let seen_name = format_ident!("seen_{}", fld, span = Span::mixed_site());
-        if prop.flatten {
+        if false /* TODO prop.flatten */ {
             declare_empty.push(quote! {
                 let mut #fld = ::std::default::Default::default();
             });
@@ -489,26 +468,16 @@ fn decode_props(s: &Common, node: &syn::Ident)
                 => {}
             });
         } else {
-            let decode_value = decode_value(&val, ctx, &prop.decode,
-                                            prop.option)?;
+            let decode_value = decode_value(&val, ctx, &prop.decode)?;
             declare_empty.push(quote! {
                 let mut #fld = None;
                 let mut #seen_name = false;
             });
-            if prop.option {
-                match_branches.push(quote! {
-                    #prop_name => {
-                        #seen_name = true;
-                        #fld = #decode_value?;
-                    }
-                });
-            } else {
-                match_branches.push(quote! {
-                    #prop_name => {
-                        #fld = Some(#decode_value?);
-                    }
-                });
-            }
+            match_branches.push(quote! {
+                #prop_name => {
+                    #fld = Some(#decode_value?);
+                }
+            });
             let req_msg = format!("property `{}` is required", prop_name);
             if let Some(value) = &prop.default {
                 let default = if let Some(expr) = value {
@@ -516,18 +485,10 @@ fn decode_props(s: &Common, node: &syn::Ident)
                 } else {
                     quote!(::std::default::Default::default())
                 };
-                if prop.option {
-                    postprocess.push(quote! {
-                        if !#seen_name {
-                            #fld = #default;
-                        };
-                    });
-                } else {
-                    postprocess.push(quote! {
-                        let #fld = #fld.unwrap_or_else(|| #default);
-                    });
-                }
-            } else if !prop.option {
+                postprocess.push(quote! {
+                    let #fld = #fld.unwrap_or_else(|| #default);
+                });
+            } else {
                 postprocess.push(quote! {
                     let #fld = #fld.ok_or_else(|| {
                         ::kfl::errors::DecodeError::missing(
@@ -539,7 +500,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
     }
     if let Some(var_props) = &s.object.var_props {
         let fld = &var_props.field.tmp_name;
-        let decode_value = decode_value(&val, ctx, &var_props.decode, false)?;
+        let decode_value = decode_value(&val, ctx, &var_props.decode)?;
         declare_empty.push(quote! {
             let mut #fld = Vec::new();
         });
@@ -590,7 +551,7 @@ fn unwrap_fn(parent: &Common,
         parent.object.trait_props.clone(),
         parent.object.generics.clone(),
     );
-    bld.add_field(Field::new_named(name, ty), false, false, attrs)?;
+    bld.add_field(Field::new_named(name, ty), false, attrs)?;
     let object = bld.build();
     let common = Common {
         object: &object,
@@ -728,30 +689,20 @@ fn insert_property(s: &Common, name: &syn::Ident, value: &syn::Ident)
     for prop in &s.object.properties {
         let dest = &prop.field.from_self();
         let prop_name = &prop.name;
-        if prop.flatten {
+        if false /* TODO prop.flatten */ {
             match_branches.push(quote! {
                 _ if ::kfl::traits::DecodePartial
                     ::insert_property(&mut #dest, #name, #value, #ctx)?
                 => Ok(true),
             });
         } else {
-            let decode_value = decode_value(&value, ctx, &prop.decode,
-                                            prop.option)?;
-            if prop.option {
-                match_branches.push(quote! {
-                    #prop_name => {
-                        #dest = #decode_value?;
-                        Ok(true)
-                    }
-                });
-            } else {
-                match_branches.push(quote! {
-                    #prop_name => {
-                        #dest = Some(#decode_value?);
-                        Ok(true)
-                    }
-                });
-            }
+            let decode_value = decode_value(&value, ctx, &prop.decode)?;
+            match_branches.push(quote! {
+                #prop_name => {
+                    #dest = Some(#decode_value?);
+                    Ok(true)
+                }
+            });
         }
     }
     Ok(quote! {

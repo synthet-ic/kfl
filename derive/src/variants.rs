@@ -94,26 +94,10 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                     }
                 });
             }
-            VariantKind::Nested { option: false } => {
+            VariantKind::Nested { ty }=> {
                 branches.push(quote! {
-                    #name => ::kfl::Decode::decode_node(#node, #ctx)
+                    #name => <#ty as ::kfl::Decode<_>>::decode_node(#node, #ctx)
                         .map(#enum_name::#variant_name),
-                });
-            }
-            VariantKind::Nested { option: true } => {
-                branches.push(quote! {
-                    #name => {
-                        if #node.arguments.len() > 0 ||
-                            #node.properties.len() > 0 ||
-                            #node.children.is_some()
-                        {
-                            ::kfl::Decode::decode_node(#node, #ctx)
-                                .map(Some)
-                                .map(#enum_name::#variant_name)
-                        } else {
-                            Ok(#enum_name::#variant_name(None))
-                        }
-                    }
                 });
             }
             VariantKind::Tuple(s) => {

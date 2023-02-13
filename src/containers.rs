@@ -34,13 +34,13 @@ impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Box<T> {
     {
         (**self).insert_child(node, ctx)
     }
-    fn insert_property(&mut self,
-                       name: &Spanned<Box<str>, S>, value: &Value<S>,
-                       ctx: &mut Context<S>)
-        -> Result<bool, DecodeError<S>>
-    {
-        (**self).insert_property(name, value, ctx)
-    }
+    // fn insert_property(&mut self,
+    //                    name: &Spanned<Box<str>, S>, value: &Value<S>,
+    //                    ctx: &mut Context<S>)
+    //     -> Result<bool, DecodeError<S>>
+    // {
+    //     (**self).insert_property(name, value, ctx)
+    // }
 }
 
 impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Box<T> {
@@ -78,14 +78,14 @@ impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Arc<T> {
         Arc::get_mut(self).expect("no Arc clone yet")
             .insert_child(node, ctx)
     }
-    fn insert_property(&mut self,
-                       name: &Spanned<Box<str>, S>, value: &Value<S>,
-                       ctx: &mut Context<S>)
-        -> Result<bool, DecodeError<S>>
-    {
-        Arc::get_mut(self).expect("no Arc clone yet")
-            .insert_property(name, value, ctx)
-    }
+    // fn insert_property(&mut self,
+    //                    name: &Spanned<Box<str>, S>, value: &Value<S>,
+    //                    ctx: &mut Context<S>)
+    //     -> Result<bool, DecodeError<S>>
+    // {
+    //     Arc::get_mut(self).expect("no Arc clone yet")
+    //         .insert_property(name, value, ctx)
+    // }
 }
 
 impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Arc<T> {
@@ -124,14 +124,14 @@ impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Rc<T> {
         Rc::get_mut(self).expect("no Rc clone yet")
             .insert_child(node, ctx)
     }
-    fn insert_property(&mut self,
-                       name: &Spanned<Box<str>, S>, value: &Value<S>,
-                       ctx: &mut Context<S>)
-        -> Result<bool, DecodeError<S>>
-    {
-        Rc::get_mut(self).expect("no Rc clone yet")
-            .insert_property(name, value, ctx)
-    }
+    // fn insert_property(&mut self,
+    //                    name: &Spanned<Box<str>, S>, value: &Value<S>,
+    //                    ctx: &mut Context<S>)
+    //     -> Result<bool, DecodeError<S>>
+    // {
+    //     Rc::get_mut(self).expect("no Rc clone yet")
+    //         .insert_property(name, value, ctx)
+    // }
 }
 
 impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Rc<T> {
@@ -198,7 +198,7 @@ impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Option<T> {
     {
         match &**value {
             Literal::Null => Ok(None),
-            _ => DecodeScalar::raw_decode(value, ctx).map(Some),
+            _ => <T as DecodeScalar<S>>::raw_decode(value, ctx).map(Some),
         }
     }
 }

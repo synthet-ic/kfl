@@ -10,11 +10,11 @@ struct Child1(#[kfl(argument)] String);
 #[derive(Decode, Debug, PartialEq)]
 struct Child2(#[kfl(argument)] String);
 
-#[derive(Decode, Debug, PartialEq)]
+#[derive(Decode, Debug, Default, PartialEq)]
 struct Intermediate {
-    #[kfl(child)]
+    #[kfl(child, default)]
     child1: Option<Child1>,
-    #[kfl(children)]
+    #[kfl(children, default)]
     children2: Vec<Child2>
 }
 

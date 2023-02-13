@@ -53,15 +53,15 @@ pub trait DecodePartial<S: ErrorSpan>: Sized {
     /// structure).
     fn insert_child(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<bool, DecodeError<S>>;
-    /// The method is called when unknown property is encountered by parent
-    /// structure
-    ///
-    /// Returns `Ok(true)` if the property is "consumed" (i.e. stored in this
-    /// structure).
-    fn insert_property(&mut self,
-                       name: &Spanned<Box<str>, S>, value: &Value<S>,
-                       ctx: &mut Context<S>)
-        -> Result<bool, DecodeError<S>>;
+    // /// The method is called when unknown property is encountered by parent
+    // /// structure
+    // ///
+    // /// Returns `Ok(true)` if the property is "consumed" (i.e. stored in this
+    // /// structure).
+    // fn insert_property(&mut self,
+    //                    name: &Spanned<Box<str>, S>, value: &Value<S>,
+    //                    ctx: &mut Context<S>)
+    //     -> Result<bool, DecodeError<S>>;
 }
 
 /// The trait that decodes scalar value and checks its type

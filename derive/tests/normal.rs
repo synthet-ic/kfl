@@ -172,7 +172,7 @@ fn parse_argument_named() {
 
 #[test]
 fn parse_argument_unnamed() {
-    #[derive(kfl_derive::Decode, Debug, PartialEq)]
+    #[derive(Decode, Debug, PartialEq)]
     struct Node(
         #[kfl(argument)]
         String
@@ -207,7 +207,7 @@ fn parse_argument_unnamed() {
 
 #[test]
 fn parse_argument_default_named() {
-    #[derive(kfl_derive::Decode, Debug, PartialEq)]
+    #[derive(Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument, default)]
         name: String,
@@ -226,7 +226,7 @@ fn parse_argument_default_named() {
 
 #[test]
 fn parse_argument_default_unnamed() {
-    #[derive(kfl_derive::Decode, Debug, PartialEq)]
+    #[derive(Decode, Debug, PartialEq)]
     struct Node(
         #[kfl(argument, default)]
         String,
@@ -248,7 +248,7 @@ fn parse_argument_default_unnamed() {
 
 #[test]
 fn parse_argument_default_value_named() {
-    #[derive(kfl_derive::Decode, Debug, PartialEq)]
+    #[derive(Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument, default = "unnamed".into())]
         name: String,
@@ -278,27 +278,8 @@ fn parse_argument_default_value_named() {
 }
 
 #[test]
-fn parse_option_argument() {
-    #[derive(kfl_derive::Decode, Debug, PartialEq)]
-    struct Node {
-        #[kfl(argument)]
-        name: Option<String>,
-    }
-
-    assert_parse::<Node>(
-        r#"node "hello""#,
-        Node { name: Some("hello".into()) });
-    assert_parse::<Node>(
-        r#"node"#,
-        Node { name: None });
-    assert_parse::<Node>(
-        r#"node null"#,
-        Node { name: None });
-}
-
-#[test]
 fn parse_property_named() {
-    #[derive(kfl_derive::Decode, Debug, PartialEq, Default)]
+    #[derive(Decode, Debug, PartialEq, Default)]
     struct Node {
         #[kfl(property)]
         name: String,
@@ -317,7 +298,7 @@ fn parse_property_named() {
 
 #[test]
 fn parse_property_unnamed() {
-    #[derive(kfl_derive::Decode, Debug, PartialEq, Default)]
+    #[derive(Decode, Debug, PartialEq, Default)]
     struct Node(
         #[kfl(property(name = "name"))]
         String,
@@ -408,12 +389,12 @@ fn parse_property_unnamed() {
 
 #[test]
 fn parse_children() {
-    #[derive(kfl_derive::Decode, Debug, PartialEq)]
+    #[derive(Decode, Debug, PartialEq)]
     struct Parent {
         #[kfl(children)]
         children: Vec<Child>,
     }
-    #[derive(kfl_derive::Decode, Debug, PartialEq)]
+    #[derive(Decode, Debug, PartialEq)]
     struct Child {
         #[kfl(argument)]
         name: String,
@@ -441,21 +422,21 @@ fn parse_children() {
 
 #[test]
 fn parse_filtered_children() {
-    #[derive(kfl_derive::Decode, Debug, PartialEq)]
+    #[derive(Decode, Debug, PartialEq)]
     struct Parent {
         #[kfl(children)]
         lefts: Vec<Left>,
         #[kfl(children)]
         rights: Vec<Right>,
     }
-    #[derive(kfl_derive::Decode, Debug, PartialEq)]
+    #[derive(Decode, Debug, PartialEq)]
     struct Left {
-        #[kfl(argument)]
+        #[kfl(argument, default)]
         name: Option<String>,
     }
-    #[derive(kfl_derive::Decode, Debug, PartialEq)]
+    #[derive(Decode, Debug, PartialEq)]
     struct Right {
-        #[kfl(argument)]
+        #[kfl(argument, default)]
         name: Option<String>,
     }
 
@@ -506,7 +487,7 @@ fn parse_filtered_children() {
 
 #[test]
 fn parse_child() {
-    #[derive(kfl_derive::Decode, Debug, PartialEq)]
+    #[derive(Decode, Debug, PartialEq)]
     struct Parent {
         #[kfl(child)]
         child1: Child1,
@@ -515,12 +496,12 @@ fn parse_child() {
         // #[kfl(child)]
         // flag: bool,
     }
-    #[derive(kfl_derive::Decode, Debug, PartialEq, Default)]
+    #[derive(Decode, Debug, PartialEq, Default)]
     struct Child1 {
         #[kfl(property)]
         name: String,
     }
-    #[derive(kfl_derive::Decode, Debug, PartialEq, Default)]
+    #[derive(Decode, Debug, PartialEq, Default)]
     struct Child2 {
         #[kfl(property)]
         name: String,

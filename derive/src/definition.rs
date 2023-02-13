@@ -126,7 +126,6 @@ pub enum ChildMode {
     Normal,
     Flatten,
     Multi,
-    Bool,
 }
 
 pub struct Child {
@@ -225,13 +224,6 @@ fn err_pair(s1: &Field, s2: &Field, t1: &str, t2: &str)
     let mut err = syn::Error::new(s1.span, t1);
     err.combine(syn::Error::new(s2.span, t2));
     return err;
-}
-
-fn is_bool(ty: &syn::Type) -> bool {
-    matches!(ty,
-        syn::Type::Path(syn::TypePath { qself: None, path })
-        if path.is_ident("bool")
-    )
 }
 
 impl Variant {
@@ -351,7 +343,7 @@ impl StructBuilder {
             extra_fields: self.extra_fields,
         }
     }
-    pub fn add_field(&mut self, field: Field, is_bool: bool, attrs: &FieldAttrs)
+    pub fn add_field(&mut self, field: Field, attrs: &FieldAttrs)
         -> syn::Result<&mut Self>
     {
         match &attrs.mode {
@@ -415,11 +407,7 @@ impl StructBuilder {
             Some(FieldMode::Child) => {
                 self.children.push(Child {
                     field,
-                    mode: if attrs.unwrap.is_none() && is_bool {
-                        ChildMode::Bool
-                    } else {
-                        ChildMode::Normal
-                    },
+                    mode: ChildMode::Normal,
                     unwrap: attrs.unwrap.clone(),
                     default: attrs.default.clone(),
                 });
@@ -472,7 +460,7 @@ impl Struct {
             let mut attrs = FieldAttrs::new();
             attrs.update(parse_attr_list(&fld.attrs));
             let field = Field::new(&fld, idx);
-            bld.add_field(field, is_bool(&fld.ty), &attrs)?;
+            bld.add_field(field, &attrs)?;
         }
 
         Ok(bld.build())

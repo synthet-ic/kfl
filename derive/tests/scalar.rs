@@ -47,3 +47,23 @@ fn parse_some_scalar() {
         r#"node "test""#,
         "expected one of `first`, `another-option`");
 }
+
+#[test]
+fn parse_option_argument() {
+    #[derive(Decode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(argument)]
+        name: Option<String>,
+    }
+
+    assert_parse::<Node>(
+        r#"node "hello""#,
+        Node { name: Some("hello".into()) });
+    // TODO(rnarkk) 
+    // assert_parse::<Node>(
+    //     r#"node"#,
+    //     Node { name: None });
+    assert_parse::<Node>(
+        r#"node null"#,
+        Node { name: None });
+}

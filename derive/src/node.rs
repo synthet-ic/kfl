@@ -3,18 +3,12 @@ use quote::{format_ident, quote, ToTokens};
 use syn::ext::IdentExt;
 
 use crate::definition::{Struct, StructBuilder, FieldAttrs, DecodeMode};
-use crate::definition::{Child, Field, NewType, ExtraKind, ChildMode};
+use crate::definition::{Field, NewType, ExtraKind, ChildMode};
 
 pub(crate) struct Common<'a> {
     pub object: &'a Struct,
     pub ctx: &'a syn::Ident,
     pub span_type: &'a TokenStream,
-}
-
-fn child_can_partial(child: &Child) -> bool {
-    use ChildMode::*;
-
-    matches!(child.mode, Bool | Flatten)
 }
 
 pub fn emit_struct(s: &Struct, named: bool) -> syn::Result<TokenStream> {
@@ -75,18 +69,15 @@ pub fn emit_struct(s: &Struct, named: bool) -> syn::Result<TokenStream> {
     let partial_compatible = s.spans.is_empty() &&
         s.node_names.is_empty() &&
         s.type_names.is_empty() &&
-        !s.has_arguments && (
-            // s.properties.iter().all(|x| x.option || x.flatten) &&
-            s.var_props.is_none()
-        ) && (
-            s.children.iter().all(child_can_partial)
-        );
+        !s.has_arguments &&
+        s.var_props.is_none() &&
+        s.children.iter().all(|child| child.default.is_some());
     if partial_compatible {
         let node = syn::Ident::new("node", Span::mixed_site());
-        let name = syn::Ident::new("name", Span::mixed_site());
-        let value = syn::Ident::new("value", Span::mixed_site());
+        // let name = syn::Ident::new("name", Span::mixed_site());
+        // let value = syn::Ident::new("value", Span::mixed_site());
         let insert_child = insert_child(&common, &node)?;
-        let insert_property = insert_property(&common, &name, &value)?;
+        // let insert_property = insert_property(&common, &name, &value)?;
         extra_traits.push(quote! {
             impl #impl_gen ::kfl::traits::DecodePartial #trait_gen
                 for #s_name #type_gen
@@ -99,14 +90,14 @@ pub fn emit_struct(s: &Struct, named: bool) -> syn::Result<TokenStream> {
                 {
                     #insert_child
                 }
-                fn insert_property(&mut self,
-                    #name: &::kfl::span::Spanned<Box<str>, #span_ty>,
-                    #value: &::kfl::ast::Value<#span_ty>,
-                    #ctx: &mut ::kfl::decode::Context<#span_ty>)
-                    -> Result<bool, ::kfl::errors::DecodeError<#span_ty>>
-                {
-                    #insert_property
-                }
+                // fn insert_property(&mut self,
+                //     #name: &::kfl::span::Spanned<Box<str>, #span_ty>,
+                //     #value: &::kfl::ast::Value<#span_ty>,
+                //     #ctx: &mut ::kfl::decode::Context<#span_ty>)
+                //     -> Result<bool, ::kfl::errors::DecodeError<#span_ty>>
+                // {
+                //     #insert_property
+                // }
             }
         });
     }
@@ -217,13 +208,14 @@ pub(crate) fn decode_enum_item(s: &Common,
     })
 }
 
-fn decode_value(val: &syn::Ident, ctx: &syn::Ident, mode: &DecodeMode)
+fn decode_value(val: &syn::Ident, ctx: &syn::Ident, mode: &DecodeMode,
+                ty: &syn::Type)
     -> syn::Result<TokenStream>
 {
     match mode {
         DecodeMode::Normal => {
             Ok(quote! {
-                ::kfl::traits::DecodeScalar::decode(#val, #ctx)
+                <#ty as ::kfl::traits::DecodeScalar<_>>::decode(#val, #ctx)
             })
         }
         // DecodeMode::Str if optional => {
@@ -388,7 +380,7 @@ fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     for arg in &s.object.arguments {
         let fld = &arg.field.tmp_name;
         let val = syn::Ident::new("val", Span::mixed_site());
-        let decode_value = decode_value(&val, ctx, &arg.decode)?;
+        let decode_value = decode_value(&val, ctx, &arg.decode, &arg.field.ty)?;
         match &arg.default {
             None => {
                 let error = if arg.field.is_indexed() {
@@ -424,7 +416,8 @@ fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     if let Some(var_args) = &s.object.var_args {
         let fld = &var_args.field.tmp_name;
         let val = syn::Ident::new("val", Span::mixed_site());
-        let decode_value = decode_value(&val, ctx, &var_args.decode)?;
+        let decode_value = decode_value(&val, ctx, &var_args.decode,
+                                        &var_args.field.ty)?;
         decoder.push(quote! {
             let #fld = #iter_args.map(|#val| {
                 #decode_value
@@ -468,7 +461,8 @@ fn decode_props(s: &Common, node: &syn::Ident)
                 => {}
             });
         } else {
-            let decode_value = decode_value(&val, ctx, &prop.decode)?;
+            let decode_value = decode_value(&val, ctx, &prop.decode,
+                                            &prop.field.ty)?;
             declare_empty.push(quote! {
                 let mut #fld = None;
                 let mut #seen_name = false;
@@ -500,7 +494,8 @@ fn decode_props(s: &Common, node: &syn::Ident)
     }
     if let Some(var_props) = &s.object.var_props {
         let fld = &var_props.field.tmp_name;
-        let decode_value = decode_value(&val, ctx, &var_props.decode)?;
+        let decode_value = decode_value(&val, ctx, &var_props.decode,
+                                        &var_props.field.ty)?;
         declare_empty.push(quote! {
             let mut #fld = Vec::new();
         });
@@ -551,7 +546,7 @@ fn unwrap_fn(parent: &Common,
         parent.object.trait_props.clone(),
         parent.object.generics.clone(),
     );
-    bld.add_field(Field::new_named(name, ty), false, attrs)?;
+    bld.add_field(Field::new_named(name, ty), attrs)?;
     let object = bld.build();
     let common = Common {
         object: &object,
@@ -580,138 +575,98 @@ fn unwrap_fn(parent: &Common,
     })
 }
 
-fn decode_node(common: &Common, child_def: &Child, in_partial: bool,
-               child: &syn::Ident)
-    -> syn::Result<TokenStream>
-{
-    let ctx = common.ctx;
-    let fld = &child_def.field.tmp_name;
-    let dest = if in_partial {
-        child_def.field.from_self()
-    } else {
-        quote!(#fld)
-    };
-    let (init, func) = if let Some(unwrap) = &child_def.unwrap {
-        let func = format_ident!("unwrap_{}", fld, span = Span::mixed_site());
-        let unwrap_fn = unwrap_fn(common, &func, fld, &child_def.field.ty, unwrap)?;
-        (unwrap_fn, quote!(#func))
-    } else {
-        (quote!(), quote!(::kfl::traits::Decode::decode_node))
-    };
-    let value = syn::Ident::new("value", Span::mixed_site());
-    let assign = if matches!(child_def.mode, ChildMode::Multi) {
-        quote!(#dest.push(#value))
-    } else {
-        quote!(#dest = Some(#value))
-    };
-    if in_partial {
-        Ok(quote! {
-            {
-                #init
-                let #value = #func(#child, #ctx)?;
-                #assign;
-                Ok(true)
-            }
-        })
-    } else {
-        Ok(quote! {
-            {
-                #init
-                match #func(#child, #ctx) {
-                    Ok(#value) => {
-                        #assign;
-                        None
-                    }
-                    Err(e) => Some(Err(e)),
-                }
-            }
-        })
-    }
-}
-
 fn insert_child(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     let ctx = s.ctx;
-    let mut match_branches = Vec::with_capacity(s.object.children.len());
+    let mut branches = vec![quote! {
+        if false {
+            Ok(false)
+        }
+    }];
     for child_def in &s.object.children {
         let dest = &child_def.field.from_self();
-        let child_name = &s.object.ident.to_string();
-        if matches!(child_def.mode, ChildMode::Flatten) {
-            match_branches.push(quote! {
-                _ if ::kfl::traits::DecodePartial
-                    ::insert_child(&mut #dest, #node, #ctx)?
-                => Ok(true),
-            })
-        } else if matches!(child_def.mode, ChildMode::Bool) {
-            let dup_err = format!("duplicate node `{}`, single node expected",
-                                  child_name.escape_default());
-            match_branches.push(quote! {
-                #child_name => {
-                    ::kfl::decode::check_flag_node(#node, #ctx);
-                    if #dest {
-                        #ctx.emit_error(
-                            ::kfl::errors::DecodeError::unexpected(
-                                &#node.node_name, "node", #dup_err));
-                    } else {
-                        #dest = true;
+        let ty = &child_def.field.ty;
+        match &child_def.mode {
+            ChildMode::Normal => {
+                let dup_err = quote! {
+                    format!("duplicate node `{}`, single node expected",
+                            #node.node_name.as_ref())
+                };
+                branches.push(quote! {
+                    else if let Ok(value) = <#ty as ::kfl::traits::Decode<_>>
+                        ::decode_node(#node, #ctx)
+                    {
+                        if #dest.is_some() {
+                            Err(
+                                ::kfl::errors::DecodeError::unexpected(
+                                &#node.node_name, "node", #dup_err))
+                        } else {
+                            #dest = value;
+                            Ok(true)
+                        }
                     }
-                    Ok(true)
-                }
-            });
-        } else {
-            let dup_err = format!("duplicate node `{}`, single node expected",
-                                  child_name.escape_default());
-            let decode = decode_node(s, &child_def, true, node)?;
-            match_branches.push(quote! {
-                #child_name => {
-                    if #dest.is_some() {
-                        #ctx.emit_error(
-                            ::kfl::errors::DecodeError::unexpected(
-                                &#node.node_name, "node", #dup_err));
+                });
+            }
+            ChildMode::Multi => {
+                branches.push(quote! {
+                    else if let Ok(value) = <#ty as ::kfl::traits::DecodeIterator<_>>
+                        ::decode_item(#node, #ctx)
+                    {
+                        #dest.push(value);
+                        Ok(true)
                     }
-                    #decode
-                }
-            });
+                });
+            }
+            ChildMode::Flatten => {
+                branches.push(quote! {
+                    else if <#ty as ::kfl::traits::DecodePartial<_>>
+                        ::insert_child(&mut #dest, #node, #ctx)?
+                    {
+                        Ok(true)
+                    }
+                });
+            }
         }
     }
-    Ok(quote! {
-        match &**#node.node_name {
-            #(#match_branches)*
-            _ => Ok(false),
+    branches.push(quote! {
+        else {
+            Ok(false)
         }
-    })
+    });
+    Ok(quote!(#(#branches)*))
 }
 
-fn insert_property(s: &Common, name: &syn::Ident, value: &syn::Ident)
-    -> syn::Result<TokenStream>
-{
-    let ctx = s.ctx;
-    let mut match_branches = Vec::with_capacity(s.object.children.len());
-    for prop in &s.object.properties {
-        let dest = &prop.field.from_self();
-        let prop_name = &prop.name;
-        if false /* TODO prop.flatten */ {
-            match_branches.push(quote! {
-                _ if ::kfl::traits::DecodePartial
-                    ::insert_property(&mut #dest, #name, #value, #ctx)?
-                => Ok(true),
-            });
-        } else {
-            let decode_value = decode_value(&value, ctx, &prop.decode)?;
-            match_branches.push(quote! {
-                #prop_name => {
-                    #dest = Some(#decode_value?);
-                    Ok(true)
-                }
-            });
-        }
-    }
-    Ok(quote! {
-        match &***#name {
-            #(#match_branches)*
-            _ => Ok(false),
-        }
-    })
-}
+// fn insert_property(s: &Common, name: &syn::Ident, value: &syn::Ident)
+//     -> syn::Result<TokenStream>
+// {
+//     let ctx = s.ctx;
+//     let mut match_branches = Vec::with_capacity(s.object.children.len());
+//     for prop in &s.object.properties {
+//         let dest = &prop.field.from_self();
+//         let prop_name = &prop.name;
+//         if false /* TODO prop.flatten */ {
+//             match_branches.push(quote! {
+//                 _ if ::kfl::traits::DecodePartial
+//                     ::insert_property(&mut #dest, #name, #value, #ctx)?
+//                 => Ok(true),
+//             });
+//         } else {
+//             let decode_value = decode_value(&value, ctx, &prop.decode,
+//                                             &prop.field.ty)?;
+//             match_branches.push(quote! {
+//                 #prop_name => {
+//                     #dest = Some(#decode_value?);
+//                     Ok(true)
+//                 }
+//             });
+//         }
+//     }
+//     Ok(quote! {
+//         match &***#name {
+//             #(#match_branches)*
+//             _ => Ok(false),
+//         }
+//     })
+// }
 
 fn decode_children(s: &Common, children: &syn::Ident,
                    err_span: Option<TokenStream>)
@@ -723,12 +678,10 @@ fn decode_children(s: &Common, children: &syn::Ident,
             None
         }
     }];
-    let mut match_branches = Vec::new();
     let mut postprocess = Vec::new();
 
     let ctx = s.ctx;
     let child = syn::Ident::new("child", Span::mixed_site());
-    let name_str = syn::Ident::new("name_str", Span::mixed_site());
     for child_def in &s.object.children {
         let fld = &child_def.field.tmp_name;
         let child_name = &s.object.ident.to_string();
@@ -739,25 +692,16 @@ fn decode_children(s: &Common, children: &syn::Ident,
                     let mut #fld = ::std::default::Default::default();
                 });
                 branches.push(quote! {
-
+                    else if let Ok(true) = <#ty as ::kfl::traits::DecodePartial<_>>
+                        ::insert_child(&mut #fld, #child, #ctx) {
+                        None
+                    }
                 });
-                match_branches.push(quote! {
-                    _ if (
-                        match ::kfl::traits::DecodePartial
-                            ::insert_child(&mut #fld, #child, #ctx)
-                        {
-                            Ok(true) => return None,
-                            Ok(false) => false,
-                            Err(e) => return Some(Err(e)),
-                        }
-                    ) => None,
-                })
             }
             ChildMode::Multi => {
                 declare_empty.push(quote! {
                     let mut #fld = Vec::new();
                 });
-                // let decode = decode_node(s, &child_def, false, &child)?;
                 let ctx = &s.ctx;
                 branches.push(quote! {
                     else if let Ok(value) = <#ty as ::kfl::traits::DecodeIterator<_>>
@@ -790,10 +734,10 @@ fn decode_children(s: &Common, children: &syn::Ident,
                 declare_empty.push(quote! {
                     let mut #fld = None;
                 });
-                let dup_err = format!(
-                    "duplicate node `{}`, single node expected",
-                    child_name.escape_default());
-                // let decode = decode_node(s, &child_def, false, &child)?;
+                let dup_err = quote! {
+                    format!("duplicate node `{}`, single node expected",
+                            #child.node_name.as_ref())
+                };
                 branches.push(quote! {
                     else if let Ok(value) = <#ty as ::kfl::traits::Decode<_>>
                         ::decode_node(#child, #ctx)
@@ -808,7 +752,7 @@ fn decode_children(s: &Common, children: &syn::Ident,
                         }
                     }
                 });
-                let req_msg = format!("child node `{}` is required",
+                let req_msg = format!("child node for field `{}` is required",
                                       child_name);
                 if let Some(default_value) = &child_def.default {
                     let default = if let Some(expr) = default_value {
@@ -840,49 +784,22 @@ fn decode_children(s: &Common, children: &syn::Ident,
                     }
                 }
             }
-            ChildMode::Bool => {
-                let dup_err = format!(
-                    "duplicate node `{}`, single node expected",
-                    child_name.escape_default());
-                declare_empty.push(quote! {
-                    let mut #fld = false;
-                });
-                match_branches.push(quote! {
-                    #child_name => {
-                        ::kfl::decode::check_flag_node(#child, #ctx);
-                        if #fld {
-                            #ctx.emit_error(
-                                ::kfl::errors::DecodeError::unexpected(
-                                    &#child.node_name, "node", #dup_err));
-                        } else {
-                            #fld = true;
-                        }
-                        None
-                    }
-                });
-            }
         }
     }
-    match_branches.push(quote! {
-        #name_str => {
+    // TODO(rnarkk) return Err?
+    branches.push(quote! {
+        else {
             #ctx.emit_error(::kfl::errors::DecodeError::unexpected(
                 #child, "node",
                 format!("unexpected node `{}`",
-                        #name_str.escape_default())));
+                        #child.node_name.as_ref())));
             None
         }
-    });
-    // TODO Some(Err(e))
-    branches.push(quote! {
-        else { None }
     });
     Ok(quote! {
         #(#declare_empty)*
         #children.iter().flat_map(|#child| {
             #(#branches)*
-            // match &**#child.node_name {
-            //     #(#match_branches)*
-            // }
         }).collect::<Result<(), ::kfl::errors::DecodeError<_>>>()?;
         #(#postprocess)*
     })

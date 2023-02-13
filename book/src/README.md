@@ -8,10 +8,11 @@
 - Children
   - Not eble to use enum as a single child
 - Nominal
-  - Flatten properties
+  - Flatten properties (analogous to serde)
+    - Not implemented `DecodeScalar` for structs
   - NodeName
   - TypeName
-- Option
+- Option vs Default
 - unwrap
 - new type
 

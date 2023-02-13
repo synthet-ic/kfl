@@ -13,8 +13,8 @@
     - Unify `DecodePartial` and `DecodeChildren`
   - NodeName
   - TypeName
-- Option vs Default
   - bool child
+- Option vs Default
 - unwrap
 - new type
 

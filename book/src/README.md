@@ -16,7 +16,7 @@
   - bool child
 - Option vs Default
 - unwrap
-- new type
+- `NewType` for structs and `Nested` for enums
 
 # TODO
 

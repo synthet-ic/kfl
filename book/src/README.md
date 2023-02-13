@@ -3,7 +3,16 @@
 - Nominal Typing
 - Trait Driven
 
-## KFL
+## Misconceptions
+
+- Children
+  - Not eble to use enum as a single child
+- Nominal
+  - Flatten properties
+  - NodeName
+  - TypeName
+- Option
+- unwrap
 
 # TODO
 

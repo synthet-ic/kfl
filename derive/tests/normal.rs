@@ -6,7 +6,7 @@ use std::{
 };
 use kfl::Decode;
 
-use common::{assert_parse, assert_parse_err};
+use common::{parse, assert_parse, parse_err, assert_parse_err};
 
 // #[derive(kfl_derive::Decode, Debug, PartialEq)]
 // struct Arg1 {
@@ -56,12 +56,6 @@ use common::{assert_parse, assert_parse_err};
 // }
 
 // #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct PropDef {
-//     #[kfl(property, default)]
-//     label: String,
-// }
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
 // struct PropDefValue {
 //     #[kfl(property, default="unknown".into())]
 //     label: String,
@@ -71,12 +65,6 @@ use common::{assert_parse, assert_parse_err};
 // struct PropDefOptValue {
 //     #[kfl(property, default=Some("unknown".into()))]
 //     label: Option<String>,
-// }
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct PropNamed {
-//     #[kfl(property(name="x"))]
-//     label: String,
 // }
 
 // #[derive(kfl_derive::Decode, Debug, PartialEq)]
@@ -118,11 +106,7 @@ use common::{assert_parse, assert_parse_err};
 //     flag: bool,
 // }
 
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct ChildDef {
-//     #[kfl(child, default)]
-//     main: Prop1,
-// }
+
 
 // #[derive(kfl_derive::Decode, Debug, PartialEq)]
 // struct ChildDefValue {
@@ -325,13 +309,19 @@ fn parse_property_unnamed() {
 //                "property `type` is required");
 // }
 
-// #[test]
-// fn parse_prop_default() {
-//     assert_eq!(parse::<PropDef>(r#"node label="hello""#),
-//                PropDef { label: "hello".into() } );
-//     assert_eq!(parse::<PropDef>(r#"node"#),
-//                PropDef { label: "".into() });
-// }
+#[test]
+fn parse_property_default() {
+    #[derive(Decode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(property, default)]
+        name: String,
+    }
+
+    assert_eq!(parse::<Node>(r#"node label="hello""#),
+               Node { name: "hello".into() } );
+    assert_eq!(parse::<Node>(r#"node"#),
+               Node { name: "".into() });
+}
 
 // #[test]
 // fn parse_prop_def_value() {
@@ -348,15 +338,21 @@ fn parse_property_unnamed() {
 //                PropDefOptValue { label: None });
 // }
 
-// #[test]
-// fn parse_prop_named() {
-//     assert_eq!(parse::<PropNamed>(r#"node x="hello""#),
-//                PropNamed { label: "hello".into() } );
-//     assert_eq!(parse_err::<PropNamed>(r#"node label="hello" y="world""#),
-//         "unexpected property `label`");
-//     assert_eq!(parse_err::<PropNamed>(r#"node"#),
-//         "property `x` is required");
-// }
+#[test]
+fn parse_property_name() {
+    #[derive(Decode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(property(name = "x"))]
+        name: String,
+    }
+
+    assert_eq!(parse::<Node>(r#"node x="hello""#),
+               Node { name: "hello".into() } );
+    assert_eq!(parse_err::<Node>(r#"node label="hello" y="world""#),
+        "unexpected property `label`");
+    assert_eq!(parse_err::<Node>(r#"node"#),
+        "property `x` is required");
+}
 
 // #[test]
 // fn parse_opt_prop() {
@@ -553,17 +549,28 @@ fn parse_child() {
 //                "child node `main` is required");
 }
 
-// #[test]
-// fn parse_child_def() {
-//     assert_eq!(parse::<ChildDef>(r#"parent { main label="val1"; }"#),
-//                ChildDef {
-//                    main: Prop1 { label: "val1".into() },
-//                });
-//     assert_eq!(parse::<ChildDef>(r#"parent"#),
-//                ChildDef {
-//                    main: Prop1 { label: "".into() },
-//                });
-// }
+#[test]
+fn parse_child_default() {
+    #[derive(Decode, Debug, PartialEq)]
+    struct Parent {
+        #[kfl(child, default)]
+        child: Child,
+    }
+    #[derive(Decode, Debug, PartialEq, Default)]
+    struct Child {
+        #[kfl(property)]
+        name: String,
+    }
+
+    assert_eq!(parse::<Parent>(r#"parent { child name="val1"; }"#),
+               Parent {
+                   child: Child { name: "val1".into() },
+               });
+    assert_eq!(parse::<Parent>(r#"parent"#),
+               Parent {
+                   child: Child { name: "".into() },
+               });
+}
 
 // #[test]
 // fn parse_child_def_value() {

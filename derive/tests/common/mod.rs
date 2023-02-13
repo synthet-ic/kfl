@@ -5,11 +5,11 @@ use kfl::{
 };
 use miette::Diagnostic;
 
-// fn parse<T: Decode<Span>>(input: &str) -> T {
-//     let mut nodes: Vec<T> = kfl::parse("<test>", input).unwrap();
-//     assert_eq!(nodes.len(), 1);
-//     nodes.remove(0)
-// }
+pub fn parse<T: Decode<Span>>(input: &str) -> T {
+    let mut nodes: Vec<T> = kfl::parse("<test>", input).unwrap();
+    assert_eq!(nodes.len(), 1);
+    nodes.remove(0)
+}
 
 pub fn assert_parse<T>(input: &str, output: T)
     where T: Decode<Span> + Debug + PartialEq
@@ -19,12 +19,12 @@ pub fn assert_parse<T>(input: &str, output: T)
     assert_eq!(nodes.remove(0), output);
 }
 
-// fn parse_err<T: Decode<Span>+fmt::Debug>(input: &str) -> String {
-//     let err = kfl::parse::<Vec<T>>("<test>", input).unwrap_err();
-//     err.related().unwrap()
-//         .map(|e| e.to_string()).collect::<Vec<_>>()
-//         .join("\n")
-// }
+pub fn parse_err<T: Decode<Span> + Debug>(input: &str) -> String {
+    let err = kfl::parse::<Vec<T>>("<test>", input).unwrap_err();
+    err.related().unwrap()
+        .map(|e| e.to_string()).collect::<Vec<_>>()
+        .join("\n")
+}
 
 pub fn assert_parse_err<T>(input: &str, output: &str)
     where T: Decode<Span> + Debug + PartialEq

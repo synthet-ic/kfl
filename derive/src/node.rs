@@ -69,14 +69,14 @@ pub fn emit_struct(s: &Struct, named: bool) -> syn::Result<TokenStream> {
                    (0..fields.len()).collect::<Vec<_>>(),
                    "all tuple structure fields should be filled in");
         let assignments = fields.iter().map(|(_, v)| v);
-        quote!{ #s_name(#(#assignments),*) }
+        quote! { #s_name(#(#assignments),*) }
     };
     let mut extra_traits = Vec::new();
     let partial_compatible = s.spans.is_empty() &&
         s.node_names.is_empty() &&
         s.type_names.is_empty() &&
         !s.has_arguments && (
-            s.properties.iter().all(|x| x.option || x.flatten) &&
+            // s.properties.iter().all(|x| x.option || x.flatten) &&
             s.var_props.is_none()
         ) && (
             s.children.iter().all(child_can_partial)
@@ -204,7 +204,7 @@ pub(crate) fn decode_enum_item(s: &Common,
                    (0..fields.len()).collect::<Vec<_>>(),
                    "all tuple structure fields should be filled in");
         let assignments = fields.iter().map(|(_, v)| v);
-        quote!{ #s_name(#(#assignments),*) }
+        quote! { #s_name(#(#assignments),*) }
     };
     Ok(quote! {
         #decode_args
@@ -223,7 +223,7 @@ fn decode_value(val: &syn::Ident, ctx: &syn::Ident, mode: &DecodeMode,
 {
     match mode {
         DecodeMode::Normal => {
-            Ok(quote!{
+            Ok(quote! {
                 ::kfl::traits::DecodeScalar::decode(#val, #ctx)
             })
         }
@@ -786,6 +786,9 @@ fn decode_children(s: &Common, children: &syn::Ident,
             ChildMode::Flatten => {
                 declare_empty.push(quote! {
                     let mut #fld = ::std::default::Default::default();
+                });
+                branches.push(quote! {
+
                 });
                 match_branches.push(quote! {
                     _ if (

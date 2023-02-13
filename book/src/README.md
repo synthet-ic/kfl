@@ -1,7 +1,7 @@
 # KFL
 
 - Nominal Typing
-- Trait-Oriented
+- Trait-Specific
 
 ## Misconceptions
 

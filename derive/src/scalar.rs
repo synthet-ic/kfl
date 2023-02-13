@@ -34,7 +34,7 @@ pub struct Variant {
 
 impl Enum {
     fn new(ident: syn::Ident, _attrs: Vec<syn::Attribute>,
-           src_variants: impl Iterator<Item=syn::Variant>)
+           src_variants: impl Iterator<Item = syn::Variant>)
         -> syn::Result<Self>
     {
         let mut variants = Vec::new();

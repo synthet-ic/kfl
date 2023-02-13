@@ -13,7 +13,9 @@
   - TypeName
 - Option
 - unwrap
+- new type
 
 # TODO
 
 - [ ] Implement `DecodeScalar` for struct as the replacement of `flat(properties)`
+- [ ] Allow distinguish variant nodes by `(type-name)`

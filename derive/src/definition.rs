@@ -39,15 +39,10 @@ pub enum FieldMode {
     Properties,
     Children,
     Child,
-    Flatten(Flatten),
+    Flatten,
     Span,
     NodeName,
     TypeName,
-}
-
-pub enum FlattenItem {
-    Child,
-    Property,
 }
 
 #[derive(Debug, Clone)]
@@ -130,9 +125,7 @@ pub struct VarArgs {
 pub struct Prop {
     pub field: Field,
     pub name: String,
-    pub option: bool,
     pub decode: DecodeMode,
-    pub flatten: bool,
     pub default: Option<Option<syn::Expr>>,
 }
 
@@ -435,9 +428,7 @@ impl StructBuilder {
                 self.properties.push(Prop {
                     field,
                     name,
-                    option: is_option,
                     decode: attrs.decode.clone().unwrap_or(DecodeMode::Normal),
-                    flatten: false,
                     default: attrs.default.clone(),
                 });
             }
@@ -472,35 +463,17 @@ impl StructBuilder {
                     default: attrs.default.clone(),
                 });
             }
-            Some(FieldMode::Flatten(flatten)) => {
+            Some(FieldMode::Flatten) => {
                 if is_option {
                     return Err(syn::Error::new(field.span,
                         "optional flatten fields are not supported yet"));
                 }
-                if flatten.property {
-                    if let Some(prev) = &self.var_props {
-                        return Err(err_pair(&field, &prev.field,
-                            "extra `flatten(property)` after \
-                            capture all `properties`",
-                            "capture all `properties` is defined here"));
-                    }
-                    self.properties.push(Prop {
-                        field: field.clone(),
-                        name: "".into(),  // irrelevant
-                        option: is_option,
-                        decode: DecodeMode::Normal,
-                        flatten: true,
-                        default: None,
-                    });
-                }
-                if flatten.child {
-                    self.children.push(Child {
-                        field: field.clone(),
-                        mode: ChildMode::Flatten,
-                        unwrap: None,
-                        default: None,
-                    });
-                }
+                self.children.push(Child {
+                    field: field.clone(),
+                    mode: ChildMode::Flatten,
+                    unwrap: None,
+                    default: None,
+                });
             }
             Some(FieldMode::Span) => {
                 self.spans.push(SpanField { field });
@@ -780,21 +753,7 @@ impl Attr {
             Ok(Attr::DecodeMode(DecodeMode::Bytes))
         } else if lookahead.peek(kw::flatten) {
             let _kw: kw::flatten = input.parse()?;
-            let parens;
-            syn::parenthesized!(parens in input);
-            let items = Punctuated::<FlattenItem, syn::Token![,]>::
-                parse_terminated(&parens)?;
-            let mut flatten = Flatten {
-                child: false,
-                property: false,
-            };
-            for item in items {
-                match item {
-                    FlattenItem::Child => flatten.child = true,
-                    FlattenItem::Property => flatten.property = true,
-                }
-            }
-            Ok(Attr::FieldMode(FieldMode::Flatten(flatten)))
+            Ok(Attr::FieldMode(FieldMode::Flatten))
         } else if lookahead.peek(kw::default) {
             let _kw: kw::default = input.parse()?;
             if !input.is_empty() && !input.lookahead1().peek(syn::Token![,]) {
@@ -818,21 +777,6 @@ impl Attr {
             let _eq: syn::Token![=] = input.parse()?;
             let ty: syn::Type = input.parse()?;
             Ok(Attr::SpanType(ty))
-        } else {
-            Err(lookahead.error())
-        }
-    }
-}
-
-impl Parse for FlattenItem {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let lookahead = input.lookahead1();
-        if lookahead.peek(kw::child) {
-            let _kw: kw::child = input.parse()?;
-            Ok(FlattenItem::Child)
-        } else if lookahead.peek(kw::property) {
-            let _kw: kw::property = input.parse()?;
-            Ok(FlattenItem::Property)
         } else {
             Err(lookahead.error())
         }

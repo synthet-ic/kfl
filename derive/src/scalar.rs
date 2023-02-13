@@ -7,8 +7,20 @@ use syn::{
 };
 
 pub enum Scalar {
+    // Struct(Struct),
     Enum(Enum),
 }
+
+// pub struct Struct {
+//     pub ident: syn::Ident,
+//     pub arguments: Vec<Arg>,
+//     pub var_args: Option<VarArgs>,
+//     pub properties: Vec<Prop>,
+//     pub var_props: Option<VarProps>,
+//     pub has_arguments: bool,
+//     pub has_properties: bool,
+//     pub extra_fields: Vec<ExtraField>,
+// }
 
 pub struct Enum {
     pub ident: syn::Ident,

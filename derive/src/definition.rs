@@ -46,12 +46,6 @@ pub enum FieldMode {
 }
 
 #[derive(Debug, Clone)]
-pub struct Flatten {
-    child: bool,
-    property: bool,
-}
-
-#[derive(Debug, Clone)]
 pub enum DecodeMode {
     Normal,
     Str,

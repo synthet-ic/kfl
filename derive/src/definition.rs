@@ -69,7 +69,6 @@ pub struct VariantAttrs {
     pub skip: bool,
 }
 
-
 #[derive(Clone)]
 pub enum AttrAccess {
     Indexed(usize),

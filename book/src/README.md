@@ -10,6 +10,7 @@
 - Nominal
   - Flatten properties (analogous to serde)
     - Not implemented `DecodeScalar` for structs
+    - Unify `DecodePartial` and `DecodeChildren`
   - NodeName
   - TypeName
 - Option vs Default

@@ -105,6 +105,7 @@ pub struct Prop {
     pub decode: DecodeMode,
     pub default: Option<Option<syn::Expr>>,
 }
+
 pub struct VarProps {
     pub field: Field,
     pub decode: DecodeMode,
@@ -142,8 +143,6 @@ pub struct Struct {
     pub trait_props: TraitProps,
     pub generics: syn::Generics,
     pub spans: Vec<SpanField>,
-    // pub node_names: Vec<NodeNameField>,
-    // pub type_names: Vec<TypeNameField>,
     pub arguments: Vec<Arg>,
     pub var_args: Option<VarArgs>,
     pub properties: Vec<Prop>,
@@ -191,7 +190,7 @@ impl TraitProps {
         let mut props = TraitProps {
             span_type: None,
         };
-        for attr in mem::replace(attrs, Vec::new()) {
+        for attr in mem::take(attrs) {
             match attr.0 {
                 Attr::SpanType(ty) => {
                     props.span_type = Some(ty);

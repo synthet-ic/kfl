@@ -67,8 +67,6 @@ pub fn emit_struct(s: &Struct, named: bool) -> syn::Result<TokenStream> {
     };
     let mut extra_traits = Vec::new();
     let partial_compatible = s.spans.is_empty() &&
-        s.node_names.is_empty() &&
-        s.type_names.is_empty() &&
         !s.has_arguments &&
         s.var_props.is_none() &&
         s.children.iter().all(|child| child.default.is_some());
@@ -101,9 +99,7 @@ pub fn emit_struct(s: &Struct, named: bool) -> syn::Result<TokenStream> {
             }
         });
     }
-    if !s.has_arguments && !s.has_properties &&
-        s.spans.is_empty() && s.node_names.is_empty() && s.type_names.is_empty()
-    {
+    if !s.has_arguments && !s.has_properties && s.spans.is_empty() {
         let decode_children = decode_children(&common, &children, None)?;
         extra_traits.push(quote! {
             impl #impl_gen ::kfl::traits::DecodeChildren #trait_gen
@@ -144,6 +140,7 @@ pub fn emit_struct(s: &Struct, named: bool) -> syn::Result<TokenStream> {
         }
     })
 }
+
 pub fn emit_new_type(s: &NewType) -> syn::Result<TokenStream> {
     let s_name = &s.ident;
     let node = syn::Ident::new("node", Span::mixed_site());
@@ -326,47 +323,34 @@ fn decode_specials(s: &Common, node: &syn::Ident)
             );
         }
     });
-    let node_names = s.object.node_names.iter().flat_map(|node_name| {
-        let fld = &node_name.field.tmp_name;
-        quote! {
-            let #fld = #node.node_name.parse()
-                .map_err(|e| {
-                    ::kfl::errors::DecodeError::conversion(
-                        &#node.node_name, e)
-                })?;
-        }
-    });
-    let type_names = s.object.type_names.iter().flat_map(|type_name| {
-        let fld = &type_name.field.tmp_name;
-        quote! {
-            let #fld = if let Some(tn) = #node.type_name.as_ref() {
-                tn.as_str()
-                    .parse()
-                    .map_err(|e| {
-                        ::kfl::errors::DecodeError::conversion(tn, e)
-                    })?
-            } else {
-                return Err(::kfl::errors::DecodeError::missing(
-                    #node, "type name required"));
-            };
-        }
-    });
-    let validate_type = if s.object.type_names.is_empty() {
-        Some(quote! {
-            if let Some(type_name) = &#node.type_name {
-                #ctx.emit_error(::kfl::errors::DecodeError::unexpected(
-                            type_name, "type name",
-                            "no type name expected for this node"));
-            }
-        })
-    } else {
-        None
-    };
+    // let type_names = s.object.type_names.iter().flat_map(|type_name| {
+    //     let fld = &type_name.field.tmp_name;
+    //     quote! {
+    //         let #fld = if let Some(tn) = #node.type_name.as_ref() {
+    //             tn.as_str()
+    //                 .parse()
+    //                 .map_err(|e| {
+    //                     ::kfl::errors::DecodeError::conversion(tn, e)
+    //                 })?
+    //         } else {
+    //             return Err(::kfl::errors::DecodeError::missing(
+    //                 #node, "type name required"));
+    //         };
+    //     }
+    // });
+    // let validate_type = if s.object.type_names.is_empty() {
+    //     Some(quote! {
+    //         if let Some(type_name) = &#node.type_name {
+    //             #ctx.emit_error(::kfl::errors::DecodeError::unexpected(
+    //                         type_name, "type name",
+    //                         "no type name expected for this node"));
+    //         }
+    //     })
+    // } else {
+    //     None
+    // };
     Ok(quote! {
         #(#spans)*
-        #(#node_names)*
-        #(#type_names)*
-        #validate_type
     })
 }
 

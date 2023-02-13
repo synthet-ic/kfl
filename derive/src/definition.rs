@@ -154,8 +154,8 @@ pub struct Struct {
     pub trait_props: TraitProps,
     pub generics: syn::Generics,
     pub spans: Vec<SpanField>,
-    pub node_names: Vec<NodeNameField>,
-    pub type_names: Vec<TypeNameField>,
+    // pub node_names: Vec<NodeNameField>,
+    // pub type_names: Vec<TypeNameField>,
     pub arguments: Vec<Arg>,
     pub var_args: Option<VarArgs>,
     pub properties: Vec<Prop>,
@@ -185,7 +185,6 @@ pub struct NewType {
     pub ident: syn::Ident,
     pub trait_props: TraitProps,
     pub generics: syn::Generics,
-    // pub option: bool,
 }
 
 pub struct Variant {
@@ -329,8 +328,6 @@ impl StructBuilder {
             trait_props: self.trait_props,
             generics: self.generics,
             spans: self.spans,
-            node_names: self.node_names,
-            type_names: self.type_names,
             has_arguments:
                 !self.arguments.is_empty() || self.var_args.is_some(),
             has_properties:
@@ -468,8 +465,6 @@ impl Struct {
     pub fn all_fields(&self) -> Vec<&Field> {
         let mut res = Vec::new();
         res.extend(self.spans.iter().map(|a| &a.field));
-        res.extend(self.node_names.iter().map(|a| &a.field));
-        res.extend(self.type_names.iter().map(|a| &a.field));
         res.extend(self.arguments.iter().map(|a| &a.field));
         res.extend(self.var_args.iter().map(|a| &a.field));
         res.extend(self.properties.iter().map(|p| &p.field));

@@ -1,5 +1,6 @@
 use proc_macro2::{TokenStream, Span};
 use quote::quote;
+use syn::ext::IdentExt;
 
 use crate::{
     definition::{Enum, VariantKind},
@@ -40,7 +41,7 @@ pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
         ctx: &ctx,
         span_type: &span_ty,
     };
-
+    let check_type = check_type(&common, &node)?;
     let decode = decode(&common, &node)?;
     Ok(quote! {
         impl #impl_gen ::kfl::Decode #trait_gen for #name #type_gen
@@ -50,7 +51,24 @@ pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
                            #ctx: &mut ::kfl::decode::Context<#span_ty>)
                 -> Result<Self, ::kfl::errors::DecodeError<#span_ty>>
             {
+                #check_type
                 #decode
+            }
+        }
+    })
+}
+
+fn check_type(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
+    let name = heck::ToKebabCase::to_kebab_case(
+        &s.object.ident.unraw().to_string()[..]);
+    Ok(quote! {
+        if let Some(type_name) = #node.type_name.as_ref() {
+            if type_name != #name {
+                return Err(::kfl::errors::DecodeError::unexpected(
+                    #node, "node", format!("unexpected node `({}){}`",
+                    #node.type_name.as_ref(),
+                    #node.node_name.as_ref())
+                ))
             }
         }
     })

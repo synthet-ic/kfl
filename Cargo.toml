@@ -6,7 +6,7 @@ members = [
 
 [package]
 name = "kfl"
-version = "0.0.4"
+version = "0.0.5"
 edition = "2021"
 description = "Another KDL language implementation"
 license = "MIT/Apache-2.0"
@@ -20,7 +20,7 @@ readme = "README.md"
 [dependencies]
 base64 = { version = "0.21", optional = true }
 chumsky = { version = "0.8", default-features = false }
-kfl-derive = { path = "./derive", version = "0.0.3", optional = true }
+kfl-derive = { path = "./derive", version = "0", optional = true }
 miette = "5"
 minicbor = { version = "0.19", optional = true, features = ["std", "derive"] }
 thiserror = "1"

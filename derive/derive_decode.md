@@ -41,6 +41,7 @@ node name and are positional, i.e. they parsed and put into structure fields
 in order.
 
 The two Rust attributes to parse arguments are:
+
 * `argument` -- to parse single argument
 * `arguments` -- to parse sequence of arguments
 
@@ -48,10 +49,13 @@ Note: order of the structure fields matter. Fields marked as `arguments` can
 be used only once and cannot be followed by `argument`.
 
 For example, the following node:
+
 ```kdl
 node "arg1" true 1 22 333
 ```
+
 ... can be parsed into the following structure:
+
 ```rust
 #[derive(kfl::Decode)]
 struct MyNode {
@@ -87,22 +91,6 @@ Or may be `null`:
 ```kdl
 node null null
 ```
-
-Note: due to limitations of the procedural macros in Rust, optional arguments
-must use `Option` in this specific notation. Other variations like these:
-
-```rust
-use std::option::Option as Opt;
-#[derive(kfl::Decode)]
-struct MyNode {
-    #[kfl(argument)]
-    first: ::std::option::Option<String>,
-    #[kfl(argument)]
-    second: Opt<bool>,
-}
-```
-
-Do not work (they will always require `null` arguments).
 
 The field marked as `arguments` can have any type that implements `FromIterator<T> where T: DecodeScalar`.
 

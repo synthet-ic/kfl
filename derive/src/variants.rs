@@ -112,7 +112,7 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                     }
                 });
             }
-            VariantKind::Nested { ty }=> {
+            VariantKind::Nested { ty } => {
                 branches.push(quote! {
                     #name => <#ty as ::kfl::Decode<_>>::decode_node(#node, #ctx)
                         .map(#enum_name::#variant_name),

@@ -1,4 +1,4 @@
 # Summary
 
 - [Introduction](./introduction.md)
-- [tutorial](./tutorial.md)
+- [Tutorial](./tutorial.md)

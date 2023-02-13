@@ -42,7 +42,7 @@ pub trait DecodeChildren<S: ErrorSpan>: Sized {
 /// structs
 ///
 /// The type of field that `#[kfl(flatten)]` is used for should implement
-/// this trait. It is automatically implemented by `#[derive(kfl::Decode)]`
+/// this trait. It is automatically implemented by `#[derive(Decode)]`
 /// by structures that have only optional properties and children (no
 /// arguments).
 pub trait DecodePartial<S: ErrorSpan>: Sized {

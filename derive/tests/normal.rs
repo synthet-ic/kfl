@@ -1,14 +1,10 @@
+mod common;
+
 use std::{
-    fmt,
-    collections::BTreeMap,
+    // collections::BTreeMap,
     default::Default
 };
-
-use kfl::{
-    Decode, DecodeChildren,
-    span::Span
-};
-use miette::Diagnostic;
+use kfl::Decode;
 
 use common::{assert_parse, assert_parse_err};
 
@@ -154,7 +150,7 @@ use common::{assert_parse, assert_parse_err};
 
 #[test]
 fn parse_argument_named() {
-    #[derive(kfl_derive::Decode, Debug, PartialEq)]
+    #[derive(Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument)]
         name: String,

@@ -1,4 +1,4 @@
-# Tutorials
+# Tutorial
 
 ## Case 1: All Arguments
 

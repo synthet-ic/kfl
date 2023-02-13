@@ -108,7 +108,7 @@ struct Node {
 
 NOTE: `a` is redundant.
 
-## Case 3: Mixture of Singulars and A Plural
+## Case 3: Mix of Singulars and A Plural
 
 ### Case 3.1: Arguments
 

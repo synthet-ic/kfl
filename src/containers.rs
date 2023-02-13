@@ -147,13 +147,13 @@ impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Rc<T> {
     }
 }
 
-// impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Vec<T> {
-//     fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
-//         -> Result<Self, DecodeError<S>>
-//     {
-//         <T as Decode<S>>::decode_node(node, ctx).map(|node| vec![node])
-//     }
-// }
+impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Vec<T> {
+    fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
+        -> Result<Self, DecodeError<S>>
+    {
+        <T as Decode<S>>::decode_node(node, ctx).map(|node| vec![node])
+    }
+}
 
 impl<S: ErrorSpan, T: Decode<S>> DecodeIterator<S> for Vec<T> {
     type Item = T;
@@ -202,24 +202,6 @@ impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Option<T> {
         }
     }
 }
-
-// impl<S: ErrorSpan, T: Decode<S>> DecodeChildren<S> for Option<T> {
-//     fn decode_children(nodes: &[SpannedNode<S>], ctx: &mut Context<S>)
-//         -> Result<Self, DecodeError<S>>
-//     {
-//         match nodes.len() {
-//             0 => Ok(None),
-//             1 => Decode::decode_node(&nodes[0], ctx),
-//             _ => {
-//                 Err(DecodeError::unexpected(
-//                     &nodes[1],
-//                     "kind",
-//                     "Option"
-//                 ))
-//             }
-//         }
-//     }
-// }
 
 impl<T: DecodeScalar<S>, S, Q> DecodeScalar<S> for Spanned<T, Q>
     where S: Span,

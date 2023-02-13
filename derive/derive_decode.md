@@ -119,6 +119,7 @@ node name="arg1" enabled=true a=1 b=2 c=3
 ```
 
 Can be parsed into the following structure:
+
 ```rust
 # use std::collections::HashMap;
 #[derive(kfl::Decode)]
@@ -150,23 +151,9 @@ In this case properties may not exist or may be set to `null`:
 node name=null
 ```
 
-Note: due to limitations of the procedural macros in Rust, optional properties
-must use `Option` in this specific notation. Other variations like this:
-
-```rust
-use std::option::Option as Opt;
-#[derive(kfl::Decode)]
-struct MyNode {
-    #[kfl(property)]
-    name: ::std::option::Option<String>,
-    #[kfl(property)]
-    enabled: Opt<bool>,
-}
-```
-Do not work (they will always require `property=null`).
-
 By default, field name is renamed to use `kebab-case` in KDL file. So field
 defined like this:
+
 ```rust
 #[derive(kfl::Decode)]
 struct MyNode {
@@ -180,10 +167,11 @@ node plugin-name="my_plugin"
 ```
 
 To rename a property in the source use `name=`:
+
 ```rust
 #[derive(kfl::Decode)]
 struct MyNode {
-    #[kfl(property(name="pluginName"))]
+    #[kfl(property(name = "pluginName"))]
     name: String,
 }
 ```
@@ -210,6 +198,7 @@ The `str` marker is very useful for types coming from other libraries that
 aren't supported by `kfl` directly.
 
 For example:
+
 ```rust
 #[derive(kfl::Decode)]
 struct Server {
@@ -217,6 +206,7 @@ struct Server {
     listen: std::net::SocketAddr,
 }
 ```
+
 This will parse listening addresses that Rust stdlib supports, like this:
 ```kdl
 server listen="127.0.0.1:8080"
@@ -229,6 +219,7 @@ the type level, there is a `bytes` marker that can be applied to parse scalar
 as byte buffer.
 
 For example:
+
 ```rust
 #[derive(kfl::Decode)]
 struct Response {
@@ -246,6 +237,7 @@ response (base64)"SGVsbG8gd29ybGQh"
 While using base64 allows encoding any binary data, strings may also be used
 and end up using utf-8 encoded in buffer. So the KDL above is equivalent to
 the following:
+
 ```kdl
 response "Hello world!"
 ```
@@ -268,6 +260,7 @@ node1 "x" "y"
     node4 2
 }
 ```
+
 There are four nodes in this example. Nodes typically start with identifier
 which is called node name. Similarly to scalars, nodes can be prepended by type
 name in parenthesis. The nodes `node3` and `node4` are children nodes with
@@ -279,6 +272,7 @@ The two Rust attributes to parse children are:
 * `children` -- to parse sequence of children
 
 For example the follwing KDL:
+
 ```kdl
 node {
     version 1
@@ -286,6 +280,7 @@ node {
     datum "yyy"
 }
 ```
+
 ... can be parsed by into the following structures:
 
 ```rust
@@ -313,16 +308,16 @@ allows filtering nodes by name:
 
 ```rust
 #[derive(kfl::Decode)]
-struct NamedNode {
+struct Plugin {
     #[kfl(argument)]
     name: u32
 }
 #[derive(kfl::Decode)]
 struct MyNode {
-    #[kfl(children(name="plugin"))]
-    plugins: Vec<NamedNode>,
-    #[kfl(children(name="datum"))]
-    data: Vec<NamedNode>,
+    #[kfl(children)]
+    plugins: Vec<Plugin>,
+    #[kfl(children)]
+    data: Vec<Datum>,
 }
 ```
 
@@ -492,13 +487,15 @@ For example, this structure can:
 struct MyNode {
     #[kfl(child, unwrap(argument))]
     version: u32,
-    #[kfl(children(name="plugin"))]
-    plugins: Vec<NamedNode>,
-    #[kfl(children(name="datum"))]
-    data: Vec<NamedNode>,
+    #[kfl(children)]
+    plugins: Vec<Plugin>,
+    #[kfl(children)]
+    data: Vec<Datum>,
 }
 ```
+
 On the other hand this one can **not** because it contains a `property`:
+
 ```rust
 # #[derive(kfl::Decode)]
 # struct NamedNode { #[kfl(argument)] name: u32 }
@@ -506,10 +503,10 @@ On the other hand this one can **not** because it contains a `property`:
 struct MyNode {
     #[kfl(property)]
     version: u32,
-    #[kfl(children(name="plugin"))]
-    plugins: Vec<NamedNode>,
-    #[kfl(children(name="datum"))]
-    data: Vec<NamedNode>,
+    #[kfl(children)]
+    plugins: Vec<Plugin>,
+    #[kfl(children)]
+    data: Vec<Datum>,
 }
 ```
 Note: attributes in the `unwrap` have no influence on whether structure can be
@@ -527,6 +524,7 @@ implemented for the structures that can be used as documents.
 [properties](#properties) or [children](#children).
 
 There are two forms of it. Marker attribute:
+
 ```rust
 #[derive(kfl::Decode)]
 struct MyNode {
@@ -534,6 +532,7 @@ struct MyNode {
     first: String,
 }
 ```
+
 Which means that `std::default::Default` should be used if field was not
 filled otherwise (i.e. no such property encountered).
 
@@ -541,7 +540,7 @@ Another form is `default=value`:
 ```rust
 #[derive(kfl::Decode)]
 struct MyNode {
-    #[kfl(property, default="unnamed".into())]
+    #[kfl(property, default = "unnamed".into())]
     name: String,
 }
 ```
@@ -553,7 +552,7 @@ definition like this:
 ```rust
 #[derive(kfl::Decode)]
 struct MyNode {
-    #[kfl(property, default=Some("unnamed".into()))]
+    #[kfl(property, default = Some("unnamed".into()))]
     name: Option<String>,
 }
 ```
@@ -588,7 +587,7 @@ struct Common {
 }
 #[derive(kfl::Decode)]
 struct Plugin {
-    #[kfl(flatten(child))]
+    #[kfl(flatten)]
     common: Common,
     #[kfl(child, unwrap(argument))]
     url: String,
@@ -636,6 +635,7 @@ By default kfl doesn't allow type names for nodes as these are quite rare.
 
 To allow type names on specific node and to have the name stored use
 `type_name` attribute:
+
 ```rust
 #[derive(kfl::Decode)]
 struct Node {

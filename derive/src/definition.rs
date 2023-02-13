@@ -37,8 +37,6 @@ pub enum FieldMode {
     Child,
     Flatten,
     Span,
-    NodeName,
-    TypeName,
 }
 
 #[derive(Debug, Clone)]
@@ -90,17 +88,8 @@ pub struct SpanField {
     pub field: Field,
 }
 
-pub struct NodeNameField {
-    pub field: Field,
-}
-
-pub struct TypeNameField {
-    pub field: Field,
-}
-
 pub struct Arg {
     pub field: Field,
-    // pub kind: ArgKind,
     pub decode: DecodeMode,
     pub default: Option<Option<syn::Expr>>,
 }
@@ -116,7 +105,6 @@ pub struct Prop {
     pub decode: DecodeMode,
     pub default: Option<Option<syn::Expr>>,
 }
-
 pub struct VarProps {
     pub field: Field,
     pub decode: DecodeMode,
@@ -124,8 +112,8 @@ pub struct VarProps {
 
 pub enum ChildMode {
     Normal,
-    Flatten,
     Multi,
+    Flatten,
 }
 
 pub struct Child {
@@ -171,8 +159,6 @@ pub struct StructBuilder {
     pub trait_props: TraitProps,
     pub generics: syn::Generics,
     pub spans: Vec<SpanField>,
-    pub node_names: Vec<NodeNameField>,
-    pub type_names: Vec<TypeNameField>,
     pub arguments: Vec<Arg>,
     pub var_args: Option<VarArgs>,
     pub properties: Vec<Prop>,
@@ -312,8 +298,6 @@ impl StructBuilder {
             trait_props,
             generics,
             spans: Vec::new(),
-            node_names: Vec::new(),
-            type_names: Vec::new(),
             arguments: Vec::new(),
             var_args: None::<VarArgs>,
             properties: Vec::new(),
@@ -427,14 +411,6 @@ impl StructBuilder {
             }
             Some(FieldMode::Span) => {
                 self.spans.push(SpanField { field });
-            }
-            Some(FieldMode::NodeName) => {
-                self.node_names.push(NodeNameField { field });
-            }
-            Some(FieldMode::TypeName) => {
-                self.type_names.push(TypeNameField {
-                    field,
-                });
             }
             None => {
                 self.extra_fields.push(ExtraField {
@@ -712,12 +688,6 @@ impl Attr {
         } else if lookahead.peek(kw::span) {
             let _kw: kw::span = input.parse()?;
             Ok(Attr::FieldMode(FieldMode::Span))
-        } else if lookahead.peek(kw::node_name) {
-            let _kw: kw::node_name = input.parse()?;
-            Ok(Attr::FieldMode(FieldMode::NodeName))
-        } else if lookahead.peek(kw::type_name) {
-            let _kw: kw::type_name = input.parse()?;
-            Ok(Attr::FieldMode(FieldMode::TypeName))
         } else if lookahead.peek(kw::span_type) {
             let _kw: kw::span_type = input.parse()?;
             let _eq: syn::Token![=] = input.parse()?;
@@ -730,14 +700,14 @@ impl Attr {
 }
 
 impl Field {
-    pub fn new_named(name: &syn::Ident, ty: &syn::Type) -> Field {
-        Field {
-            span: name.span(),
-            attr: AttrAccess::Named(name.clone()),
-            tmp_name: name.clone(),
-            ty: ty.clone()
-        }
-    }
+    // pub fn new_named(name: &syn::Ident, ty: &syn::Type) -> Field {
+    //     Field {
+    //         span: name.span(),
+    //         attr: AttrAccess::Named(name.clone()),
+    //         tmp_name: name.clone(),
+    //         ty: ty.clone()
+    //     }
+    // }
     fn new(field: &syn::Field, idx: usize) -> Field {
         field.ident.as_ref()
             .map(|id| Field {

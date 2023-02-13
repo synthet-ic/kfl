@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    ast::{SpannedNode, Literal, Value, TypeName},
+    ast::{SpannedNode, Literal, TypeName},
     decode::Context,
     errors::DecodeError,
     span::Spanned,

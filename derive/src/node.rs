@@ -2,12 +2,13 @@ use proc_macro2::{TokenStream, Span};
 use quote::{format_ident, quote, ToTokens};
 use syn::ext::IdentExt;
 
-use crate::definition::{Struct, StructBuilder, FieldAttrs, DecodeMode};
-use crate::definition::{Field, NewType, ExtraKind, ChildMode};
+use crate::definition::{Struct, DecodeMode};
+use crate::definition::{NewType, ExtraKind, ChildMode};
 
 pub(crate) struct Common<'a> {
     pub object: &'a Struct,
     pub ctx: &'a syn::Ident,
+    #[allow(unused)]
     pub span_type: &'a TokenStream,
 }
 
@@ -519,45 +520,45 @@ fn decode_props(s: &Common, node: &syn::Ident)
     })
 }
 
-fn unwrap_fn(parent: &Common,
-             func: &syn::Ident, name: &syn::Ident, ty: &syn::Type, attrs: &FieldAttrs)
-    -> syn::Result<TokenStream>
-{
-    let ctx = parent.ctx;
-    let span_ty = parent.span_type;
-    let mut bld = StructBuilder::new(
-        format_ident!("Wrap_{}", name, span = Span::mixed_site()),
-        parent.object.trait_props.clone(),
-        parent.object.generics.clone(),
-    );
-    bld.add_field(Field::new_named(name, ty), attrs)?;
-    let object = bld.build();
-    let common = Common {
-        object: &object,
-        ctx: parent.ctx,
-        span_type: parent.span_type,
-    };
+// fn unwrap_fn(parent: &Common,
+//              func: &syn::Ident, name: &syn::Ident, ty: &syn::Type, attrs: &FieldAttrs)
+//     -> syn::Result<TokenStream>
+// {
+//     let ctx = parent.ctx;
+//     let span_ty = parent.span_type;
+//     let mut bld = StructBuilder::new(
+//         format_ident!("Wrap_{}", name, span = Span::mixed_site()),
+//         parent.object.trait_props.clone(),
+//         parent.object.generics.clone(),
+//     );
+//     bld.add_field(Field::new_named(name, ty), attrs)?;
+//     let object = bld.build();
+//     let common = Common {
+//         object: &object,
+//         ctx: parent.ctx,
+//         span_type: parent.span_type,
+//     };
 
-    let node = syn::Ident::new("node", Span::mixed_site());
-    let children = syn::Ident::new("children", Span::mixed_site());
-    let decode_args = decode_args(&common, &node)?;
-    let decode_props = decode_props(&common, &node)?;
-    let decode_children = decode_children(&common, &children,
-                                          Some(quote!(#node.span())))?;
-    Ok(quote! {
-        let mut #func = |#node: &::kfl::ast::SpannedNode<#span_ty>,
-                         #ctx: &mut ::kfl::decode::Context<#span_ty>|
-        {
-            #decode_args
-            #decode_props
-            let #children = #node.children.as_ref()
-                .map(|lst| &lst[..]).unwrap_or(&[]);
-            #decode_children
+//     let node = syn::Ident::new("node", Span::mixed_site());
+//     let children = syn::Ident::new("children", Span::mixed_site());
+//     let decode_args = decode_args(&common, &node)?;
+//     let decode_props = decode_props(&common, &node)?;
+//     let decode_children = decode_children(&common, &children,
+//                                           Some(quote!(#node.span())))?;
+//     Ok(quote! {
+//         let mut #func = |#node: &::kfl::ast::SpannedNode<#span_ty>,
+//                          #ctx: &mut ::kfl::decode::Context<#span_ty>|
+//         {
+//             #decode_args
+//             #decode_props
+//             let #children = #node.children.as_ref()
+//                 .map(|lst| &lst[..]).unwrap_or(&[]);
+//             #decode_children
 
-            Ok(#name)
-        };
-    })
-}
+//             Ok(#name)
+//         };
+//     })
+// }
 
 fn insert_child(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     let ctx = s.ctx;

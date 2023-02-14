@@ -20,16 +20,6 @@ pub trait Decode<S: ErrorSpan>: Sized {
         -> Result<Self, DecodeError<S>>;
 }
 
-///
-pub trait DecodeIterator<S: ErrorSpan>: Sized + FromIterator<Self::Item> {
-    /// 
-    type Item: Decode<S>;
-    
-    ///
-    fn decode_item(node: &SpannedNode<S>, ctx: &mut Context<S>)
-        -> Result<Self::Item, DecodeError<S>>;
-}
-
 /// Trait to decode children of the KDL node, mostly used for root document
 pub trait DecodeChildren<S: ErrorSpan>: Sized {
     /// Decodes from a list of chidren ASTs
@@ -50,7 +40,7 @@ pub trait DecodePartial<S: ErrorSpan>: Sized + Default {
     ///
     /// Returns `Ok(true)` if the child is "consumed" (i.e. stored in this
     /// structure).
-    fn insert_child(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn decode_partial(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<bool, DecodeError<S>>;
     // /// The method is called when unknown property is encountered by parent
     // /// structure

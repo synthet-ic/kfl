@@ -68,25 +68,25 @@ pub fn emit_struct(s: &Struct, named: bool) -> syn::Result<TokenStream> {
     let mut extra_traits = Vec::new();
     let partial_compatible = s.spans.is_empty() &&
         !s.has_arguments &&
-        s.var_props.is_none() &&
+        !s.has_properties &&
         s.children.iter().all(|child| child.default.is_some());
     if partial_compatible {
         let node = syn::Ident::new("node", Span::mixed_site());
         // let name = syn::Ident::new("name", Span::mixed_site());
         // let value = syn::Ident::new("value", Span::mixed_site());
-        let insert_child = insert_child(&common, &node)?;
+        let decode_partial = decode_partial(&common, &node)?;
         // let insert_property = insert_property(&common, &name, &value)?;
         extra_traits.push(quote! {
             impl #impl_gen ::kfl::traits::DecodePartial #trait_gen
                 for #s_name #type_gen
                 #bounds
             {
-                fn insert_child(&mut self,
+                fn decode_partial(&mut self,
                     #node: &::kfl::ast::SpannedNode<#span_ty>,
                     #ctx: &mut ::kfl::decode::Context<#span_ty>)
                     -> Result<bool, ::kfl::errors::DecodeError<#span_ty>>
                 {
-                    #insert_child
+                    #decode_partial
                 }
                 // fn insert_property(&mut self,
                 //     #name: &::kfl::span::Spanned<Box<str>, #span_ty>,
@@ -559,7 +559,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
 //     })
 // }
 
-fn insert_child(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
+fn decode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     let ctx = s.ctx;
     let mut branches = vec![quote! {
         if false {
@@ -592,10 +592,9 @@ fn insert_child(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
             }
             ChildMode::Multi => {
                 branches.push(quote! {
-                    else if let Ok(value) = <#ty as ::kfl::traits::DecodeIterator<_>>
-                        ::decode_item(#node, #ctx)
+                    else if let Ok(true) = <#ty as ::kfl::traits::DecodePartial<_>>
+                        ::decode_partial(&mut #dest, #node, #ctx)
                     {
-                        #dest.push(value);
                         Ok(true)
                     }
                 });
@@ -603,7 +602,7 @@ fn insert_child(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
             ChildMode::Flatten => {
                 branches.push(quote! {
                     else if <#ty as ::kfl::traits::DecodePartial<_>>
-                        ::insert_child(&mut #dest, #node, #ctx)?
+                        ::decode_partial(&mut #dest, #node, #ctx)?
                     {
                         Ok(true)
                     }
@@ -677,7 +676,7 @@ fn decode_children(s: &Common, children: &syn::Ident,
                 });
                 branches.push(quote! {
                     else if let Ok(true) = <#ty as ::kfl::traits::DecodePartial<_>>
-                        ::insert_child(&mut #fld, #child, #ctx) {
+                        ::decode_partial(&mut #fld, #child, #ctx) {
                         None
                     }
                 });
@@ -688,10 +687,9 @@ fn decode_children(s: &Common, children: &syn::Ident,
                 });
                 let ctx = &s.ctx;
                 branches.push(quote! {
-                    else if let Ok(value) = <#ty as ::kfl::traits::DecodeIterator<_>>
-                        ::decode_item(#child, #ctx)
+                    else if let Ok(true) = <#ty as ::kfl::traits::DecodePartial<_>>
+                        ::decode_partial(&mut #fld, #child, #ctx)
                     {
-                        #fld.push(value);
                         None
                     }
                 });

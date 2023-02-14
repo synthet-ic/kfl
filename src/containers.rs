@@ -8,7 +8,7 @@ use crate::{
     decode::Context,
     errors::DecodeError,
     span::Spanned,
-    traits::{Decode, DecodeChildren, DecodeIterator, DecodeScalar, DecodePartial},
+    traits::{Decode, DecodeChildren, DecodeScalar, DecodePartial},
     traits::{ErrorSpan, DecodeSpan, Span}
 };
 
@@ -29,10 +29,10 @@ impl<S: ErrorSpan, T: DecodeChildren<S>> DecodeChildren<S> for Box<T> {
 }
 
 impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Box<T> {
-    fn insert_child(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn decode_partial(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<bool, DecodeError<S>>
     {
-        (**self).insert_child(node, ctx)
+        (**self).decode_partial(node, ctx)
     }
     // fn insert_property(&mut self,
     //                    name: &Spanned<Box<str>, S>, value: &Value<S>,
@@ -72,11 +72,11 @@ impl<S: ErrorSpan, T: DecodeChildren<S>> DecodeChildren<S> for Arc<T> {
 }
 
 impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Arc<T> {
-    fn insert_child(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn decode_partial(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<bool, DecodeError<S>>
     {
         Arc::get_mut(self).expect("no Arc clone yet")
-            .insert_child(node, ctx)
+            .decode_partial(node, ctx)
     }
     // fn insert_property(&mut self,
     //                    name: &Spanned<Box<str>, S>, value: &Value<S>,
@@ -118,11 +118,11 @@ impl<S: ErrorSpan, T: DecodeChildren<S>> DecodeChildren<S> for Rc<T> {
 }
 
 impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Rc<T> {
-    fn insert_child(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn decode_partial(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<bool, DecodeError<S>>
     {
         Rc::get_mut(self).expect("no Rc clone yet")
-            .insert_child(node, ctx)
+            .decode_partial(node, ctx)
     }
     // fn insert_property(&mut self,
     //                    name: &Spanned<Box<str>, S>, value: &Value<S>,
@@ -156,7 +156,7 @@ impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Vec<T> {
 }
 
 impl<S: ErrorSpan, T: Decode<S>> DecodePartial<S> for Vec<T> {
-    fn insert_child(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn decode_partial(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<bool, DecodeError<S>>
     {
         match <T as Decode<S>>::decode_node(node, ctx) {
@@ -166,16 +166,6 @@ impl<S: ErrorSpan, T: Decode<S>> DecodePartial<S> for Vec<T> {
             }
             Err(e) => Err(e)
         }
-    }
-}
-
-impl<S: ErrorSpan, T: Decode<S>> DecodeIterator<S> for Vec<T> {
-    type Item = T;
-
-    fn decode_item(node: &SpannedNode<S>, ctx: &mut Context<S>)
-        -> Result<Self::Item, DecodeError<S>>
-    {
-        <Self::Item as Decode<S>>::decode_node(node, ctx)
     }
 }
 
@@ -199,6 +189,27 @@ impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Option<T> {
         -> Result<Self, DecodeError<S>>
     {
         <T as Decode<S>>::decode_node(node, ctx).map(|node| Some(node))
+    }
+}
+
+impl<S: ErrorSpan, T: Decode<S>> DecodePartial<S> for Option<T> {
+    fn decode_partial(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
+        -> Result<bool, DecodeError<S>>
+    {
+        let slf = std::mem::take(self);
+        let result = <Self as Decode<S>>::decode_node(node, ctx);
+        match (slf, result) {
+            (None, Ok(None)) => Ok(true),  /* no-op */
+            (None, Ok(value)) => {
+                *self = value;
+                Ok(true)
+            }
+            (_, Err(_)) => Ok(false),
+            (_, _) => {
+                let dup_err = format!("duplicate node `{}`, single node expected", node.node_name.as_ref());
+                Err(DecodeError::unexpected(&node.node_name, "node", dup_err))
+            }
+        }
     }
 }
 

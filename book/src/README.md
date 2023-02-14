@@ -10,7 +10,6 @@
 - Nominal
   - Flatten properties (analogous to serde)
     - Not implemented `DecodeScalar` for structs
-    - Unify `DecodePartial` and `DecodeChildren`
   - NodeName
   - TypeName
   - bool child
@@ -27,7 +26,7 @@
 - [ ] Implement `DecodeScalar` for struct as the replacement of `flatten(properties)` and support `flatten(arguments)` equivalent as well
 - [ ] Span
 - [ ] Detect name conflicts between fields in the same struct
-- [ ] Understand error categories, reconsider `Context` together with `DecodePartial`
+- [ ] Understand error categories, reconsider `Context` in the presence of `DecodePartial`
 - [ ] Test organisation, provide utility macros
 - [ ] `Encode`
   - [ ] `EncodePartial` as an analogous to `skip_serializing_none`

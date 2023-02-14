@@ -68,13 +68,8 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
         quote! { #s_name(#(#assignments),*) }
     };
     let mut extra_traits = Vec::new();
-    // TODO(rnarkk) turn this into a function after refactor `decode_partial`
     if partial {
-        let partial_compatible = s.spans.is_empty() &&
-            !s.has_arguments &&
-            !s.has_properties &&
-            s.children.iter().all(|child| child.default.is_some());
-        if partial_compatible {
+        if is_partial_compatible(&s) {
             let node = syn::Ident::new("node", Span::mixed_site());
             // let name = syn::Ident::new("name", Span::mixed_site());
             // let value = syn::Ident::new("value", Span::mixed_site());
@@ -103,7 +98,7 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
                 }
             });
         } else {
-            
+            return Err(syn::Error::new(s.ident.span(), "not partial compatible"));
         }
     }
     if !s.has_arguments && !s.has_properties && s.spans.is_empty() {
@@ -566,6 +561,13 @@ fn decode_props(s: &Common, node: &syn::Ident)
 //     })
 // }
 
+fn is_partial_compatible(s: &Struct) -> bool {
+    s.spans.is_empty()
+    && !s.has_arguments
+    && !s.has_properties
+    // && s.children.iter().all(|child| child.default.is_some())
+}
+
 fn decode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     let ctx = s.ctx;
     let mut branches = vec![quote! {
@@ -576,35 +578,13 @@ fn decode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     for child_def in &s.object.children {
         let dest = &child_def.field.from_self();
         let ty = &child_def.field.ty;
-        match &child_def.mode {
-            ChildMode::Normal => {
-                branches.push(quote! {
-                    else if let Ok(true) = <#ty as ::kfl::traits::DecodePartial<_>>
-                        ::decode_partial(&mut #dest, #node, #ctx)
-                    {
-                        Ok(true)
-                    }
-                });
+        branches.push(quote! {
+            else if let Ok(true) = <#ty as ::kfl::traits::DecodePartial<_>>
+                ::decode_partial(&mut #dest, #node, #ctx)
+            {
+                Ok(true)
             }
-            ChildMode::Multi => {
-                branches.push(quote! {
-                    else if let Ok(true) = <#ty as ::kfl::traits::DecodePartial<_>>
-                        ::decode_partial(&mut #dest, #node, #ctx)
-                    {
-                        Ok(true)
-                    }
-                });
-            }
-            ChildMode::Flatten => {
-                branches.push(quote! {
-                    else if <#ty as ::kfl::traits::DecodePartial<_>>
-                        ::decode_partial(&mut #dest, #node, #ctx)?
-                    {
-                        Ok(true)
-                    }
-                });
-            }
-        }
+        });
     }
     branches.push(quote! {
         else {

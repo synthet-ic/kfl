@@ -13,7 +13,6 @@ use crate::{
     decode::Context
 };
 
-
 /// Trait to decode KDL node from the AST
 pub trait Decode<S: ErrorSpan>: Sized {
     /// Decodes the node from the ast
@@ -45,7 +44,7 @@ pub trait DecodeChildren<S: ErrorSpan>: Sized {
 /// this trait. It is automatically implemented by `#[derive(Decode)]`
 /// by structures that have only optional properties and children (no
 /// arguments).
-pub trait DecodePartial<S: ErrorSpan>: Sized {
+pub trait DecodePartial<S: ErrorSpan>: Sized + Default {
     /// The method is called when unknown child is encountered by parent
     /// structure
     ///

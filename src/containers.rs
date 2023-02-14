@@ -1,6 +1,6 @@
 use std::{
     sync::Arc,
-    rc::Rc
+    rc::Rc,
 };
 
 use crate::{
@@ -8,7 +8,7 @@ use crate::{
     decode::Context,
     errors::DecodeError,
     span::Spanned,
-    traits::{Decode, DecodeChildren, DecodeScalar, DecodePartial},
+    traits::{Decode, DecodePartial, DecodeChildren, DecodeScalar},
     traits::{ErrorSpan, DecodeSpan, Span}
 };
 
@@ -196,7 +196,7 @@ impl<S: ErrorSpan, T: Decode<S>> DecodePartial<S> for Option<T> {
     fn decode_partial(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<bool, DecodeError<S>>
     {
-        let slf = std::mem::take(self);
+        let slf = std::mem::take(self);  /* (1) */
         let result = <Self as Decode<S>>::decode_node(node, ctx);
         match (slf, result) {
             (None, Ok(None)) => Ok(true),  /* no-op */
@@ -204,7 +204,10 @@ impl<S: ErrorSpan, T: Decode<S>> DecodePartial<S> for Option<T> {
                 *self = value;
                 Ok(true)
             }
-            (_, Err(_)) => Ok(false),
+            (slf, Err(_)) => {
+                *self = slf;  /* TODO improve this with line (1) */
+                Ok(false)
+            },
             (_, _) => {
                 let dup_err = format!("duplicate node `{}`, single node expected", node.node_name.as_ref());
                 Err(DecodeError::unexpected(&node.node_name, "node", dup_err))

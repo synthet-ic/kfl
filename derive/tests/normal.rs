@@ -317,7 +317,7 @@ fn parse_property_default() {
         name: String,
     }
 
-    assert_eq!(parse::<Node>(r#"node label="hello""#),
+    assert_eq!(parse::<Node>(r#"node name="hello""#),
                Node { name: "hello".into() } );
     assert_eq!(parse::<Node>(r#"node"#),
                Node { name: "".into() });

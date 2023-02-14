@@ -11,7 +11,9 @@ pub(crate) struct Common<'a> {
     pub span_type: &'a TokenStream,
 }
 
-pub fn emit_struct(s: &Struct, named: bool) -> syn::Result<TokenStream> {
+pub fn emit_struct(s: &Struct, named: bool, partial: bool)
+    -> syn::Result<TokenStream>
+{
     let s_name = &s.ident;
     let node = syn::Ident::new("node", Span::mixed_site());
     let ctx = syn::Ident::new("ctx", Span::mixed_site());
@@ -66,38 +68,43 @@ pub fn emit_struct(s: &Struct, named: bool) -> syn::Result<TokenStream> {
         quote! { #s_name(#(#assignments),*) }
     };
     let mut extra_traits = Vec::new();
-    let partial_compatible = s.spans.is_empty() &&
-        !s.has_arguments &&
-        !s.has_properties &&
-        s.children.iter().all(|child| child.default.is_some());
-    if partial_compatible {
-        let node = syn::Ident::new("node", Span::mixed_site());
-        // let name = syn::Ident::new("name", Span::mixed_site());
-        // let value = syn::Ident::new("value", Span::mixed_site());
-        let decode_partial = decode_partial(&common, &node)?;
-        // let insert_property = insert_property(&common, &name, &value)?;
-        extra_traits.push(quote! {
-            impl #impl_gen ::kfl::traits::DecodePartial #trait_gen
-                for #s_name #type_gen
-                #bounds
-            {
-                fn decode_partial(&mut self,
-                    #node: &::kfl::ast::SpannedNode<#span_ty>,
-                    #ctx: &mut ::kfl::decode::Context<#span_ty>)
-                    -> Result<bool, ::kfl::errors::DecodeError<#span_ty>>
+    // TODO(rnarkk) turn this into a function after refactor `decode_partial`
+    if partial {
+        let partial_compatible = s.spans.is_empty() &&
+            !s.has_arguments &&
+            !s.has_properties &&
+            s.children.iter().all(|child| child.default.is_some());
+        if partial_compatible {
+            let node = syn::Ident::new("node", Span::mixed_site());
+            // let name = syn::Ident::new("name", Span::mixed_site());
+            // let value = syn::Ident::new("value", Span::mixed_site());
+            let decode_partial = decode_partial(&common, &node)?;
+            // let insert_property = insert_property(&common, &name, &value)?;
+            extra_traits.push(quote! {
+                impl #impl_gen ::kfl::traits::DecodePartial #trait_gen
+                    for #s_name #type_gen
+                    #bounds
                 {
-                    #decode_partial
+                    fn decode_partial(&mut self,
+                        #node: &::kfl::ast::SpannedNode<#span_ty>,
+                        #ctx: &mut ::kfl::decode::Context<#span_ty>)
+                        -> Result<bool, ::kfl::errors::DecodeError<#span_ty>>
+                    {
+                        #decode_partial
+                    }
+                    // fn insert_property(&mut self,
+                    //     #name: &::kfl::span::Spanned<Box<str>, #span_ty>,
+                    //     #value: &::kfl::ast::Value<#span_ty>,
+                    //     #ctx: &mut ::kfl::decode::Context<#span_ty>)
+                    //     -> Result<bool, ::kfl::errors::DecodeError<#span_ty>>
+                    // {
+                    //     #insert_property
+                    // }
                 }
-                // fn insert_property(&mut self,
-                //     #name: &::kfl::span::Spanned<Box<str>, #span_ty>,
-                //     #value: &::kfl::ast::Value<#span_ty>,
-                //     #ctx: &mut ::kfl::decode::Context<#span_ty>)
-                //     -> Result<bool, ::kfl::errors::DecodeError<#span_ty>>
-                // {
-                //     #insert_property
-                // }
-            }
-        });
+            });
+        } else {
+            
+        }
     }
     if !s.has_arguments && !s.has_properties && s.spans.is_empty() {
         let decode_children = decode_children(&common, &children, None)?;
@@ -571,22 +578,11 @@ fn decode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
         let ty = &child_def.field.ty;
         match &child_def.mode {
             ChildMode::Normal => {
-                let dup_err = quote! {
-                    format!("duplicate node `{}`, single node expected",
-                            #node.node_name.as_ref())
-                };
                 branches.push(quote! {
-                    else if let Ok(value) = <#ty as ::kfl::traits::Decode<_>>
-                        ::decode_node(#node, #ctx)
+                    else if let Ok(true) = <#ty as ::kfl::traits::DecodePartial<_>>
+                        ::decode_partial(&mut #dest, #node, #ctx)
                     {
-                        if #dest.is_some() {
-                            Err(
-                                ::kfl::errors::DecodeError::unexpected(
-                                &#node.node_name, "node", #dup_err))
-                        } else {
-                            #dest = value;
-                            Ok(true)
-                        }
+                        Ok(true)
                     }
                 });
             }
@@ -687,7 +683,7 @@ fn decode_children(s: &Common, children: &syn::Ident,
                 });
                 let ctx = &s.ctx;
                 branches.push(quote! {
-                    else if let Ok(true) = <#ty as ::kfl::traits::DecodePartial<_>>
+                    else if let Ok(true) = <Vec<<#ty as IntoIterator>::Item> as ::kfl::traits::DecodePartial<_>>
                         ::decode_partial(&mut #fld, #child, #ctx)
                     {
                         None
@@ -716,22 +712,11 @@ fn decode_children(s: &Common, children: &syn::Ident,
                 declare_empty.push(quote! {
                     let mut #fld = None;
                 });
-                let dup_err = quote! {
-                    format!("duplicate node `{}`, single node expected",
-                            #child.node_name.as_ref())
-                };
                 branches.push(quote! {
-                    else if let Ok(value) = <#ty as ::kfl::traits::Decode<_>>
-                        ::decode_node(#child, #ctx)
+                    else if let Ok(true) = <Option<#ty> as ::kfl::traits::DecodePartial<_>>
+                        ::decode_partial(&mut #fld, #child, #ctx)
                     {
-                        if #fld.is_some() {
-                            Some(Err(
-                                ::kfl::errors::DecodeError::unexpected(
-                                &#child.node_name, "node", #dup_err)))
-                        } else {
-                            #fld = Some(value);
-                            None
-                        }
+                        None
                     }
                 });
                 let req_msg = format!("child node for field `{}` is required",

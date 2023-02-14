@@ -4,7 +4,7 @@
 //! [`Decode`](derive@crate::Decode)` and
 //! [`DecodeScalar`](derive@crate::DecodeScalar) for a
 //! documentation of the derives to implement these traits.
-use std::fmt;
+use std::fmt::Debug;
 
 use crate::{
     ast::{SpannedNode, Literal, Value, TypeName},
@@ -102,10 +102,10 @@ impl<T: ErrorSpan> DecodeSpan<T> for T {
 ///
 /// Custom span types can be used for this unlike for [`Span`]
 pub trait ErrorSpan: Into<miette::SourceSpan>
-                     + Clone + fmt::Debug + Send + Sync + 'static {}
+                     + Clone + Debug + Send + Sync + 'static {}
 impl<T> ErrorSpan for T
     where T: Into<miette::SourceSpan>,
-          T: Clone + fmt::Debug + Send + Sync + 'static,
+          T: Clone + Debug + Send + Sync + 'static,
 {}
 
 

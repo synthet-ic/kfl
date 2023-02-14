@@ -1,6 +1,6 @@
 mod common;
 
-use kfl::Decode;
+use kfl::{Decode, DecodePartial};
 
 use common::{assert_parse, assert_parse_err};
 
@@ -10,7 +10,7 @@ struct Child1(#[kfl(argument)] String);
 #[derive(Decode, Debug, PartialEq)]
 struct Child2(#[kfl(argument)] String);
 
-#[derive(Decode, Debug, Default, PartialEq)]
+#[derive(DecodePartial, Debug, Default, PartialEq)]
 struct Intermediate {
     #[kfl(child, default)]
     child1: Option<Child1>,

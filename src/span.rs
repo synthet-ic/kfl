@@ -207,7 +207,7 @@ impl traits::sealed::SpanTracker for sealed::LineTracker {
     }
 }
 
-#[cfg(feature="line-numbers")]
+#[cfg(feature = "line-numbers")]
 impl traits::sealed::Sealed for LineSpan {
     type Tracker = sealed::LineTracker;
     /// Note assuming ascii, single-width, non-newline chars here
@@ -275,10 +275,10 @@ impl traits::sealed::Sealed for LineSpan {
     }
 }
 
-#[cfg(feature="line-numbers")]
+#[cfg(feature = "line-numbers")]
 impl traits::Span for LineSpan {}
 
-#[cfg(feature="line-numbers")]
+#[cfg(feature = "line-numbers")]
 impl traits::DecodeSpan<LineSpan> for Span {
     fn decode_span(span: &LineSpan, _: &mut Context<LineSpan>)
         -> Self

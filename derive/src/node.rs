@@ -2,8 +2,7 @@ use proc_macro2::{TokenStream, Span};
 use quote::{format_ident, quote, ToTokens};
 use syn::ext::IdentExt;
 
-use crate::definition::{Struct, DecodeMode};
-use crate::definition::{NewType, ExtraKind, ChildMode};
+use crate::definition::{Struct, DecodeMode, NewType, ExtraKind, ChildMode};
 
 pub(crate) struct Common<'a> {
     pub object: &'a Struct,

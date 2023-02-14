@@ -24,5 +24,6 @@
 - [ ] Implement `DecodeScalar` for struct as the replacement of `flatten(properties)` and support `flatten(arguments)` equivalent as well
 - [ ] Span
 - [ ] Detect name conflicts between fields in the same struct
-- [ ] Organise error categories, reconsider `Context` together with `DecodePatial`
+- [ ] Understand error categories, reconsider `Context` together with `DecodePatial`
+- [ ] Test organisation, provide utility macros
 - [ ] Encode

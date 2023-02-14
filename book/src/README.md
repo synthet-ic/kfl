@@ -21,7 +21,8 @@
 
 # TODO
 
-- [ ] `DecodePartial` compatibility cannot automatically be detected
+- [ ] `DecodePartial` compatibility cannot automatically be detected (except `Unit` useless case)
+  - Because we discard `option` parameter and also switch to manually implementing it for `Option<T>` and `Vec<T>`
 - [ ] Implement `DecodeScalar` for struct as the replacement of `flatten(properties)` and support `flatten(arguments)` equivalent as well
 - [ ] Span
 - [ ] Detect name conflicts between fields in the same struct

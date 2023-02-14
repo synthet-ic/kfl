@@ -155,6 +155,20 @@ impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Vec<T> {
     }
 }
 
+impl<S: ErrorSpan, T: Decode<S>> DecodePartial<S> for Vec<T> {
+    fn insert_child(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
+        -> Result<bool, DecodeError<S>>
+    {
+        match <T as Decode<S>>::decode_node(node, ctx) {
+            Ok(value) => {
+                self.push(value);
+                Ok(true)
+            }
+            Err(e) => Err(e)
+        }
+    }
+}
+
 impl<S: ErrorSpan, T: Decode<S>> DecodeIterator<S> for Vec<T> {
     type Item = T;
 

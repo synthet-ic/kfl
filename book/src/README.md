@@ -27,4 +27,5 @@
 - [ ] Detect name conflicts between fields in the same struct
 - [ ] Understand error categories, reconsider `Context` together with `DecodePartial`
 - [ ] Test organisation, provide utility macros
-- [ ] Encode
+- [ ] `Encode`
+  - [ ] `EncodePartial` as an analogous to `skip_serializing_none`

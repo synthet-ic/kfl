@@ -21,9 +21,10 @@
 
 # TODO
 
+- [ ] `DecodePartial` compatibility cannot automatically be detected
 - [ ] Implement `DecodeScalar` for struct as the replacement of `flatten(properties)` and support `flatten(arguments)` equivalent as well
 - [ ] Span
 - [ ] Detect name conflicts between fields in the same struct
-- [ ] Understand error categories, reconsider `Context` together with `DecodePatial`
+- [ ] Understand error categories, reconsider `Context` together with `DecodePartial`
 - [ ] Test organisation, provide utility macros
 - [ ] Encode

@@ -1,5 +1,6 @@
 use std::{
     default::Default,
+    net::SocketAddr,
     path::PathBuf,
     str::FromStr
 };
@@ -29,7 +30,7 @@ macro_rules! impl_integer {
 
         impl<S: ErrorSpan> DecodeScalar<S> for $typ {
             fn raw_decode(val: &Spanned<Literal, S>, ctx: &mut Context<S>)
-                -> Result<$typ, DecodeError<S>>
+                -> Result<Self, DecodeError<S>>
             {
                 match &**val {
                     Literal::Int(ref value) => {
@@ -98,7 +99,7 @@ macro_rules! impl_decimal {
 
         impl<S: ErrorSpan> DecodeScalar<S> for $typ {
             fn raw_decode(val: &Spanned<Literal, S>, ctx: &mut Context<S>)
-                -> Result<$typ, DecodeError<S>>
+                -> Result<Self, DecodeError<S>>
             {
                 match &**val {
                     Literal::Int(ref value) => {
@@ -150,7 +151,7 @@ impl_decimal!(f64, F64);
 
 impl<S: ErrorSpan> DecodeScalar<S> for String {
     fn raw_decode(val: &Spanned<Literal, S>, ctx: &mut Context<S>)
-        -> Result<String, DecodeError<S>>
+        -> Result<Self, DecodeError<S>>
     {
         match &**val {
             Literal::String(ref s) => Ok(s.clone().into()),
@@ -174,10 +175,9 @@ impl<S: ErrorSpan> DecodeScalar<S> for String {
     }
 }
 
-
 impl<S: ErrorSpan> DecodeScalar<S> for PathBuf {
     fn raw_decode(val: &Spanned<Literal, S>, ctx: &mut Context<S>)
-        -> Result<PathBuf, DecodeError<S>>
+        -> Result<Self, DecodeError<S>>
     {
         match &**val {
             Literal::String(ref s) => Ok(String::from(s.clone()).into()),
@@ -196,6 +196,36 @@ impl<S: ErrorSpan> DecodeScalar<S> for PathBuf {
                 found: Some(typ.value.clone()),
                 expected: ExpectedType::no_type(),
                 rust_type: "PathBuf",
+            });
+        }
+    }
+}
+
+impl<S: ErrorSpan> DecodeScalar<S> for SocketAddr {
+    fn raw_decode(value: &Spanned<Literal, S>, _: &mut Context<S>)
+        -> Result<Self, DecodeError<S>>
+    {
+        match &**value {
+            Literal::String(ref s) => {
+                match String::from(s.clone()).parse() {
+                    Ok(value) => Ok(value),
+                    Err(_) => Err(DecodeError::scalar_kind(Kind::String, value))
+                }
+            }
+            _ => {
+                Err(DecodeError::scalar_kind(Kind::String, value))
+            }
+        }
+    }
+    fn type_check(type_name: &Option<Spanned<TypeName, S>>,
+                  ctx: &mut Context<S>)
+    {
+        if let Some(typ) = type_name {
+            ctx.emit_error(DecodeError::TypeName {
+                span: typ.span().clone(),
+                found: Some(typ.value.clone()),
+                expected: ExpectedType::no_type(),
+                rust_type: "SocketAddr",
             });
         }
     }

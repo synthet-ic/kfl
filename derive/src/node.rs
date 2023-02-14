@@ -214,7 +214,7 @@ fn decode_value(val: &syn::Ident, ctx: &syn::Ident, mode: &DecodeMode,
     match mode {
         DecodeMode::Normal => {
             Ok(quote! {
-                <#ty as ::kfl::traits::DecodeScalar<_>>::decode(#val, #ctx)
+                ::kfl::traits::DecodeScalar::decode(#val, #ctx)
             })
         }
         // DecodeMode::Str if optional => {

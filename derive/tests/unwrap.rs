@@ -31,12 +31,6 @@
 //     labels: Vec<Vec<String>>,
 // }
 
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct Parse {
-//     #[kfl(child, unwrap(argument, str))]
-//     listen: std::net::SocketAddr,
-// }
-
 // #[test]
 // fn parse_unwrap() {
 //     assert_eq!(parse::<Unwrap>(r#"node { label "hello"; }"#),

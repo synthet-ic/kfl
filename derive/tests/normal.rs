@@ -1,7 +1,7 @@
 mod common;
 
 use std::{
-    // collections::BTreeMap,
+    collections::BTreeMap,
     default::Default
 };
 use kfl::Decode;
@@ -37,12 +37,6 @@ use common::{parse, assert_parse, parse_err, assert_parse_err};
 //     field: String,
 // }
 
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct VarArg {
-//     #[kfl(arguments)]
-//     params: Vec<u64>,
-// }
-
 // #[derive(kfl_derive::Decode, Debug, PartialEq, Default)]
 // struct Prop1 {
 //     #[kfl(property)]
@@ -68,32 +62,11 @@ use common::{parse, assert_parse, parse_err, assert_parse_err};
 // }
 
 // #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct OptProp {
-//     #[kfl(property)]
-//     label: Option<String>,
-// }
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct VarProp {
-//     #[kfl(properties)]
-//     scores: BTreeMap<String, u64>,
-// }
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
 // struct FilteredChildren {
 //     #[kfl(children)]
 //     left: Vec<OptArg>,
 //     #[kfl(children)]
 //     right: Vec<OptArg>,
-// }
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// enum Variant {
-//     Arg1(Arg1),
-//     Prop1(Prop1),
-//     #[kfl(skip)]
-//     #[allow(dead_code)]
-//     Var3(u32),
 // }
 
 // #[derive(kfl_derive::Decode, Debug, PartialEq)]
@@ -107,18 +80,6 @@ use common::{parse, assert_parse, parse_err, assert_parse_err};
 // }
 
 
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct ChildDefValue {
-//     #[kfl(child, default=Prop1 { label: String::from("prop1") })]
-//     main: Prop1,
-// }
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct ParseOpt {
-//     #[kfl(property, str)]
-//     listen: Option<std::net::SocketAddr>,
-// }
 
 // #[derive(kfl_derive::Decode, Debug, PartialEq)]
 // struct Bytes {
@@ -354,34 +315,49 @@ fn parse_property_name() {
         "property `x` is required");
 }
 
-// #[test]
-// fn parse_opt_prop() {
-//     assert_eq!(parse::<OptProp>(r#"node label="hello""#),
-//                OptProp { label: Some("hello".into()) } );
-//     assert_eq!(parse::<OptProp>(r#"node"#),
-//                OptProp { label: None } );
-//     assert_eq!(parse::<OptProp>(r#"node label=null"#),
-//                OptProp { label: None } );
-// }
+#[test]
+fn parse_option_property() {
+    #[derive(Decode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(property, default)]  /* TODO test without default */
+        name: Option<String>,
+    }
+    assert_eq!(parse::<Node>(r#"node name="hello""#),
+               Node { name: Some("hello".into()) } );
+    assert_eq!(parse::<Node>(r#"node"#),
+               Node { name: None } );
+    assert_eq!(parse::<Node>(r#"node name=null"#),
+               Node { name: None } );
+}
 
-// #[test]
-// fn parse_var_arg() {
-//     assert_eq!(parse::<VarArg>(r#"sum 1 2 3"#),
-//                VarArg { params: vec![1, 2, 3] } );
-//     assert_eq!(parse::<VarArg>(r#"sum"#),
-//                VarArg { params: vec![] } );
-// }
+#[test]
+fn parse_var_arguments() {
+    #[derive(Decode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(arguments)]
+        params: Vec<u64>,
+    }
+    assert_eq!(parse::<Node>(r#"node 1 2 3"#),
+               Node { params: vec![1, 2, 3] } );
+    assert_eq!(parse::<Node>(r#"node"#),
+               Node { params: vec![] } );
+}
 
-// #[test]
-// fn parse_var_prop() {
-//     let mut scores = BTreeMap::new();
-//     scores.insert("john".into(), 13);
-//     scores.insert("jack".into(), 7);
-//     assert_eq!(parse::<VarProp>(r#"scores john=13 jack=7"#),
-//                VarProp { scores } );
-//     assert_eq!(parse::<VarProp>(r#"scores"#),
-//                VarProp { scores: BTreeMap::new() } );
-// }
+#[test]
+fn parse_var_properties() {
+    #[derive(Decode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(properties)]
+        scores: BTreeMap<String, u64>,
+    }
+    let mut scores = BTreeMap::new();
+    scores.insert("john".into(), 13);
+    scores.insert("jack".into(), 7);
+    assert_eq!(parse::<Node>(r#"node john=13 jack=7"#),
+               Node { scores } );
+    assert_eq!(parse::<Node>(r#"node"#),
+               Node { scores: BTreeMap::new() } );
+}
 
 #[test]
 fn parse_children() {
@@ -572,20 +548,48 @@ fn parse_child_default() {
                });
 }
 
-// #[test]
-// fn parse_child_def_value() {
-//     assert_eq!(parse::<ChildDefValue>(r#"parent { main label="val1"; }"#),
-//                ChildDefValue {
-//                    main: Prop1 { label: "val1".into() },
-//                });
-//     assert_eq!(parse::<ChildDefValue>(r#"parent"#),
-//                ChildDefValue {
-//                    main: Prop1 { label: "prop1".into() },
-//                });
-// }
+#[test]
+fn parse_child_default_value() {
+    #[derive(Decode, Debug, PartialEq)]
+    struct Parent {
+        #[kfl(child, default = Child { label: String::from("prop1") })]
+        main: Child,
+    }
+    #[derive(Decode, Debug, PartialEq, Default)]
+    struct Child {
+        #[kfl(property)]
+        label: String,
+    }
+    assert_eq!(parse::<Parent>(r#"parent { child label="val1"; }"#),
+               Parent {
+                   main: Child { label: "val1".into() },
+               });
+    assert_eq!(parse::<Parent>(r#"parent"#),
+               Parent {
+                   main: Child { label: "prop1".into() },
+               });
+}
 
 // #[test]
 // fn parse_enum() {
+//     #[derive(Decode, Debug, PartialEq)]
+//     enum Variant {
+//         Arg1(Arg1),
+//         Prop1(Prop1),
+//         #[kfl(skip)]
+//         #[allow(dead_code)]
+//         Var3(u32),
+//     }
+//     #[derive(Decode, Debug, PartialEq)]
+//     struct Arg1 {
+//         #[kfl(argument)]
+//         name: String,
+//     }
+//     #[derive(Decode, Debug, PartialEq, Default)]
+//     struct Prop1 {
+//         #[kfl(property)]
+//         label: String,
+//     }
 //     assert_eq!(parse::<Variant>(r#"arg1 "hello""#),
 //                Variant::Arg1(Arg1 { name: "hello".into() }));
 //     assert_eq!(parse::<Variant>(r#"prop1 label="hello""#),
@@ -594,20 +598,33 @@ fn parse_child_default() {
 //         "expected one of `arg1`, `prop1`");
 // }
 
-// #[test]
-// fn parse_str() {
-//     assert_eq!(parse_doc::<Parse>(r#"listen "127.0.0.1:8080""#),
-//                Parse { listen: "127.0.0.1:8080".parse().unwrap() });
-//     assert_eq!(parse_doc_err::<Parse>(r#"listen "2/3""#),
-//         "invalid socket address syntax");
+#[test]
+fn parse_str() {
+    #[derive(Decode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(argument, str)]
+        listen: std::net::SocketAddr,
+    }
+    assert_eq!(parse::<Node>(r#"node "127.0.0.1:8080""#),
+               Node { listen: "127.0.0.1:8080".parse().unwrap() });
+    assert_eq!(parse_err::<Node>(r#"node "2/3""#),
+               "invalid socket address syntax");
+}
 
-//     assert_eq!(parse::<ParseOpt>(r#"server listen="127.0.0.1:8080""#),
-//                ParseOpt { listen: Some("127.0.0.1:8080".parse().unwrap()) });
-//     assert_eq!(parse_err::<ParseOpt>(r#"server listen="2/3""#),
-//         "invalid socket address syntax");
-//     assert_eq!(parse::<ParseOpt>(r#"server listen=null"#),
-//                ParseOpt { listen: None });
-// }
+#[test]
+fn parse_option_str() {
+    #[derive(Decode, Debug, PartialEq)]
+    struct Server {
+        #[kfl(property, default)]  // str
+        listen: Option<std::net::SocketAddr>,  /* TODO strip std::net:: */
+    }
+    assert_eq!(parse::<Server>(r#"server listen="127.0.0.1:8080""#),
+               Server { listen: Some("127.0.0.1:8080".parse().unwrap()) });
+    assert_eq!(parse_err::<Server>(r#"server listen="2/3""#),
+               "invalid socket address syntax");
+    assert_eq!(parse::<Server>(r#"server listen=null"#),
+               Server { listen: None });
+}
 
 // #[test]
 // fn parse_bytes() {

@@ -125,7 +125,7 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
         impl #impl_gen ::kfl::traits::Decode #trait_gen for #s_name #type_gen
             #bounds
         {
-            fn decode_node(#node: &::kfl::ast::SpannedNode<#span_ty>,
+            fn decode(#node: &::kfl::ast::SpannedNode<#span_ty>,
                            #ctx: &mut ::kfl::decode::Context<#span_ty>)
                 -> Result<Self, ::kfl::errors::DecodeError<#span_ty>>
             {
@@ -151,7 +151,7 @@ pub fn emit_new_type(s: &NewType) -> syn::Result<TokenStream> {
         impl<S: ::kfl::traits::ErrorSpan>
             ::kfl::traits::Decode<S> for #s_name
         {
-            fn decode_node(#node: &::kfl::ast::SpannedNode<S>,
+            fn decode(#node: &::kfl::ast::SpannedNode<S>,
                            #ctx: &mut ::kfl::decode::Context<S>)
                 -> Result<Self, ::kfl::errors::DecodeError<S>>
             {

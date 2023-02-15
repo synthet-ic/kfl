@@ -2,7 +2,6 @@ mod common;
 
 use std::path::PathBuf;
 use kfl::Decode;
-use common::assert_parse;
 
 #[derive(Decode, Debug, PartialEq)]
 struct Scalars {
@@ -20,7 +19,7 @@ struct Scalars {
 
 #[test]
 fn parse_enum() {
-    assert_parse::<Scalars>(r#"
+    assert_parse!(r#"
         scalars \
             "hello" \
             1234 \

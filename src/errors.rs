@@ -155,6 +155,17 @@ pub enum DecodeError<S: ErrorSpan> {
 #[non_exhaustive]
 pub enum EncodeError<S: ErrorSpan> {
     #[diagnostic()]
+    #[error("{}", message)]
+    Unexpected {
+        /// Position of the unexpected element
+        #[label("unexpected {}", kind)]
+        span: S,
+        /// Kind of element that was found
+        kind: &'static str,
+        /// Description of the error
+        message: String,
+    },
+    #[diagnostic()]
     #[error(transparent)]
     Custom(Box<dyn std::error::Error + Send + Sync + 'static>)
 }
@@ -215,7 +226,17 @@ pub(crate) enum ParseError<S: ErrorSpan> {
 
 #[derive(Debug, Diagnostic, Error)]
 pub(crate) enum PrintError<S: ErrorSpan> {
-    
+    #[diagnostic()]
+    #[error("{}", message)]
+    Unexpected {
+        /// Position of the unexpected element
+        #[label("unexpected {}", kind)]
+        span: S,
+        /// Kind of element that was found
+        kind: &'static str,
+        /// Description of the error
+        message: String,
+    },
 }
 
 impl From<Option<char>> for TokenFormat {

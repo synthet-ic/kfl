@@ -81,7 +81,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html" class="active"><strong aria-hidden="true">1.</strong> KFL</a></li><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">2.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="tutorial.html"><strong aria-hidden="true">3.</strong> Tutorial</a></li><li class="chapter-item expanded "><a href="rationale.html"><strong aria-hidden="true">4.</strong> Rationale</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html" class="active"><strong aria-hidden="true">1.</strong> KFL</a></li><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">2.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="tutorial.html"><strong aria-hidden="true">3.</strong> Tutorial</a></li><li class="chapter-item expanded "><a href="rationale.html"><strong aria-hidden="true">4.</strong> Rationale</a></li><li class="chapter-item expanded "><a href="appendix.html"><strong aria-hidden="true">5.</strong> Appendix</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="appendix/knuffel.html"><strong aria-hidden="true">5.1.</strong> knuffel</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -145,35 +145,7 @@
                         <h1 id="kfl"><a class="header" href="#kfl">KFL</a></h1>
 <ul>
 <li>Nominal Typing</li>
-<li>Trait-Specific</li>
-</ul>
-<h2 id="misconceptions"><a class="header" href="#misconceptions">Misconceptions</a></h2>
-<ul>
-<li>Children
-<ul>
-<li>Not eble to use enum as a single child</li>
-</ul>
-</li>
-<li>Nominal
-<ul>
-<li>Flatten properties (analogous to serde)
-<ul>
-<li>Not implemented <code>DecodeScalar</code> for structs</li>
-</ul>
-</li>
-<li>NodeName</li>
-<li>TypeName</li>
-<li>bool child</li>
-</ul>
-</li>
-<li>Option vs Default
-<ul>
-<li>benefit: form of type path doesn't matter </li>
-</ul>
-</li>
-<li>unwrap</li>
-<li><code>NewType</code> for structs and <code>Nested</code> for enums</li>
-<li><code>str</code> and <code>bytes</code> → simply implement <code>DecodeScalar</code> for <code>SocketAddr</code> and <code>Vec&lt;u8&gt;</code></li>
+<li>Trait-Based</li>
 </ul>
 <h1 id="todo"><a class="header" href="#todo">TODO</a></h1>
 <ul>

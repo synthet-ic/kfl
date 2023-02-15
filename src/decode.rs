@@ -142,7 +142,7 @@ pub fn node<T, S>(ast: &SpannedNode<S>) -> Result<T, Vec<DecodeError<S>>>
           S: ErrorSpan,
 {
     let mut ctx = Context::new();
-    match Decode::decode_node(ast, &mut ctx) {
+    match Decode::decode(ast, &mut ctx) {
         Ok(_) if ctx.has_errors() => {
             Err(ctx.into_errors())
         }

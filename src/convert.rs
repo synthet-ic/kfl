@@ -209,7 +209,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for SocketAddr {
             Literal::String(ref s) => {
                 match String::from(s.clone()).parse() {
                     Ok(value) => Ok(value),
-                    Err(_) => Err(DecodeError::scalar_kind(Kind::String, value))
+                    Err(e) => Err(DecodeError::conversion(value, e))
                 }
             }
             _ => {

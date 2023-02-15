@@ -7,44 +7,14 @@ use std::{
 use kfl::Decode;
 
 // #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct Arg1 {
-//     #[kfl(argument)]
-//     name: String,
-// }
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct Arg1RawIdent {
-//     #[kfl(argument)]
-//     r#type: String,
-// }
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
 // struct ArgDefOptValue {
 //     #[kfl(argument, default = Some("unnamed".into()))]
 //     name: Option<String>,
 // }
 
 // #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct OptArg {
-//     #[kfl(argument)]
-//     name: Option<String>,
-// }
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
 // struct Extra {
 //     field: String,
-// }
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq, Default)]
-// struct Prop1 {
-//     #[kfl(property)]
-//     label: String,
-// }
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq, Default)]
-// struct Prop1RawIdent {
-//     #[kfl(property)]
-//     r#type: String,
 // }
 
 // #[derive(kfl_derive::Decode, Debug, PartialEq)]
@@ -57,24 +27,6 @@ use kfl::Decode;
 // struct PropDefOptValue {
 //     #[kfl(property, default=Some("unknown".into()))]
 //     label: Option<String>,
-// }
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct FilteredChildren {
-//     #[kfl(children)]
-//     left: Vec<OptArg>,
-//     #[kfl(children)]
-//     right: Vec<OptArg>,
-// }
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct Child {
-//     #[kfl(child)]
-//     main: Prop1,
-//     #[kfl(child, default)]
-//     extra: Option<Prop1>,
-//     #[kfl(child)]
-//     flag: bool,
 // }
 
 // #[derive(kfl_derive::Decode, Debug, PartialEq)]
@@ -132,18 +84,26 @@ fn parse_argument_unnamed() {
         "additional argument is required");
 }
 
-// #[test]
-// fn parse_arg1_raw_ident() {
-//     assert_eq!(parse::<Arg1RawIdent>(r#"node "hello""#),
-//                Arg1RawIdent { r#type: "hello".into() } );
-//     assert_eq!(parse_err::<Arg1RawIdent>(r#"node "hello" "world""#),
-//                "unexpected argument");
-//     assert_eq!(parse_err::<Arg1RawIdent>(r#"(some)node "hello""#),
-//                "no type name expected for this node");
-//     assert_eq!(parse_err::<Arg1RawIdent>(r#"node"#),
-//                "additional argument `type` is required");
-// }
-
+#[test]
+fn parse_argument_raw_ident() {
+    #[derive(Decode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(argument)]
+        r#type: String,
+    }
+    assert_decode!(r#"node "hello""#,
+                   Node { r#type: "hello".into() });
+    assert_decode_error!(Node,
+        r#"node "hello" "world""#,
+        "unexpected argument");
+    // TODO(rnarkk)
+    // assert_decode_error!(Node,
+    //     r#"(some)node "hello""#,
+    //     "no type name expected for this node");
+    assert_decode_error!(Node,
+        r#"node"#,
+        "additional argument `type` is required");
+}
 
 #[test]
 fn parse_argument_default_named() {
@@ -250,15 +210,22 @@ fn parse_property_unnamed() {
         "property `name` is required");
 }
 
-// #[test]
-// fn parse_prop_raw_ident() {
-//     assert_eq!(parse::<Prop1RawIdent>(r#"node type="hello""#),
-//                Prop1RawIdent { r#type: "hello".into() } );
-//     assert_eq!(parse_err::<Prop1RawIdent>(r#"node type="hello" y="world""#),
-//                "unexpected property `y`");
-//     assert_eq!(parse_err::<Prop1RawIdent>(r#"node"#),
-//                "property `type` is required");
-// }
+#[test]
+fn parse_property_raw_ident() {
+    #[derive(Decode, Debug, PartialEq, Default)]
+    struct Node {
+        #[kfl(property)]
+        r#type: String,
+    }
+    assert_decode!(r#"node type="hello""#,
+                   Node { r#type: "hello".into() });
+    assert_decode_error!(Node,
+        r#"node type="hello" y="world""#,
+        "unexpected property `y`");
+    assert_decode_error!(Node,
+        r#"node"#,
+        "property `type` is required");
+}
 
 #[test]
 fn parse_property_default() {

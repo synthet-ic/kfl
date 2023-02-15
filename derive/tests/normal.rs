@@ -241,8 +241,7 @@ fn parse_property_unnamed() {
         #[kfl(property(name = "name"))]
         String,
     );
-
-    assert_parse::<Node>(
+    assert_parse!(
         r#"node name="hello""#,
         Node("hello".into()));
     assert_parse_err::<Node>(
@@ -270,11 +269,11 @@ fn parse_property_default() {
         #[kfl(property, default)]
         name: String,
     }
-
-    assert_eq!(parse::<Node>(r#"node name="hello""#),
-               Node { name: "hello".into() } );
-    assert_eq!(parse::<Node>(r#"node"#),
-               Node { name: "".into() });
+    assert_parse!(
+                 r#"node name="hello""#,
+                 Node { name: "hello".into() });
+    assert_parse!(r#"node"#,
+                  Node { name: "".into() });
 }
 
 // #[test]
@@ -299,9 +298,8 @@ fn parse_property_name() {
         #[kfl(property(name = "x"))]
         name: String,
     }
-
-    assert_eq!(parse::<Node>(r#"node x="hello""#),
-               Node { name: "hello".into() } );
+    assert_parse!(r#"node x="hello""#,
+                  Node { name: "hello".into() } );
     assert_eq!(parse_err::<Node>(r#"node label="hello" y="world""#),
         "unexpected property `label`");
     assert_eq!(parse_err::<Node>(r#"node"#),
@@ -315,12 +313,12 @@ fn parse_option_property() {
         #[kfl(property, default)]  /* TODO test without default */
         name: Option<String>,
     }
-    assert_eq!(parse::<Node>(r#"node name="hello""#),
-               Node { name: Some("hello".into()) } );
-    assert_eq!(parse::<Node>(r#"node"#),
-               Node { name: None } );
-    assert_eq!(parse::<Node>(r#"node name=null"#),
-               Node { name: None } );
+    assert_parse!(r#"node name="hello""#,
+                  Node { name: Some("hello".into()) } );
+    assert_parse!(r#"node"#,
+                  Node { name: None } );
+    assert_parse!(r#"node name=null"#,
+                  Node { name: None } );
 }
 
 #[test]

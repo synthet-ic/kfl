@@ -664,9 +664,6 @@ impl Attr {
         } else if lookahead.peek(kw::skip) {
             let _kw: kw::skip = input.parse()?;
             Ok(Attr::Skip)
-        } else if lookahead.peek(kw::str) {
-            let _kw: kw::str = input.parse()?;
-            Ok(Attr::DecodeMode(DecodeMode::Str))
         } else if lookahead.peek(kw::bytes) {
             let _kw: kw::bytes = input.parse()?;
             Ok(Attr::DecodeMode(DecodeMode::Bytes))

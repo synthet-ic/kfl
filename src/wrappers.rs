@@ -29,7 +29,7 @@ pub fn decode<T>(file_name: &str, text: &str) -> Result<T, DecodeError<Span>>
     where T: Decode<Span>,
 {
     let ast = parse_ast(file_name, text).unwrap();
-    let ctx = Context::new();
+    let mut ctx = Context::new();
     Decode::decode(&ast.nodes[0], &mut ctx)
 }
 

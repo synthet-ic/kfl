@@ -119,6 +119,9 @@ pub trait Encode {
 pub trait EncodePartial {
 }
 
+pub trait EncodeChildren {
+}
+
 pub trait EncodeScalar {
 }
 

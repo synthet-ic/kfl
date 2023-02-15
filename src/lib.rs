@@ -21,5 +21,5 @@ pub use kfl_derive::{Decode, DecodePartial, DecodeScalar};
 
 pub use wrappers::{parse_ast, parse, parse_with_context};
 pub use traits::{Decode, DecodePartial, DecodeScalar, DecodeChildren};
-pub use traits::{Encode, EncodePartial, EncodeScalar};
+pub use traits::{Encode, EncodePartial, EncodeScalar, EncodeChildren};
 pub use errors::Error;

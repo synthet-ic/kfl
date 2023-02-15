@@ -527,10 +527,9 @@ fn parse_child_default() {
                Parent {
                    child: Child { name: "val1".into() },
                });
-    assert_parse!(r#"parent"#,
-               Parent {
-                   child: Child { name: "".into() },
-               });
+    assert_parse!(
+        r#"parent"#,
+        Parent { child: Child { name: "".into() } });
 }
 
 #[test]
@@ -545,13 +544,11 @@ fn parse_child_default_value() {
         #[kfl(property)]
         label: String,
     }
-    assert_parse!r#"parent { child label="val1"; }"#,
-               Parent {
-                   main: Child { label: "val1".into() },
+    assert_parse!(r#"parent { child label="val1"; }"#,
+        Parent { main: Child { label: "val1".into() },
                });
-    assert_eq!(parse::<Parent>(r#"parent"#),
-               Parent {
-                   main: Child { label: "prop1".into() },
+    assert_parse!(r#"parent"#,
+        Parent { main: Child { label: "prop1".into() },
                });
 }
 
@@ -590,9 +587,9 @@ fn parse_str() {
         #[kfl(argument)]  /* str */
         listen: std::net::SocketAddr,
     }
-    assert_eq!(parse::<Node>(r#"node "127.0.0.1:8080""#),
+    assert_parse!(r#"node "127.0.0.1:8080""#,
                Node { listen: "127.0.0.1:8080".parse().unwrap() });
-    assert_eq!(parse_err::<Node>(r#"node "2/3""#),
+    assert_parse!(r#"node "2/3""#,
                "invalid socket address syntax");
 }
 
@@ -603,11 +600,11 @@ fn parse_option_str() {
         #[kfl(property, default)]  /* str */
         listen: Option<std::net::SocketAddr>,  /* TODO strip std::net:: */
     }
-    assert_eq!(parse::<Server>(r#"server listen="127.0.0.1:8080""#),
+    assert_parse!(r#"server listen="127.0.0.1:8080""#,
                Server { listen: Some("127.0.0.1:8080".parse().unwrap()) });
-    assert_eq!(parse_err::<Server>(r#"server listen="2/3""#),
+    assert_parse!(r#"server listen="2/3""#,
                "invalid socket address syntax");
-    assert_eq!(parse::<Server>(r#"server listen=null"#),
+    assert_parse!(r#"server listen=null"#,
                Server { listen: None });
 }
 

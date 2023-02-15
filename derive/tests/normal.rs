@@ -523,10 +523,9 @@ fn parse_child_default() {
         #[kfl(property)]
         name: String,
     }
-    assert_parse!(r#"parent { child name="val1"; }"#,
-               Parent {
-                   child: Child { name: "val1".into() },
-               });
+    assert_parse!(
+        r#"parent { child name="val1"; }"#,
+        Parent { child: Child { name: "val1".into() } });
     assert_parse!(
         r#"parent"#,
         Parent { child: Child { name: "".into() } });
@@ -589,7 +588,7 @@ fn parse_str() {
     }
     assert_parse!(r#"node "127.0.0.1:8080""#,
                Node { listen: "127.0.0.1:8080".parse().unwrap() });
-    assert_parse!(r#"node "2/3""#,
+    assert_parse_err::<Node>(r#"node "2/3""#,
                "invalid socket address syntax");
 }
 

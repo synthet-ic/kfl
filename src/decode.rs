@@ -8,7 +8,7 @@ use std::{
     fmt::Display
 };
 
-#[cfg(feature="base64")] 
+#[cfg(feature = "base64")] 
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 
 use crate::{

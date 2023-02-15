@@ -207,8 +207,7 @@ pub(crate) fn decode_enum_item(s: &Common,
     })
 }
 
-fn decode_value(val: &syn::Ident, ctx: &syn::Ident, mode: &DecodeMode,
-                ty: &syn::Type)
+fn decode_value(val: &syn::Ident, ctx: &syn::Ident, mode: &DecodeMode)
     -> syn::Result<TokenStream>
 {
     match mode {
@@ -294,7 +293,7 @@ fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     for arg in &s.object.arguments {
         let fld = &arg.field.tmp_name;
         let val = syn::Ident::new("val", Span::mixed_site());
-        let decode_value = decode_value(&val, ctx, &arg.decode, &arg.field.ty)?;
+        let decode_value = decode_value(&val, ctx, &arg.decode)?;
         match &arg.default {
             None => {
                 let error = if arg.field.is_indexed() {
@@ -375,8 +374,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
                 => {}
             });
         } else {
-            let decode_value = decode_value(&val, ctx, &prop.decode,
-                                            &prop.field.ty)?;
+            let decode_value = decode_value(&val, ctx, &prop.decode)?;
             declare_empty.push(quote! {
                 let mut #fld = None;
                 let mut #seen_name = false;

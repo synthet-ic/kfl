@@ -298,7 +298,7 @@ fn parse_property_name() {
         name: String,
     }
     assert_parse!(r#"node x="hello""#,
-                  Node { name: "hello".into() } );
+                  Node { name: "hello".into() });
     assert_parse_err::<Node>(r#"node label="hello" y="world""#),
         "unexpected property `label`");
     assert_parse_err::<Node>(r#"node"#),
@@ -313,11 +313,11 @@ fn parse_option_property() {
         name: Option<String>,
     }
     assert_parse!(r#"node name="hello""#,
-                  Node { name: Some("hello".into()) } );
+                  Node { name: Some("hello".into()) });
     assert_parse!(r#"node"#,
-                  Node { name: None } );
+                  Node { name: None });
     assert_parse!(r#"node name=null"#,
-                  Node { name: None } );
+                  Node { name: None });
 }
 
 #[test]
@@ -328,9 +328,9 @@ fn parse_var_arguments() {
         params: Vec<u64>,
     }
     assert_parse!(r#"node 1 2 3"#,
-                  Node { params: vec![1, 2, 3] } );
+                  Node { params: vec![1, 2, 3] });
     assert_parse!(r#"node"#,
-                  Node { params: vec![] } );
+                  Node { params: vec![] });
 }
 
 #[test]

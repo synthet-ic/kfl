@@ -42,7 +42,7 @@ fn parse_flatten() {
         #[kfl(flatten)]
         intermediate: Intermediate,
     }
-    assert_parse::<Parent>(
+    assert_parse!(
         r#"parent {
             child2 "v2"
             child1 "v1"
@@ -90,7 +90,7 @@ fn parse_flatten_flatten() {
         #[kfl(flatten)]
         intermediate: Intermediate1,
     }
-    assert_parse::<Parent>(
+    assert_parse!(
         r#"parent {
             child2 "v2"
             child1 "v1"

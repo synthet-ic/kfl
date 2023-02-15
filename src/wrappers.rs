@@ -61,9 +61,10 @@ pub fn parse_with_context<T, S, F>(file_name: &str, text: &str, set_ctx: F)
     })
 }
 
+/*
 /// Encode Rust object and print KDL text
 pub fn print<T>(file_name: &str, document: T) -> Result<String, Error>
-    where T: EncodeChildren<Span, DecodeChildren<Span>>,
+    where T: EncodeChildren<Span, _>,
 {
     print_with_context(file_name, document, |_| {})
 }
@@ -73,11 +74,12 @@ pub fn print<T>(file_name: &str, document: T) -> Result<String, Error>
 pub fn print_with_context<T, S, F>(file_name: &str, document: T, set_ctx: F)
     -> Result<String, Error>
     where F: FnOnce(&mut Context<S>),
-          T: EncodeChildren<S, DecodeChildren<S>>,
+          T: EncodeChildren<S, _>,
           S: traits::Span,
 {
     Err(Error::)
 }
+*/
 
 #[test]
 fn normal() {

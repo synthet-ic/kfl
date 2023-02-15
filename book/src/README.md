@@ -1,7 +1,7 @@
 # KFL
 
 - Nominal Typing
-- Trait-Specific
+- Trait-Based
 
 # TODO
 

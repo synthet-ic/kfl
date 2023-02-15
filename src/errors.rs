@@ -151,9 +151,11 @@ pub enum DecodeError<S: ErrorSpan> {
     Custom(Box<dyn std::error::Error + Send + Sync + 'static>),
 }
 
+///
 #[derive(Debug, Diagnostic, Error)]
 #[non_exhaustive]
 pub enum EncodeError<S: ErrorSpan> {
+    ///
     #[diagnostic()]
     #[error("{}", message)]
     Unexpected {
@@ -165,11 +167,13 @@ pub enum EncodeError<S: ErrorSpan> {
         /// Description of the error
         message: String,
     },
+    ///
     #[diagnostic()]
     #[error(transparent)]
     Custom(Box<dyn std::error::Error + Send + Sync + 'static>)
 }
 
+///
 #[derive(Clone, Debug, PartialOrd, Ord, PartialEq, Eq)]
 pub(crate) enum TokenFormat {
     Char(char),
@@ -224,8 +228,10 @@ pub(crate) enum ParseError<S: ErrorSpan> {
     },
 }
 
+///
 #[derive(Debug, Diagnostic, Error)]
 pub(crate) enum PrintError<S: ErrorSpan> {
+    ///
     #[diagnostic()]
     #[error("{}", message)]
     Unexpected {

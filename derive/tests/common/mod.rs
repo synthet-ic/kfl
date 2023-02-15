@@ -16,7 +16,7 @@ pub fn hint_same_type<T>(lhs: &T, rhs: &T) {}
 #[macro_export]
 macro_rules! assert_parse {
     ($input:literal, $output:expr) => {
-        let mut node = kfl::decode("<test>", $input).unwrap();
+        let node = kfl::decode("<test>", $input).unwrap();
         common::hint_same_type(&node, &$output);
         assert!(node == $output);
     }

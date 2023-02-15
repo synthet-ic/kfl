@@ -156,7 +156,7 @@ pub enum DecodeError<S: ErrorSpan> {
 pub enum EncodeError<S: ErrorSpan> {
     #[diagnostic()]
     #[error(transparent)]
-    Custom
+    Custom(Box<dyn std::error::Error + Send + Sync + 'static>)
 }
 
 #[derive(Clone, Debug, PartialOrd, Ord, PartialEq, Eq)]

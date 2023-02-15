@@ -1,10 +1,3 @@
-// use std::fmt::Debug;
-// use kfl::{
-//     Decode, DecodeChildren,
-//     span::Span
-// };
-// use miette::Diagnostic;
-
 pub fn hint_same_type<T>(_lhs: &T, _rhs: &T) {}
 
 #[macro_export]
@@ -25,24 +18,24 @@ macro_rules! assert_decode_error {
     }
 }
 
-/*
-pub fn parse_doc<T>(input: &str) -> T
-    where T: DecodeChildren<Span>
-{
-    kfl::parse("<test>", input).unwrap()
+#[macro_export]
+macro_rules! assert_decode_children {
+    ($input:literal, $output:expr) => {
+        let node = kfl::decode_children("<test>", $input).unwrap();
+        let output = $output;
+        common::hint_same_type(&node, &output);
+        assert!(node == output);
+    }
 }
 
-pub fn assert_parse_doc<T>(input: &str, output: T)
-    where T: DecodeChildren<Span> + Debug + PartialEq
-{
-    let node = parse_doc::<T>(input);
-    assert_eq!(node, output);
+#[macro_export]
+macro_rules! assert_decode_children_error {
+    ($ty:ty, $input:literal, $output:literal) => {
+        let err = kfl::decode_children::<$ty>("<test>", $input)
+            .unwrap_err();
+        let err = <kfl::Error as miette::Diagnostic>::related(&err).unwrap()
+            .map(|e| e.to_string()).collect::<Vec<_>>()
+            .join("\n");
+        assert_eq!(err, $output);
+    }
 }
-
-pub fn parse_doc_err<T: DecodeChildren<Span> + Debug>(text: &str) -> String {
-    let err = kfl::parse::<T>("<test>", text).unwrap_err();
-    err.related().unwrap()
-        .map(|e| e.to_string()).collect::<Vec<_>>()
-        .join("\n")
-}
-*/

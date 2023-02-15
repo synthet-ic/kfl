@@ -2,7 +2,7 @@ mod common;
 
 use std::{
     collections::BTreeMap,
-    default::Default
+    default::Default,
 };
 use kfl::Decode;
 
@@ -417,8 +417,6 @@ fn parse_child() {
         child1: Child1,
         #[kfl(child, default)]
         child2: Option<Child2>,
-        // #[kfl(child)]
-        // flag: bool,
     }
     #[derive(Decode, Debug, PartialEq, Default)]
     struct Child1 {
@@ -435,44 +433,43 @@ fn parse_child() {
         Parent {
             child1: Child1 { name: "val1".into() },
             child2: None,
-            // flag: false,
         });
-//     assert_eq!(parse::<Child>(r#"parent {
-//                     main label="primary";
-//                     extra label="replica";
-//                  }"#),
-//                Child {
-//                    main: Prop1 { label: "primary".into() },
-//                    extra: Some(Prop1 { label: "replica".into() }),
-//                    flag: false,
-//                });
-//     assert_eq!(parse_err::<Child>(r#"parent { something; }"#),
-//                "unexpected node `something`\n\
-//                 child node `main` is required");
-//     assert_eq!(parse_err::<Child>(r#"parent"#),
-//                "child node `main` is required");
-
-//     assert_eq!(parse_doc::<Child>(r#"main label="val1""#),
-//                Child {
-//                    main: Prop1 { label: "val1".into() },
-//                    extra: None,
-//                    flag: false,
-//                });
-//     assert_eq!(parse_doc::<Child>(r#"
-//                     main label="primary"
-//                     extra label="replica"
-//                     flag
-//                  "#),
-//                Child {
-//                    main: Prop1 { label: "primary".into() },
-//                    extra: Some(Prop1 { label: "replica".into() }),
-//                    flag: true,
-//                });
-//     assert_eq!(parse_doc_err::<Child>(r#"something"#),
-//                "unexpected node `something`\n\
-//                 child node `main` is required");
-//     assert_eq!(parse_doc_err::<Child>(r#""#),
-//                "child node `main` is required");
+    assert_decode!(
+        r#"parent {
+            child1 name="primary";
+            child2 name="replica";
+         }"#,
+         Parent {
+            child1: Child1 { name: "primary".into() },
+            child2: Some(Child2 { name: "replica".into() }),
+        });
+    // assert_decode_error!(Parent,
+    //     r#"parent { something; }"#,
+    //     "unexpected node `something`\n\
+    //     child node `child1` is required");
+    // assert_decode_error!(Parent,
+    //     r#"parent"#,
+    //     "child node `child1` is required");
+    assert_decode_children!(
+        r#"child1 name="val1""#,
+        Parent {
+            child1: Child1 { name: "val1".into() },
+            child2: None,
+        });
+    assert_decode_children!(
+        r#"child1 name="primary"
+        child2 name="replica""#,
+        Parent {
+            child1: Child1 { name: "primary".into() },
+            child2: Some(Child2 { name: "replica".into() }),
+        });
+    assert_decode_children_error!(Parent,
+        r#"something"#,
+        "unexpected node `something`\n\
+        child node for struct field `child1` is required");
+    assert_decode_children_error!(Parent,
+        r#""#,
+        "child node for struct field `child1` is required");
 }
 
 #[test]

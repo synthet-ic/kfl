@@ -567,7 +567,6 @@ fn decode_children(s: &Common, children: &syn::Ident,
     let child = syn::Ident::new("child", Span::mixed_site());
     for child_def in &s.object.children {
         let fld = &child_def.field.tmp_name;
-        let child_name = &s.object.ident.to_string();
         let ty = &child_def.field.ty;
         match child_def.mode {
             ChildMode::Flatten => {
@@ -623,8 +622,9 @@ fn decode_children(s: &Common, children: &syn::Ident,
                         None
                     }
                 });
-                let req_msg = format!("child node for field `{}` is required",
-                                      child_name);
+                let req_msg = format!(
+                    "child node for struct field `{}` is required",
+                    &fld.unraw().to_string());
                 if let Some(default_value) = &child_def.default {
                     let default = if let Some(expr) = default_value {
                         quote!(#expr)

@@ -48,7 +48,7 @@ impl<S, T> Decode<S> for SpannedNode<T>
     {
         Ok(Spanned {
             span: DecodeSpan::decode_span(&node.span, ctx),
-            value: Decode::decode_node(node, ctx)?,
+            value: Decode::decode(node, ctx)?,
         })
     }
 }

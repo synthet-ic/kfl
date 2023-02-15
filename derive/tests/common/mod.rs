@@ -11,12 +11,13 @@ pub fn parse<T: Decode<Span>>(input: &str) -> T {
     nodes.remove(0)
 }
 
-pub fn assert_parse<T>(input: &str, output: T)
-    where T: Decode<Span> + Debug + PartialEq
-{
-    let mut nodes: Vec<T> = kfl::parse("<test>", input).unwrap();
-    assert_eq!(nodes.len(), 1);
-    assert_eq!(nodes.remove(0), output);
+#[macro_export]
+macro_rules! assert_parse {
+    ($input:literal, $output:expr) => {
+        let mut nodes: Vec<_> = kfl::parse("<test>", $input).unwrap();
+        assert_eq!(nodes.len(), 1);
+        assert_eq!(nodes.remove(0), $output);
+    }
 }
 
 pub fn parse_err<T: Decode<Span> + Debug>(input: &str) -> String {

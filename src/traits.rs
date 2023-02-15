@@ -130,11 +130,7 @@ pub trait EncodeChildren<S: ErrorSpan, T: DecodeChildren<S>> {
 
 pub trait EncodeScalar<S: ErrorSpan, T: DecodeScalar<S>>: Sized {
     fn encode(scalar: &T, ctx: &mut Context<S>)
-        -> Result<Value<S>, EncodeError<S>>
-    {
-        Self::value_check(&value.type_name, ctx);
-        Self::raw_encode(&value.literal, ctx)
-    }
+        -> Result<Value<S>, EncodeError<S>>;
 }
 
 #[allow(missing_debug_implementations)]

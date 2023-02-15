@@ -1,8 +1,8 @@
 #![doc = include_str!("../README.md")]
 #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
-#![feature(try_trait_v2)]
-#![feature(never_type)]
+// #![feature(try_trait_v2)]
+// #![feature(never_type)]
 
 mod containers;
 mod convert;

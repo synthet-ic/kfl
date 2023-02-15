@@ -601,7 +601,7 @@ fn parse_option_str() {
     }
     assert_parse!(r#"server listen="127.0.0.1:8080""#,
                Server { listen: Some("127.0.0.1:8080".parse().unwrap()) });
-    assert_parse!(r#"server listen="2/3""#,
+    assert_parse_err::<Server>(r#"server listen="2/3""#,
                "invalid socket address syntax");
     assert_parse!(r#"server listen=null"#,
                Server { listen: None });

@@ -1,8 +1,7 @@
 mod common;
 
 use kfl::{Decode, DecodePartial};
-
-use common::{assert_parse, assert_parse_err};
+use common::assert_parse_err;
 
 #[derive(Decode, Debug, PartialEq)]
 struct Child1(#[kfl(argument)] String);

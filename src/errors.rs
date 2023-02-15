@@ -152,6 +152,7 @@ pub enum DecodeError<S: ErrorSpan> {
 }
 
 ///
+#[allow(dead_code)]
 #[derive(Debug, Diagnostic, Error)]
 #[non_exhaustive]
 pub enum EncodeError<S: ErrorSpan> {

@@ -1,7 +1,7 @@
 mod common;
 
 use kfl::{Decode, DecodeScalar};
-use common::{assert_parse, assert_parse_err};
+use common::assert_parse_err;
 
 // #[derive(Decode, Default, Debug, PartialEq)]
 // struct Prop1 {

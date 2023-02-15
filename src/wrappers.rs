@@ -73,9 +73,10 @@ pub fn print<T>(file_name: &str, document: T) -> Result<String, Error>
 pub fn print_with_context<T, S, F>(file_name: &str, document: T, set_ctx: F)
     -> Result<String, Error>
     where F: FnOnce(&mut Context<S>),
-          T: DecodeChildren<S>,
+          T: EncodeChildren<S>,
           S: traits::Span,
 {
+    Err(Error::)
 }
 
 #[test]

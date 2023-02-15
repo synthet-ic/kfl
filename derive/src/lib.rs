@@ -44,7 +44,6 @@ pub fn decode_derive(input: proc_macro::TokenStream)
 
 #[proc_macro_error::proc_macro_error]
 #[proc_macro_derive(DecodePartial, attributes(kfl))]
-// #[doc = include_str!("../derive_decode.md")]
 pub fn decode_partial_derive(input: proc_macro::TokenStream)
     -> proc_macro::TokenStream
 {

@@ -119,7 +119,9 @@ pub trait Encode {
 pub trait EncodePartial {
 }
 
-pub trait EncodeChildren {
+pub trait EncodeChildren<S: ErrorSpan, T: Decode<S>> {
+    fn encode_children(nodes: &[T], ctx: &mut Context<S>)
+        -> Result<Vec<SpannedNode<S>>, EncodeError<S>>;
 }
 
 pub trait EncodeScalar {

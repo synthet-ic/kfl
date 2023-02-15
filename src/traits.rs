@@ -118,7 +118,7 @@ pub trait Encode<S: ErrorSpan, T: Decode<S>> {
         -> Result<SpannedNode<S>, EncodeError<S>>;
 }
 
-pub trait EncodePartial<S: ErrorSpan, T: DecodePartial<S> {
+pub trait EncodePartial<S: ErrorSpan, T: DecodePartial<S>> {
     fn encode_partial(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<bool, EncodeError<S>>;
 }

@@ -10,7 +10,7 @@ impl<S, T> Decode<S> for Node<T>
     where S: Span,
           T: DecodeSpan<S>
 {
-    fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn decode(node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
         Ok(Node {
@@ -43,7 +43,7 @@ impl<S, T> Decode<S> for SpannedNode<T>
     where S: Span,
           T: DecodeSpan<S>
 {
-    fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn decode(node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
         Ok(Spanned {

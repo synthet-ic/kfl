@@ -17,6 +17,7 @@
   - benefit: form of type path doesn't matter 
 - unwrap
 - `NewType` for structs and `Nested` for enums
+- `str` and `bytes` → simply implement `DecodeScalar` for `SocketAddr` and `Vec<u8>`
 
 # TODO
 

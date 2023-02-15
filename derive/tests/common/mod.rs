@@ -12,9 +12,9 @@ pub fn parse<T: Decode<Span>>(input: &str) -> T {
     nodes.remove(0)
 }
 */
-
-#[allow(unused)]
-pub fn hint_same_type<T>(lhs: &T, rhs: &T) {}
+ 
+// #[allow(unused)]
+pub fn hint_same_type<T>(_lhs: &T, _rhs: &T) {}
 
 #[macro_export]
 macro_rules! assert_parse {

@@ -37,10 +37,10 @@ struct Node {
 
 #[test]
 fn parse_some_scalar() {
-    assert_parse::<Node>(
+    assert_parse!(
         r#"node "first""#,
         Node { value: SomeScalar::First });
-    assert_parse::<Node>(
+    assert_parse!(
         r#"node "another-option""#,
         Node { value: SomeScalar::AnotherOption });
     assert_parse_err::<Node>(
@@ -55,15 +55,14 @@ fn parse_option_argument() {
         #[kfl(argument)]
         name: Option<String>,
     }
-
-    assert_parse::<Node>(
+    assert_parse!(
         r#"node "hello""#,
         Node { name: Some("hello".into()) });
-    // TODO(rnarkk) 
-    // assert_parse::<Node>(
+    // TODO(rnarkk) should fail since no `default` directive
+    // assert_parse!(
     //     r#"node"#,
     //     Node { name: None });
-    assert_parse::<Node>(
+    assert_parse!(
         r#"node null"#,
         Node { name: None });
 }

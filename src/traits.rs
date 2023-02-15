@@ -113,7 +113,7 @@ impl<T> ErrorSpan for T
 /// [`DecodeSpan`] to convert spans whenever needed.
 pub trait Span: sealed::Sealed + chumsky::Span + ErrorSpan {}
 
-pub trait Encode<S: ErrorSpan, T: Decode<S>> {
+pub trait Encode<S: ErrorSpan, T: Decode<S>>: Sized {
     fn encode(node: &T, ctx: &mut Context<S>)
         -> Result<SpannedNode<S>, EncodeError<S>>;
 }

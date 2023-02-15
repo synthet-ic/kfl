@@ -217,47 +217,6 @@ fn decode_value(val: &syn::Ident, ctx: &syn::Ident, mode: &DecodeMode,
                 ::kfl::traits::DecodeScalar::decode(#val, #ctx)
             })
         }
-        DecodeMode::Str => {
-            Ok(quote![{
-                if let Some(typ) = &#val.type_name {
-                    #ctx.emit_error(::kfl::errors::DecodeError::TypeName {
-                        span: typ.span().clone(),
-                        found: Some((**typ).clone()),
-                        expected: ::kfl::errors::ExpectedType::no_type(),
-                        rust_type: "str", // TODO(tailhook) show field type
-                    });
-                }
-                match *#val.literal {
-                    ::kfl::ast::Literal::String(ref s) => {
-                        ::std::str::FromStr::from_str(s).map_err(|e| {
-                            ::kfl::errors::DecodeError::conversion(
-                                &#val.literal, e)
-                        })
-                    }
-                    _ => Err(::kfl::errors::DecodeError::scalar_kind(
-                        ::kfl::decode::Kind::String,
-                        &#val.literal,
-                    )),
-                }
-            }])
-        }
-        // DecodeMode::Bytes if optional => {
-        //     Ok(quote! {
-        //         if matches!(&*#val.literal, ::kfl::ast::Literal::Null) {
-        //             Ok(None)
-        //         } else {
-        //             match ::kfl::decode::bytes(#val, #ctx).try_into() {
-        //                 Ok(v) => Ok(Some(v)),
-        //                 Err(e) => {
-        //                     #ctx.emit_error(
-        //                         ::kfl::errors::DecodeError::conversion(
-        //                             &#val.literal, e));
-        //                     Ok(None)
-        //                 }
-        //             }
-        //         }
-        //     })
-        // }
         DecodeMode::Bytes => {
             Ok(quote! {
                 ::kfl::decode::bytes(#val, #ctx).try_into()

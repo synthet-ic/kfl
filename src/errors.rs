@@ -152,8 +152,11 @@ pub enum DecodeError<S: ErrorSpan> {
 }
 
 #[derive(Debug, Diagnostic, Error)]
+#[non_exhaustive]
 pub enum EncodeError<S: ErrorSpan> {
-    
+    #[diagnostic()]
+    #[error(transparent)]
+    Custom
 }
 
 #[derive(Clone, Debug, PartialOrd, Ord, PartialEq, Eq)]

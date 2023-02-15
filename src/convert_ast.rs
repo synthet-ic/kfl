@@ -30,7 +30,7 @@ impl<S, T> Decode<S> for Node<T>
                     value: sc.iter()
                         .map(|node| Ok(Spanned {
                             span: DecodeSpan::decode_span(&node.span, ctx),
-                            value: Decode::decode_node(node, ctx)?,
+                            value: Decode::decode(node, ctx)?,
                         }))
                         .collect::<Result<_, _>>()?,
                 })

@@ -102,7 +102,7 @@ impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Arc<T> {
 }
 
 impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Rc<T> {
-    fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn decode(node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
         <T as Decode<S>>::decode(node, ctx).map(Rc::new)
@@ -148,7 +148,7 @@ impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Rc<T> {
 }
 
 impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Vec<T> {
-    fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn decode(node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
         <T as Decode<S>>::decode(node, ctx).map(|node| vec![node])
@@ -185,7 +185,7 @@ impl<S: ErrorSpan, T: Decode<S>> DecodeChildren<S> for Vec<T> {
 }
 
 impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Option<T> {
-    fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn decode(node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
         <T as Decode<S>>::decode(node, ctx).map(|node| Some(node))

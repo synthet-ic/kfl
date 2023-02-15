@@ -28,7 +28,7 @@ pub fn parse_ast<S: traits::Span>(file_name: &str, text: &str)
 pub fn decode<T>(file_name: &str, text: &str) -> Result<T, DecodeError<Span>>
     where T: Decode<Span>,
 {
-    let ast = parse_ast(file_name, text).unrwap();
+    let ast = parse_ast(file_name, text).unwrap();
     let ctx = Context::new();
     Decode::decode(&ast.nodes[0], &mut ctx)
 }

@@ -11,10 +11,14 @@ pub fn parse<T: Decode<Span>>(input: &str) -> T {
     nodes.remove(0)
 }
 
+#[cfg(test)]
+fn same<T: PartialEq>(lhs: &T, rhs: &T) {}
+
 #[macro_export]
 macro_rules! assert_parse {
     ($input:literal, $output:expr) => {
         let mut node = kfl::decode("<test>", $input).unwrap();
+        same_type(&node, &$output);
         assert!(node == $output);
     }
 }

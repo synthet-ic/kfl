@@ -217,37 +217,6 @@ fn decode_value(val: &syn::Ident, ctx: &syn::Ident, mode: &DecodeMode,
                 ::kfl::traits::DecodeScalar::decode(#val, #ctx)
             })
         }
-        // DecodeMode::Str if optional => {
-        //     Ok(quote![{
-        //         if let Some(typ) = &#val.type_name {
-        //             #ctx.emit_error(::kfl::errors::DecodeError::TypeName {
-        //                 span: typ.span().clone(),
-        //                 found: Some((**typ).clone()),
-        //                 expected: ::kfl::errors::ExpectedType::no_type(),
-        //                 rust_type: "str", // TODO(tailhook) show field type
-        //             });
-        //         }
-        //         match *#val.literal {
-        //             ::kfl::ast::Literal::String(ref s) => {
-        //                 ::std::str::FromStr::from_str(s).map_err(|e| {
-        //                     ::kfl::errors::DecodeError::conversion(
-        //                         &#val.literal, e)
-        //                 })
-        //                 .map(Some)
-        //             }
-        //             ::kfl::ast::Literal::Null => Ok(None),
-        //             _ => {
-        //                 #ctx.emit_error(
-        //                     ::kfl::errors::DecodeError::scalar_kind(
-        //                         ::kfl::decode::Kind::String,
-        //                         &#val.literal,
-        //                     )
-        //                 );
-        //                 Ok(None)
-        //             }
-        //         }
-        //     }])
-        // }
         DecodeMode::Str => {
             Ok(quote![{
                 if let Some(typ) = &#val.type_name {

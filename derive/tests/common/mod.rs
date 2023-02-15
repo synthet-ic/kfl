@@ -14,9 +14,8 @@ pub fn parse<T: Decode<Span>>(input: &str) -> T {
 #[macro_export]
 macro_rules! assert_parse {
     ($input:literal, $output:expr) => {
-        let mut nodes = kfl::parse::<Vec<_>>("<test>", $input).unwrap();
-        assert_eq!(nodes.len(), 1);
-        assert!(nodes.remove(0) == $output);
+        let mut node = kfl::decode("<test>", $input).unwrap();
+        assert!(node == $output);
     }
 }
 

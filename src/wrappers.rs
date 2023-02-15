@@ -68,6 +68,16 @@ pub fn print<T>(file_name: &str, document: T) -> Result<String, Error>
     print_with_context(file_name, document, |_| {})
 }
 
+/// Decode Rust object providing extra context for the
+/// decoder and print KDL text
+pub fn print_with_context<T, S, F>(file_name: &str, document: T, set_ctx: F)
+    -> Result<String, Error>
+    where F: FnOnce(&mut Context<S>),
+          T: DecodeChildren<S>,
+          S: traits::Span,
+{
+}
+
 #[test]
 fn normal() {
     let doc = parse_ast::<Span>("embedded.kdl", r#"node "hello""#).unwrap();

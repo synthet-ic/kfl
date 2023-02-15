@@ -30,7 +30,7 @@ pub fn decode<T>(file_name: &str, text: &str) -> Result<T, Error>
 {
     let ast = parse_ast(file_name, text)?;
     let ctx = Context::new();
-    Decode::decode(ast.nodes[0], &mut ctx)
+    Decode::decode(&ast.nodes[0], &mut ctx)
 }
 
 /// Parse KDL text and decode Rust object

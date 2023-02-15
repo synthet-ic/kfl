@@ -327,10 +327,10 @@ fn parse_var_arguments() {
         #[kfl(arguments)]
         params: Vec<u64>,
     }
-    assert_eq!(parse::<Node>(r#"node 1 2 3"#),
-               Node { params: vec![1, 2, 3] } );
-    assert_eq!(parse::<Node>(r#"node"#),
-               Node { params: vec![] } );
+    assert_parse!(r#"node 1 2 3"#,
+                  Node { params: vec![1, 2, 3] } );
+    assert_parse!(r#"node"#,
+                  Node { params: vec![] } );
 }
 
 #[test]

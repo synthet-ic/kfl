@@ -269,9 +269,8 @@ fn parse_property_default() {
         #[kfl(property, default)]
         name: String,
     }
-    assert_parse!(
-                 r#"node name="hello""#,
-                 Node { name: "hello".into() });
+    assert_parse!(r#"node name="hello""#,
+                  Node { name: "hello".into() });
     assert_parse!(r#"node"#,
                   Node { name: "".into() });
 }
@@ -344,10 +343,10 @@ fn parse_var_properties() {
     let mut scores = BTreeMap::new();
     scores.insert("john".into(), 13);
     scores.insert("jack".into(), 7);
-    assert_eq!(parse::<Node>(r#"node john=13 jack=7"#),
-               Node { scores } );
-    assert_eq!(parse::<Node>(r#"node"#),
-               Node { scores: BTreeMap::new() } );
+    assert_parse!(r#"node john=13 jack=7"#,
+                  Node { scores });
+    assert_parse!(r#"node"#,
+                  Node { scores: BTreeMap::new() });
 }
 
 #[test]
@@ -362,15 +361,14 @@ fn parse_children() {
         #[kfl(argument)]
         name: String,
     }
-
-    assert_parse::<Parent>(
+    assert_parse!(
         r#"parent { child "val1"; child "val2"; }"#,
         Parent { children: vec![
             Child { name: "val1".into() },
             Child { name: "val2".into() },
         ]}
     );
-    assert_parse::<Parent>(
+    assert_parse!(
         r#"parent"#,
         Parent { children: vec![]});
 
@@ -402,8 +400,7 @@ fn parse_filtered_children() {
         #[kfl(argument, default)]
         name: Option<String>,
     }
-
-    assert_parse::<Parent>(
+    assert_parse!(
         r#"parent { left "v1"; right "v2"; left "v3"; }"#,
         Parent {
             lefts: vec![
@@ -415,7 +412,7 @@ fn parse_filtered_children() {
             ]
         }
     );
-    assert_parse::<Parent>(
+    assert_parse!(
         r#"parent { right; left; }"#,
         Parent {
             lefts: vec![Left { name: None }],
@@ -469,15 +466,13 @@ fn parse_child() {
         #[kfl(property)]
         name: String,
     }
-
-    assert_parse::<Parent>(
+    assert_parse!(
         r#"parent { child1 name="val1"; }"#,
         Parent {
             child1: Child1 { name: "val1".into() },
             child2: None,
             // flag: false,
-        }
-    );
+        });
 //     assert_eq!(parse::<Child>(r#"parent {
 //                     main label="primary";
 //                     extra label="replica";
@@ -528,7 +523,6 @@ fn parse_child_default() {
         #[kfl(property)]
         name: String,
     }
-
     assert_eq!(parse::<Parent>(r#"parent { child name="val1"; }"#),
                Parent {
                    child: Child { name: "val1".into() },

@@ -4,7 +4,7 @@ use miette::NamedSource;
 use crate::{
     ast::Document,
     decode::Context,
-    errors::Error,
+    errors::{DecodeError, Error},
     grammar,
     span::Span,
     traits::{self, Decode, DecodeChildren}
@@ -12,7 +12,7 @@ use crate::{
 
 /// Parse KDL text and return AST
 pub fn parse_ast<S: traits::Span>(file_name: &str, text: &str)
-    -> Result<Document<S>, Error>
+    -> Result<Document<S>, DecodeError<S>>
 {
     grammar::document()
     .parse(S::stream(text))

@@ -25,7 +25,7 @@ pub fn parse_ast<S: traits::Span>(file_name: &str, text: &str)
 }
 
 /// Parse KDL text and decode Rust object
-pub fn decode<T>(file_name: &str, text: &str) -> Result<T, DecodeError<S>>
+pub fn decode<T>(file_name: &str, text: &str) -> Result<T, DecodeError<Span>>
     where T: Decode<Span>,
 {
     let ast = parse_ast(file_name, text)?;

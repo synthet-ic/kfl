@@ -523,11 +523,11 @@ fn parse_child_default() {
         #[kfl(property)]
         name: String,
     }
-    assert_eq!(parse::<Parent>(r#"parent { child name="val1"; }"#),
+    assert_parse!(r#"parent { child name="val1"; }"#,
                Parent {
                    child: Child { name: "val1".into() },
                });
-    assert_eq!(parse::<Parent>(r#"parent"#),
+    assert_parse!(r#"parent"#,
                Parent {
                    child: Child { name: "".into() },
                });
@@ -545,7 +545,7 @@ fn parse_child_default_value() {
         #[kfl(property)]
         label: String,
     }
-    assert_eq!(parse::<Parent>(r#"parent { child label="val1"; }"#),
+    assert_parse!r#"parent { child label="val1"; }"#,
                Parent {
                    main: Child { label: "val1".into() },
                });

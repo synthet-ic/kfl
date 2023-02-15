@@ -65,7 +65,7 @@ struct Plugin {
 }
 
 # fn main() -> miette::Result<()> {
-let config = kfl::parse::<Config>("example.kdl", r#"
+let config = kfl::decode_children::<Config>("example.kdl", r#"
     route "/api" {
         route "/api/v1"
     }
@@ -88,7 +88,7 @@ struct Document {
     plugins: Vec<Plugin>,
 }
 
-let config = kfl::parse::<Document>("example.kdl", r#"
+let config = kfl::decode_children::<Document>("example.kdl", r#"
     version "2.0"
     route "/api" {
         route "/api/v1"

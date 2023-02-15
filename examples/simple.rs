@@ -27,7 +27,7 @@ fn main() -> miette::Result<()> {
     let mut buf = String::new();
     println!("Please type KDL document, press Return, Ctrl+D to finish");
     std::io::stdin().read_to_string(&mut buf).into_diagnostic()?;
-    let cfg: Config = kfl::parse("<stdin>", &buf)?;
+    let cfg: Config = kfl::decode_children("<stdin>", &buf)?;
     println!("{:#?}", cfg);
     Ok(())
 }

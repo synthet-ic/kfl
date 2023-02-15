@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 use kfl::{
-    Decode, DecodeChildren,
+    Decode,  // DecodeChildren,
     span::Span
 };
 use miette::Diagnostic;
@@ -13,15 +13,15 @@ pub fn parse<T: Decode<Span>>(input: &str) -> T {
 }
 */
  
-// #[allow(unused)]
 pub fn hint_same_type<T>(_lhs: &T, _rhs: &T) {}
 
 #[macro_export]
 macro_rules! assert_parse {
     ($input:literal, $output:expr) => {
         let node = kfl::decode("<test>", $input).unwrap();
-        common::hint_same_type(&node, &$output);
-        assert!(node == $output);
+        let output = $output;
+        common::hint_same_type(&node, &output);
+        assert!(node == output);
     }
 }
 
@@ -37,7 +37,7 @@ pub fn parse_err<T: Decode<Span> + Debug>(input: &str) -> String {
 pub fn assert_parse_err<T>(input: &str, output: &str)
     where T: Decode<Span> + Debug + PartialEq
 {
-    let err = kfl::parse::<Vec<T>>("<test>", input).unwrap_err()
+    let err = kfl::decode_children::<Vec<T>>("<test>", input).unwrap_err()
         .related().unwrap()
         .map(|e| e.to_string()).collect::<Vec<_>>()
         .join("\n");

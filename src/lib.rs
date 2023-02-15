@@ -19,7 +19,7 @@ pub mod traits;
 #[cfg(feature = "derive")]
 pub use kfl_derive::{Decode, DecodePartial, DecodeScalar};
 
-pub use wrappers::{decode, parse_ast, parse, parse_with_context};
+pub use wrappers::{decode, decode_children, parse_ast, parse_with_context};
 pub use traits::{Decode, DecodePartial, DecodeScalar, DecodeChildren};
 pub use traits::{Encode, EncodePartial, EncodeScalar, EncodeChildren};
 pub use errors::Error;

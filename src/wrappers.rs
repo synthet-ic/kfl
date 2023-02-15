@@ -34,7 +34,7 @@ pub fn decode<T>(file_name: &str, text: &str) -> Result<T, DecodeError<Span>>
 }
 
 /// Parse KDL text and decode Rust object
-pub fn parse<T>(file_name: &str, text: &str) -> Result<T, Error>
+pub fn decode_children<T>(file_name: &str, text: &str) -> Result<T, Error>
     where T: DecodeChildren<Span>,
 {
     parse_with_context(file_name, text, |_| {})

@@ -82,7 +82,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> KFL</a></li><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">2.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="tutorial.html"><strong aria-hidden="true">3.</strong> Tutorial</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> KFL</a></li><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">2.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="tutorial.html"><strong aria-hidden="true">3.</strong> Tutorial</a></li><li class="chapter-item expanded "><a href="rationale.html"><strong aria-hidden="true">4.</strong> Rationale</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -160,27 +160,53 @@
 <li>Flatten properties (analogous to serde)
 <ul>
 <li>Not implemented <code>DecodeScalar</code> for structs</li>
-<li>Unify <code>DecodePartial</code> and <code>DecodeChildren</code></li>
 </ul>
 </li>
 <li>NodeName</li>
 <li>TypeName</li>
+<li>bool child</li>
 </ul>
 </li>
-<li>Option vs Default</li>
+<li>Option vs Default
+<ul>
+<li>benefit: form of type path doesn't matter </li>
+</ul>
+</li>
 <li>unwrap</li>
-<li>new type</li>
+<li><code>NewType</code> for structs and <code>Nested</code> for enums</li>
+<li><code>str</code> and <code>bytes</code> → simply implement <code>DecodeScalar</code> for <code>SocketAddr</code> and <code>Vec&lt;u8&gt;</code></li>
 </ul>
 <h1 id="todo"><a class="header" href="#todo">TODO</a></h1>
 <ul>
 <li><input disabled="" type="checkbox"/>
-Implement <code>DecodeScalar</code> for struct as the replacement of <code>flat(properties)</code></li>
+Struct variants and tuple variants</li>
 <li><input disabled="" type="checkbox"/>
-Allow distinguish variant nodes by <code>(type-name)</code></li>
+<code>DecodePartial</code> compatibility cannot automatically be detected (except <code>Unit</code> useless case)
+<ul>
+<li>Because we discard <code>option</code> parameter and also switch to manually implementing it for <code>Option&lt;T&gt;</code> and <code>Vec&lt;T&gt;</code></li>
+<li>Beautiful fact is that default <code>Decode</code> behaviour anyway coerce <code>T</code> into <code>Option&lt;T&gt;</code> when <code>ChildMode::Normal</code> or <code>Vec&lt;T&gt;</code> when <code>ChildMode::Multi</code> at decoding (and then unwrap or into_iter.collect)</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"/>
+Implement <code>DecodeScalar</code> for struct as the replacement of <code>flatten(properties)</code> and support <code>flatten(arguments)</code> equivalent as well</li>
 <li><input disabled="" type="checkbox"/>
 Span</li>
+<li><input disabled="" type="checkbox"/>
+Detect name conflicts between fields in the same struct</li>
+<li><input disabled="" type="checkbox"/>
+Understand error categories, reconsider <code>Context</code> in the presence of <code>DecodePartial</code></li>
+<li><input disabled="" type="checkbox"/>
+Test organisation, provide utility macros</li>
+<li><input disabled="" type="checkbox"/>
+<code>Encode</code>
+<ul>
+<li><input disabled="" type="checkbox"/>
+<code>EncodePartial</code> as an analogous to <code>skip_serializing_none</code></li>
 </ul>
-<div style="break-before: page; page-break-before: always;"></div><table>
+</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
+<table>
   <tr>
     <td>
       <pre lang="kdl"><code>node0</code></pre>
@@ -469,6 +495,9 @@ fn main() {
     let doc: Vec&lt;Node&gt; = kfl::parse(&quot;test&quot;, &amp;document).unwrap();
     println!(&quot;{:?}&quot;, &amp;doc);
 }</code></pre></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="rationale"><a class="header" href="#rationale">Rationale</a></h1>
+<h1 id="decodepartial"><a class="header" href="#decodepartial"><code>DecodePartial</code></a></h1>
+<p><code>Default</code> + <code>DecodePartial</code> vs <code>FromIterator</code></p>
 
                     </main>
 

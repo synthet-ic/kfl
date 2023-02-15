@@ -299,9 +299,9 @@ fn parse_property_name() {
     }
     assert_parse!(r#"node x="hello""#,
                   Node { name: "hello".into() } );
-    assert_eq!(parse_err::<Node>(r#"node label="hello" y="world""#),
+    assert_parse_err::<Node>(r#"node label="hello" y="world""#),
         "unexpected property `label`");
-    assert_eq!(parse_err::<Node>(r#"node"#),
+    assert_parse_err::<Node>(r#"node"#),
         "property `x` is required");
 }
 

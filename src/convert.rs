@@ -201,7 +201,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for PathBuf {
     }
 }
 
-impl<S: ErrorSpan, T: FromStr> DecodeScalar<S> for T {
+impl<S: ErrorSpan, T: FromStr + ?Default> DecodeScalar<S> for T {
     fn raw_decode(value: &Spanned<Literal, S>, _: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {

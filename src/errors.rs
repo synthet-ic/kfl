@@ -211,7 +211,7 @@ pub(crate) enum ParseError<S: ErrorSpan> {
 }
 
 #[derive(Debug, Diagnostic, Error)]
-pub(crate) enum PrintError {
+pub(crate) enum PrintError<S: ErrorSpan> {
     
 }
 

@@ -6,8 +6,6 @@ use std::{
 };
 use kfl::Decode;
 
-use common::assert_parse_err;
-
 // #[derive(kfl_derive::Decode, Debug, PartialEq)]
 // struct Arg1 {
 //     #[kfl(argument)]
@@ -99,16 +97,16 @@ fn parse_argument_named() {
         name: String,
     }
 
-    assert_parse!(
+    assert_decode!(
         r#"node "hello""#,
         Node { name: "hello".into() });
-    assert_parse_err::<Node>(
+    assert_decode_error!(Node,
         r#"node "hello" "world""#,
         "unexpected argument");
-    // assert_parse_err::<Node>(
+    // assert_decode_error!(Node,
     //     r#"(some)node "hello""#,
     //     "no type name expected for this node");
-    assert_parse_err::<Node>(
+    assert_decode_error!(Node,
         r#"node"#,
         "additional argument `name` is required");
 }
@@ -120,16 +118,16 @@ fn parse_argument_unnamed() {
         #[kfl(argument)]
         String
     );
-    assert_parse!(
+    assert_decode!(
         r#"node "hello""#,
         Node("hello".into()));
-    assert_parse_err::<Node>(
+    assert_decode_error!(Node,
         r#"node "hello" "world""#,
         "unexpected argument");
-    // assert_parse_err::<Node>(
+    // assert_decode_error!(Node,
     //     r#"(some)node "hello""#,
     //     "no type name expected for this node");
-    assert_parse_err::<Node>(
+    assert_decode_error!(Node,
         r#"node"#,
         "additional argument is required");
 }
@@ -154,13 +152,13 @@ fn parse_argument_default_named() {
         #[kfl(argument, default)]
         name: String,
     }
-    assert_parse!(
+    assert_decode!(
         r#"node "hello""#,
         Node { name: "hello".into() });
-    assert_parse_err::<Node>(
+    assert_decode_error!(Node,
         r#"node "hello" "world""#,
         "unexpected argument");
-    assert_parse!(
+    assert_decode!(
         r#"node"#,
         Node { name: "".into() });
 }
@@ -172,15 +170,15 @@ fn parse_argument_default_unnamed() {
         #[kfl(argument, default)]
         String,
     );
-    assert_parse!(
+    assert_decode!(
         r#"node "hello""#,
         Node("hello".into())
     );
-    assert_parse_err::<Node>(
+    assert_decode_error!(Node,
         r#"node "hello" "world""#,
         "unexpected argument"
     );
-    assert_parse!(
+    assert_decode!(
         r#"node"#,
         Node("".into())
     );
@@ -193,15 +191,15 @@ fn parse_argument_default_value_named() {
         #[kfl(argument, default = "unnamed".into())]
         name: String,
     }
-    assert_parse!(
+    assert_decode!(
         r#"node "hello""#,
         Node { name: "hello".into() }
     );
-    assert_parse_err::<Node>(
+    assert_decode_error!(Node,
         r#"node "hello" "world""#,
         "unexpected argument"
     );
-    assert_parse!(
+    assert_decode!(
         r#"node"#,
         Node { name: "unnamed".into() }
     );
@@ -223,13 +221,13 @@ fn parse_property_named() {
         #[kfl(property)]
         name: String,
     }
-    assert_parse!(
+    assert_decode!(
         r#"node name="hello""#,
         Node { name: "hello".into() });
-    assert_parse_err::<Node>(
+    assert_decode_error!(Node,
         r#"node name="hello" y="world""#,
         "unexpected property `y`");
-    assert_parse_err::<Node>(
+    assert_decode_error!(Node,
         r#"node"#,
         "property `name` is required");
 }
@@ -241,13 +239,13 @@ fn parse_property_unnamed() {
         #[kfl(property(name = "name"))]
         String,
     );
-    assert_parse!(
+    assert_decode!(
         r#"node name="hello""#,
         Node("hello".into()));
-    assert_parse_err::<Node>(
+    assert_decode_error!(Node,
         r#"node name="hello" y="world""#,
         "unexpected property `y`");
-    assert_parse_err::<Node>(
+    assert_decode_error!(Node,
         r#"node"#,
         "property `name` is required");
 }
@@ -269,9 +267,9 @@ fn parse_property_default() {
         #[kfl(property, default)]
         name: String,
     }
-    assert_parse!(r#"node name="hello""#,
+    assert_decode!(r#"node name="hello""#,
                   Node { name: "hello".into() });
-    assert_parse!(r#"node"#,
+    assert_decode!(r#"node"#,
                   Node { name: "".into() });
 }
 
@@ -297,12 +295,12 @@ fn parse_property_name() {
         #[kfl(property(name = "x"))]
         name: String,
     }
-    assert_parse!(r#"node x="hello""#,
+    assert_decode!(r#"node x="hello""#,
                   Node { name: "hello".into() });
-    assert_parse_err::<Node>(
+    assert_decode_error!(Node,
         r#"node label="hello" y="world""#,
         "unexpected property `label`");
-    assert_parse_err::<Node>(
+    assert_decode_error!(Node,
         r#"node"#,
         "property `x` is required");
 }
@@ -314,11 +312,11 @@ fn parse_option_property() {
         #[kfl(property, default)]  /* TODO test without default */
         name: Option<String>,
     }
-    assert_parse!(r#"node name="hello""#,
+    assert_decode!(r#"node name="hello""#,
                   Node { name: Some("hello".into()) });
-    assert_parse!(r#"node"#,
+    assert_decode!(r#"node"#,
                   Node { name: None });
-    assert_parse!(r#"node name=null"#,
+    assert_decode!(r#"node name=null"#,
                   Node { name: None });
 }
 
@@ -329,9 +327,9 @@ fn parse_var_arguments() {
         #[kfl(arguments)]
         params: Vec<u64>,
     }
-    assert_parse!(r#"node 1 2 3"#,
+    assert_decode!(r#"node 1 2 3"#,
                   Node { params: vec![1, 2, 3] });
-    assert_parse!(r#"node"#,
+    assert_decode!(r#"node"#,
                   Node { params: vec![] });
 }
 
@@ -345,9 +343,9 @@ fn parse_var_properties() {
     let mut scores = BTreeMap::new();
     scores.insert("john".into(), 13);
     scores.insert("jack".into(), 7);
-    assert_parse!(r#"node john=13 jack=7"#,
+    assert_decode!(r#"node john=13 jack=7"#,
                   Node { scores });
-    assert_parse!(r#"node"#,
+    assert_decode!(r#"node"#,
                   Node { scores: BTreeMap::new() });
 }
 
@@ -363,14 +361,14 @@ fn parse_children() {
         #[kfl(argument)]
         name: String,
     }
-    assert_parse!(
+    assert_decode!(
         r#"parent { child "val1"; child "val2"; }"#,
         Parent { children: vec![
             Child { name: "val1".into() },
             Child { name: "val2".into() },
         ]}
     );
-    assert_parse!(
+    assert_decode!(
         r#"parent"#,
         Parent { children: vec![]});
 
@@ -402,7 +400,7 @@ fn parse_filtered_children() {
         #[kfl(argument, default)]
         name: Option<String>,
     }
-    assert_parse!(
+    assert_decode!(
         r#"parent { left "v1"; right "v2"; left "v3"; }"#,
         Parent {
             lefts: vec![
@@ -414,14 +412,14 @@ fn parse_filtered_children() {
             ]
         }
     );
-    assert_parse!(
+    assert_decode!(
         r#"parent { right; left; }"#,
         Parent {
             lefts: vec![Left { name: None }],
             rights: vec![Right { name: None }]
         }
     );
-    assert_parse_err::<Parent>(
+    assert_decode_error!(Parent,
         r#"some"#,
         "unexpected node `some`");
 
@@ -468,7 +466,7 @@ fn parse_child() {
         #[kfl(property)]
         name: String,
     }
-    assert_parse!(
+    assert_decode!(
         r#"parent { child1 name="val1"; }"#,
         Parent {
             child1: Child1 { name: "val1".into() },
@@ -525,10 +523,10 @@ fn parse_child_default() {
         #[kfl(property)]
         name: String,
     }
-    assert_parse!(
+    assert_decode!(
         r#"parent { child name="val1"; }"#,
         Parent { child: Child { name: "val1".into() } });
-    assert_parse!(
+    assert_decode!(
         r#"parent"#,
         Parent { child: Child { name: "".into() } });
 }
@@ -545,10 +543,10 @@ fn parse_child_default_value() {
         #[kfl(property)]
         label: String,
     }
-    assert_parse!(r#"parent { child label="val1"; }"#,
+    assert_decode!(r#"parent { child label="val1"; }"#,
         Parent { main: Child { label: "val1".into() },
                });
-    assert_parse!(r#"parent"#,
+    assert_decode!(r#"parent"#,
         Parent { main: Child { label: "prop1".into() },
                });
 }
@@ -588,10 +586,11 @@ fn parse_str() {
         #[kfl(argument)]  /* str */
         listen: std::net::SocketAddr,
     }
-    assert_parse!(r#"node "127.0.0.1:8080""#,
+    assert_decode!(r#"node "127.0.0.1:8080""#,
                Node { listen: "127.0.0.1:8080".parse().unwrap() });
-    assert_parse_err::<Node>(r#"node "2/3""#,
-               "invalid socket address syntax");
+    assert_decode_error!(Node,
+        r#"node "2/3""#,
+        "invalid socket address syntax");
 }
 
 #[test]
@@ -601,12 +600,13 @@ fn parse_option_str() {
         #[kfl(property, default)]  /* str */
         listen: Option<std::net::SocketAddr>,  /* TODO strip std::net:: */
     }
-    assert_parse!(r#"server listen="127.0.0.1:8080""#,
-               Server { listen: Some("127.0.0.1:8080".parse().unwrap()) });
-    assert_parse_err::<Server>(r#"server listen="2/3""#,
-               "invalid socket address syntax");
-    assert_parse!(r#"server listen=null"#,
-               Server { listen: None });
+    assert_decode!(r#"server listen="127.0.0.1:8080""#,
+                   Server { listen: Some("127.0.0.1:8080".parse().unwrap()) });
+    assert_decode_error!(Server,
+        r#"server listen="2/3""#,
+        "invalid socket address syntax");
+    assert_decode!(r#"server listen=null"#,
+                   Server { listen: None });
 }
 
 // #[test]

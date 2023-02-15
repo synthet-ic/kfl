@@ -19,7 +19,7 @@ struct Scalars {
 
 #[test]
 fn parse_enum() {
-    assert_parse!(r#"
+    assert_decode!(r#"
         scalars \
             "hello" \
             1234 \

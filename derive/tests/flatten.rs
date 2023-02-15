@@ -1,7 +1,6 @@
 mod common;
 
 use kfl::{Decode, DecodePartial};
-use common::assert_parse_err;
 
 #[derive(Decode, Debug, PartialEq)]
 struct Child1(#[kfl(argument)] String);
@@ -41,7 +40,7 @@ fn parse_flatten() {
         #[kfl(flatten)]
         intermediate: Intermediate,
     }
-    assert_parse!(
+    assert_decode!(
         r#"parent {
             child2 "v2"
             child1 "v1"
@@ -53,7 +52,7 @@ fn parse_flatten() {
                 children2: vec![Child2("v2".into()), Child2("v3".into())]
             }
         });
-    assert_parse_err::<Parent>(
+    assert_decode_error!(Parent,
         r#"something "world""#,
         "unexpected node `something`");
 }
@@ -89,7 +88,7 @@ fn parse_flatten_flatten() {
         #[kfl(flatten)]
         intermediate: Intermediate1,
     }
-    assert_parse!(
+    assert_decode!(
         r#"parent {
             child2 "v2"
             child1 "v1"
@@ -112,7 +111,7 @@ fn parse_flatten_flatten() {
                 }
             }
         });
-    assert_parse_err::<Parent>(
+    assert_decode_error!(Parent,
         r#"something "world""#,
         "unexpected node `something`");
 }

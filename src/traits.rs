@@ -118,15 +118,23 @@ pub trait Encode<S: ErrorSpan, T: Decode<S>> {
         -> Result<SpannedNode<S>, EncodeError<S>>;
 }
 
-pub trait EncodePartial {
+pub trait EncodePartial<S: ErrorSpan, T: DecodePartial<S> {
+    fn encode_partial(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
+        -> Result<bool, EncodeError<S>>;
 }
 
-pub trait EncodeChildren<S: ErrorSpan, T: Decode<S>> {
+pub trait EncodeChildren<S: ErrorSpan, T: DecodeChildren<S>> {
     fn encode_children(nodes: &[T], ctx: &mut Context<S>)
         -> Result<Vec<SpannedNode<S>>, EncodeError<S>>;
 }
 
-pub trait EncodeScalar {
+pub trait EncodeScalar<S: ErrorSpan, T: DecodeScalar<S>> {
+    fn encode(value: &Value<S>, ctx: &mut Context<S>)
+        -> Result<Self, EncodeError<S>>
+    {
+        Self::value_check(&value.type_name, ctx);
+        Self::raw_encode(&value.literal, ctx)
+    }
 }
 
 #[allow(missing_debug_implementations)]

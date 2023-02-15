@@ -151,6 +151,11 @@ pub enum DecodeError<S: ErrorSpan> {
     Custom(Box<dyn std::error::Error + Send + Sync + 'static>),
 }
 
+#[derive(Debug, Diagnostic, Error)]
+pub enum EncodeError {
+    
+}
+
 #[derive(Clone, Debug, PartialOrd, Ord, PartialEq, Eq)]
 pub(crate) enum TokenFormat {
     Char(char),
@@ -205,6 +210,10 @@ pub(crate) enum ParseError<S: ErrorSpan> {
     },
 }
 
+#[derive(Debug, Diagnostic, Error)]
+pub(crate) enum PrintError {
+    
+}
 
 impl From<Option<char>> for TokenFormat {
     fn from(chr: Option<char>) -> TokenFormat {

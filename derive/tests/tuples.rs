@@ -24,19 +24,6 @@
 //     Extra(#[kfl(argument)] Option<String>, u32),
 // }
 
-// fn parse<T: Decode<Span>>(text: &str) -> T {
-//     let mut nodes: Vec<T> = kfl::parse("<test>", text).unwrap();
-//     assert_eq!(nodes.len(), 1);
-//     nodes.remove(0)
-// }
-
-// fn parse_err<T: Decode<Span> + Debug>(text: &str) -> String {
-//     let err = kfl::parse::<Vec<T>>("<test>", text).unwrap_err();
-//     err.related().unwrap()
-//         .map(|e| e.to_string()).collect::<Vec<_>>()
-//         .join("\n")
-// }
-
 // #[test]
 // fn parse_unit() {
 //     assert_eq!(parse::<Unit>(r#"node"#), Unit);

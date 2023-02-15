@@ -44,6 +44,7 @@ pub fn assert_parse_err<T>(input: &str, output: &str)
     assert_eq!(err, output);
 }
 
+/*
 pub fn parse_doc<T>(input: &str) -> T
     where T: DecodeChildren<Span>
 {
@@ -63,3 +64,4 @@ pub fn parse_doc_err<T: DecodeChildren<Span> + Debug>(text: &str) -> String {
         .map(|e| e.to_string()).collect::<Vec<_>>()
         .join("\n")
 }
+*/

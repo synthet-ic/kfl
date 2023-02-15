@@ -16,7 +16,7 @@ use crate::{
 /// Trait to decode KDL node from the AST
 pub trait Decode<S: ErrorSpan>: Sized {
     /// Decodes the node from the ast
-    fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn decode(node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>;
 }
 

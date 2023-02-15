@@ -13,10 +13,10 @@ use crate::{
 };
 
 impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Box<T> {
-    fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn decode(node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        <T as Decode<S>>::decode_node(node, ctx).map(Box::new)
+        <T as Decode<S>>::decode(node, ctx).map(Box::new)
     }
 }
 
@@ -56,10 +56,10 @@ impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Box<T> {
 }
 
 impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Arc<T> {
-    fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn decode(node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        <T as Decode<S>>::decode_node(node, ctx).map(Arc::new)
+        <T as Decode<S>>::decode(node, ctx).map(Arc::new)
     }
 }
 
@@ -105,7 +105,7 @@ impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Rc<T> {
     fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        <T as Decode<S>>::decode_node(node, ctx).map(Rc::new)
+        <T as Decode<S>>::decode(node, ctx).map(Rc::new)
     }
 }
 
@@ -151,7 +151,7 @@ impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Vec<T> {
     fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        <T as Decode<S>>::decode_node(node, ctx).map(|node| vec![node])
+        <T as Decode<S>>::decode(node, ctx).map(|node| vec![node])
     }
 }
 
@@ -159,7 +159,7 @@ impl<S: ErrorSpan, T: Decode<S>> DecodePartial<S> for Vec<T> {
     fn decode_partial(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<bool, DecodeError<S>>
     {
-        match <T as Decode<S>>::decode_node(node, ctx) {
+        match <T as Decode<S>>::decode(node, ctx) {
             Ok(value) => {
                 self.push(value);
                 Ok(true)
@@ -175,7 +175,7 @@ impl<S: ErrorSpan, T: Decode<S>> DecodeChildren<S> for Vec<T> {
     {
         let mut result = Vec::with_capacity(nodes.len());
         for node in nodes {
-            match <T as Decode<S>>::decode_node(node, ctx) {
+            match <T as Decode<S>>::decode(node, ctx) {
                 Ok(node) => result.push(node),
                 Err(e) => ctx.emit_error(e),
             }
@@ -188,7 +188,7 @@ impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Option<T> {
     fn decode_node(node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        <T as Decode<S>>::decode_node(node, ctx).map(|node| Some(node))
+        <T as Decode<S>>::decode(node, ctx).map(|node| Some(node))
     }
 }
 
@@ -197,7 +197,7 @@ impl<S: ErrorSpan, T: Decode<S>> DecodePartial<S> for Option<T> {
         -> Result<bool, DecodeError<S>>
     {
         let slf = std::mem::take(self);  /* (1) */
-        let result = <Self as Decode<S>>::decode_node(node, ctx);
+        let result = <Self as Decode<S>>::decode(node, ctx);
         match (slf, result) {
             (None, Ok(None)) => Ok(true),  /* no-op */
             (None, Ok(value)) => {

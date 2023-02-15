@@ -7,7 +7,7 @@ use crate::{
     errors::Error,
     grammar,
     span::Span,
-    traits::{self, DecodeChildren}
+    traits::{self, DecodeChildren, EncodeChildren}
 };
 
 /// Parse KDL text and return AST
@@ -59,6 +59,13 @@ pub fn parse_with_context<T, S, F>(file_name: &str, text: &str, set_ctx: F)
         source_code: NamedSource::new(file_name, text.to_string()),
         errors: errors.into_iter().map(Into::into).collect(),
     })
+}
+
+/// Encode Rust object and print KDL text
+pub fn print<T>(file_name: &str, document: T) -> Result<String, Error>
+    where T: EncodeChildren<Span>,
+{
+    print_with_context(file_name, document, |_| {})
 }
 
 #[test]

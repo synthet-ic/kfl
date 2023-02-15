@@ -113,7 +113,7 @@ impl<T> ErrorSpan for T
 /// [`DecodeSpan`] to convert spans whenever needed.
 pub trait Span: sealed::Sealed + chumsky::Span + ErrorSpan {}
 
-pub trait Encode<S: ErrorSpan, T: Decode<S>>: Sized {
+pub trait Encode<S: ErrorSpan, T: Decode<S>> {
     fn encode(node: &T, ctx: &mut Context<S>)
         -> Result<SpannedNode<S>, EncodeError<S>>;
 }
@@ -128,9 +128,9 @@ pub trait EncodeChildren<S: ErrorSpan, T: DecodeChildren<S>> {
         -> Result<Vec<SpannedNode<S>>, EncodeError<S>>;
 }
 
-pub trait EncodeScalar<S: ErrorSpan, T: DecodeScalar<S>> {
-    fn encode(value: &Value<S>, ctx: &mut Context<S>)
-        -> Result<Self, EncodeError<S>>
+pub trait EncodeScalar<S: ErrorSpan, T: DecodeScalar<S>>: Sized {
+    fn encode(scalar: &T, ctx: &mut Context<S>)
+        -> Result<Value<S>, EncodeError<S>>
     {
         Self::value_check(&value.type_name, ctx);
         Self::raw_encode(&value.literal, ctx)

@@ -201,13 +201,13 @@ impl<S: ErrorSpan> DecodeScalar<S> for PathBuf {
     }
 }
 
-impl<S: ErrorSpan> DecodeScalar<S> for SocketAddr {
+impl<S: ErrorSpan, T: FromStr> DecodeScalar<S> for T {
     fn raw_decode(value: &Spanned<Literal, S>, _: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
         match &**value {
             Literal::String(ref s) => {
-                match String::from(s.clone()).parse() {
+                match <T as FromStr>::from_str(s.clone()) {
                     Ok(value) => Ok(value),
                     Err(e) => Err(DecodeError::conversion(value, e))
                 }

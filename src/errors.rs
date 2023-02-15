@@ -152,7 +152,7 @@ pub enum DecodeError<S: ErrorSpan> {
 }
 
 #[derive(Debug, Diagnostic, Error)]
-pub enum EncodeError {
+pub enum EncodeError<S: ErrorSpan> {
     
 }
 

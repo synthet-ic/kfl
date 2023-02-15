@@ -602,7 +602,7 @@ fn parse_child_default_value() {
 fn parse_str() {
     #[derive(Decode, Debug, PartialEq)]
     struct Node {
-        #[kfl(argument, str)]
+        #[kfl(argument)]  /* str */
         listen: std::net::SocketAddr,
     }
     assert_eq!(parse::<Node>(r#"node "127.0.0.1:8080""#),
@@ -615,7 +615,7 @@ fn parse_str() {
 fn parse_option_str() {
     #[derive(Decode, Debug, PartialEq)]
     struct Server {
-        #[kfl(property, default)]  // str
+        #[kfl(property, default)]  /* str */
         listen: Option<std::net::SocketAddr>,  /* TODO strip std::net:: */
     }
     assert_eq!(parse::<Server>(r#"server listen="127.0.0.1:8080""#),

@@ -230,6 +230,7 @@ pub(crate) enum ParseError<S: ErrorSpan> {
 }
 
 ///
+#[allow(dead_code)]
 #[derive(Debug, Diagnostic, Error)]
 pub(crate) enum PrintError<S: ErrorSpan> {
     ///

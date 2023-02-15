@@ -81,7 +81,6 @@ pub trait DecodeScalar<S: ErrorSpan>: Sized {
     }
 }
 
-
 /// The trait that decodes span into the final structure
 pub trait DecodeSpan<S: ErrorSpan>: Sized {
     /// Decode span
@@ -108,12 +107,20 @@ impl<T> ErrorSpan for T
           T: Clone + Debug + Send + Sync + 'static,
 {}
 
-
 /// Span trait used for parsing source code
 ///
 /// It's sealed because needs some tight interoperation with the parser. Use
 /// [`DecodeSpan`] to convert spans whenever needed.
 pub trait Span: sealed::Sealed + chumsky::Span + ErrorSpan {}
+
+pub trait Encode {
+}
+
+pub trait EncodePartial {
+}
+
+pub trait EncodeScalar {
+}
 
 #[allow(missing_debug_implementations)]
 pub(crate) mod sealed {

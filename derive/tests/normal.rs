@@ -7,26 +7,8 @@ use std::{
 use kfl::Decode;
 
 // #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct ArgDefOptValue {
-//     #[kfl(argument, default = Some("unnamed".into()))]
-//     name: Option<String>,
-// }
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
 // struct Extra {
 //     field: String,
-// }
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct PropDefValue {
-//     #[kfl(property, default="unknown".into())]
-//     label: String,
-// }
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct PropDefOptValue {
-//     #[kfl(property, default=Some("unknown".into()))]
-//     label: Option<String>,
 // }
 
 // #[derive(kfl_derive::Decode, Debug, PartialEq)]
@@ -153,25 +135,31 @@ fn parse_argument_default_value_named() {
     }
     assert_decode!(
         r#"node "hello""#,
-        Node { name: "hello".into() }
-    );
+        Node { name: "hello".into() });
     assert_decode_error!(Node,
         r#"node "hello" "world""#,
-        "unexpected argument"
-    );
+        "unexpected argument");
     assert_decode!(
         r#"node"#,
-        Node { name: "unnamed".into() }
-    );
+        Node { name: "unnamed".into() });
+}
 
-    // assert_eq!(parse::<ArgDefOptValue>(r#"node "hello""#),
-    //            ArgDefOptValue { name: Some("hello".into()) } );
-    // assert_eq!(parse_err::<ArgDefValue>(r#"node "hello" "world""#),
-    //     "unexpected argument");
-    // assert_eq!(parse::<ArgDefOptValue>(r#"node"#),
-    //            ArgDefOptValue { name: Some("unnamed".into()) } );
-    // assert_eq!(parse::<ArgDefOptValue>(r#"node null"#),
-    //            ArgDefOptValue { name: None } );
+#[test]
+fn parse_argument_default_option_value_named() {
+    #[derive(kfl_derive::Decode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(argument, default = Some("unnamed".into()))]
+        name: Option<String>,
+    }
+    assert_decode!(r#"node "hello""#,
+                   Node { name: Some("hello".into()) });
+    assert_decode_error!(Node,
+        r#"node "hello" "world""#,
+        "unexpected argument");
+    assert_decode!(r#"node"#,
+                   Node { name: Some("unnamed".into()) });
+    assert_decode!(r#"node null"#,
+                   Node { name: None } );
 }
 
 #[test]
@@ -240,20 +228,33 @@ fn parse_property_default() {
                   Node { name: "".into() });
 }
 
-// #[test]
-// fn parse_prop_def_value() {
-//     assert_eq!(parse::<PropDefValue>(r#"node label="hello""#),
-//                PropDefValue { label: "hello".into() } );
-//     assert_eq!(parse::<PropDefValue>(r#"node"#),
-//                PropDefValue { label: "unknown".into() });
+#[test]
+fn parse_property_default_value() {
+    #[derive(Decode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(property, default="unknown".into())]
+        label: String,
+    }
+    assert_decode!(r#"node label="hello""#,
+                   Node { label: "hello".into() } );
+    assert_decode!(r#"node"#,
+                    Node { label: "unknown".into() });
+}
 
-//     assert_eq!(parse::<PropDefOptValue>(r#"node label="hello""#),
-//                PropDefOptValue { label: Some("hello".into()) } );
-//     assert_eq!(parse::<PropDefOptValue>(r#"node"#),
-//                PropDefOptValue { label: Some("unknown".into()) });
-//     assert_eq!(parse::<PropDefOptValue>(r#"node label=null"#),
-//                PropDefOptValue { label: None });
-// }
+#[test]
+fn parse_property_default_option_value() {
+    #[derive(Decode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(property, default = Some("unknown".into()))]
+        label: Option<String>,
+    }
+    assert_decode!(r#"node label="hello""#,
+                   Node { label: Some("hello".into()) } );
+    assert_decode!(r#"node"#,
+                   Node { label: Some("unknown".into()) });
+    assert_decode!(r#"node label=null"#,
+                   Node { label: None });
+}
 
 #[test]
 fn parse_property_name() {
@@ -311,9 +312,9 @@ fn parse_var_properties() {
     scores.insert("john".into(), 13);
     scores.insert("jack".into(), 7);
     assert_decode!(r#"node john=13 jack=7"#,
-                  Node { scores });
+                   Node { scores });
     assert_decode!(r#"node"#,
-                  Node { scores: BTreeMap::new() });
+                   Node { scores: BTreeMap::new() });
 }
 
 #[test]
@@ -511,11 +512,9 @@ fn parse_child_default_value() {
         label: String,
     }
     assert_decode!(r#"parent { child label="val1"; }"#,
-        Parent { main: Child { label: "val1".into() },
-               });
+        Parent { main: Child { label: "val1".into() } });
     assert_decode!(r#"parent"#,
-        Parent { main: Child { label: "prop1".into() },
-               });
+        Parent { main: Child { label: "prop1".into() } });
 }
 
 // #[test]

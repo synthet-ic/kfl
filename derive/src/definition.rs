@@ -42,7 +42,6 @@ pub enum FieldMode {
 #[derive(Debug, Clone)]
 pub enum DecodeMode {
     Normal,
-    Str,
     Bytes,
 }
 

@@ -7,7 +7,7 @@ use crate::{
     errors::Error,
     grammar,
     span::Span,
-    traits::{self, DecodeChildren, EncodeChildren}
+    traits::{self, DecodeChildren}
 };
 
 /// Parse KDL text and return AST

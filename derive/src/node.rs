@@ -329,8 +329,7 @@ fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     if let Some(var_args) = &s.object.var_args {
         let fld = &var_args.field.tmp_name;
         let val = syn::Ident::new("val", Span::mixed_site());
-        let decode_value = decode_value(&val, ctx, &var_args.decode,
-                                        &var_args.field.ty)?;
+        let decode_value = decode_value(&val, ctx, &var_args.decode)?;
         decoder.push(quote! {
             let #fld = #iter_args.map(|#val| {
                 #decode_value
@@ -406,8 +405,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
     }
     if let Some(var_props) = &s.object.var_props {
         let fld = &var_props.field.tmp_name;
-        let decode_value = decode_value(&val, ctx, &var_props.decode,
-                                        &var_props.field.ty)?;
+        let decode_value = decode_value(&val, ctx, &var_props.decode)?;
         declare_empty.push(quote! {
             let mut #fld = Vec::new();
         });

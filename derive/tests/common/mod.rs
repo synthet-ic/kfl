@@ -12,7 +12,7 @@ pub fn parse<T: Decode<Span>>(input: &str) -> T {
 }
 
 #[cfg(test)]
-fn same<T: PartialEq>(lhs: &T, rhs: &T) {}
+fn same_type<T: PartialEq>(lhs: &T, rhs: &T) {}
 
 #[macro_export]
 macro_rules! assert_parse {

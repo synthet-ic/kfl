@@ -16,7 +16,7 @@ use common::{assert_parse, assert_parse_err};
 // }
 
 // #[test]
-// fn parse_flat_prop() {
+// fn parse_struct_scalar_properties() {
 //     assert_eq!(parse::<FlatProp>(r#"node label="hello""#),
 //         FlatProp { props: Prop1 { label: Some("hello".into()) } } );
 //     assert_eq!(parse_err::<FlatProp>(r#"node something="world""#),
@@ -36,7 +36,7 @@ struct Node {
 }
 
 #[test]
-fn parse_some_scalar() {
+fn parse_enum_scalar() {
     assert_parse!(
         r#"node "first""#,
         Node { value: SomeScalar::First });

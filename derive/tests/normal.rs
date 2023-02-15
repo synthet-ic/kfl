@@ -79,8 +79,6 @@ use common::{parse, assert_parse, parse_err, assert_parse_err};
 //     flag: bool,
 // }
 
-
-
 // #[derive(kfl_derive::Decode, Debug, PartialEq)]
 // struct Bytes {
 //     #[kfl(argument, bytes)]
@@ -101,7 +99,7 @@ fn parse_argument_named() {
         name: String,
     }
 
-    assert_parse::<Node>(
+    assert_parse!(
         r#"node "hello""#,
         Node { name: "hello".into() });
     assert_parse_err::<Node>(
@@ -122,8 +120,7 @@ fn parse_argument_unnamed() {
         #[kfl(argument)]
         String
     );
-
-    assert_parse::<Node>(
+    assert_parse!(
         r#"node "hello""#,
         Node("hello".into()));
     assert_parse_err::<Node>(
@@ -157,14 +154,13 @@ fn parse_argument_default_named() {
         #[kfl(argument, default)]
         name: String,
     }
-
-    assert_parse::<Node>(
+    assert_parse!(
         r#"node "hello""#,
         Node { name: "hello".into() });
     assert_parse_err::<Node>(
         r#"node "hello" "world""#,
         "unexpected argument");
-    assert_parse::<Node>(
+    assert_parse!(
         r#"node"#,
         Node { name: "".into() });
 }
@@ -176,8 +172,7 @@ fn parse_argument_default_unnamed() {
         #[kfl(argument, default)]
         String,
     );
-
-    assert_parse::<Node>(
+    assert_parse!(
         r#"node "hello""#,
         Node("hello".into())
     );
@@ -185,7 +180,7 @@ fn parse_argument_default_unnamed() {
         r#"node "hello" "world""#,
         "unexpected argument"
     );
-    assert_parse::<Node>(
+    assert_parse!(
         r#"node"#,
         Node("".into())
     );
@@ -198,8 +193,7 @@ fn parse_argument_default_value_named() {
         #[kfl(argument, default = "unnamed".into())]
         name: String,
     }
-
-    assert_parse::<Node>(
+    assert_parse!(
         r#"node "hello""#,
         Node { name: "hello".into() }
     );
@@ -207,7 +201,7 @@ fn parse_argument_default_value_named() {
         r#"node "hello" "world""#,
         "unexpected argument"
     );
-    assert_parse::<Node>(
+    assert_parse!(
         r#"node"#,
         Node { name: "unnamed".into() }
     );
@@ -229,14 +223,13 @@ fn parse_property_named() {
         #[kfl(property)]
         name: String,
     }
-
-    assert_parse::<Node>(
+    assert_parse!(
         r#"node name="hello""#,
         Node { name: "hello".into() });
     assert_parse_err::<Node>(
         r#"node name="hello" y="world""#,
         "unexpected property `y`");
-        assert_parse_err::<Node>(
+    assert_parse_err::<Node>(
         r#"node"#,
         "property `name` is required");
 }

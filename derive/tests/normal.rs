@@ -6,7 +6,7 @@ use std::{
 };
 use kfl::Decode;
 
-use common::{parse, assert_parse, parse_err, assert_parse_err};
+use common::{parse, parse_err, assert_parse_err};
 
 // #[derive(kfl_derive::Decode, Debug, PartialEq)]
 // struct Arg1 {

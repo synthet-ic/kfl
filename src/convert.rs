@@ -207,7 +207,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for SocketAddr {
     {
         match &**value {
             Literal::String(ref s) => {
-                match SocketAddr::from_str(s.clone()) {
+                match SocketAddr::from_str(&s) {
                     Ok(value) => Ok(value),
                     Err(e) => Err(DecodeError::conversion(value, e))
                 }

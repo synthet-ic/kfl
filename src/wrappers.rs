@@ -12,7 +12,7 @@ use crate::{
 
 /// Parse KDL text and return AST
 pub fn parse_ast<S: traits::Span>(file_name: &str, text: &str)
-    -> Result<Document<S>, DecodeError<S>>
+    -> Result<Document<S>, Error>
 {
     grammar::document()
     .parse(S::stream(text))
@@ -25,7 +25,7 @@ pub fn parse_ast<S: traits::Span>(file_name: &str, text: &str)
 }
 
 /// Parse KDL text and decode Rust object
-pub fn decode<T>(file_name: &str, text: &str) -> Result<T, Error>
+pub fn decode<T>(file_name: &str, text: &str) -> Result<T, DecodeError<S>>
     where T: Decode<Span>,
 {
     let ast = parse_ast(file_name, text)?;

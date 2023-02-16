@@ -13,8 +13,8 @@ module {
           }
         }
       }
-    } // block
-  } // function
+    }
+  }
   function {
     proto "main" "@test/Examples/Toy/Ch1/ast.toy:8:1"
     params
@@ -51,6 +51,6 @@ module {
           var "c" "@test/Examples/Toy/Ch1/ast.toy:28:44"
         }
       }
-    } // block
-  } // function
+    }
+  }
 }

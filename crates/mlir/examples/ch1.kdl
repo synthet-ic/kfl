@@ -14,7 +14,7 @@ module {
         }
       }
     } // block
-  }
+  } // function
   function {
     proto "main" "@test/Examples/Toy/Ch1/ast.toy:8:1"
     params
@@ -35,7 +35,7 @@ module {
         call "multiply_transpose" "@test/Examples/Toy/Ch1/ast.toy:22:11" {
           var "b" "@test/Examples/Toy/Ch1/ast.toy:22:30"
           var "a" "@test/Examples/Toy/Ch1/ast.toy:22:33"
-        ]
+        }
       }
       var-decl "e" <> "@test/Examples/Toy/Ch1/ast.toy:25:3" {
         call "multiply_transpose" "@test/Examples/Toy/Ch1/ast.toy:25:11" {
@@ -52,4 +52,5 @@ module {
         }
       }
     } // block
+  } // function
 }

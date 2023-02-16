@@ -14,7 +14,7 @@
   - benefit: form of type path doesn't matter 
 - unwrap
 - `NewType` for structs and `Nested` for enums
-  - Every data in KDL appears either a scalar wrapped in a node or a node itself. Therefore every type is already `newtype`ed.
+  - Every data in KDL appears either a scalar wrapped in a node or a node itself. Therefore every type can exsist only in an already `newtype`ed form.
 - `str` and `bytes` → simply implement `DecodeScalar` for `SocketAddr` and `Vec<u8>`
 
 # 

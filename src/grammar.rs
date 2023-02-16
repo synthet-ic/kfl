@@ -503,7 +503,7 @@ fn nodes<S: Span>() -> impl Parser<char, Vec<SpannedNode<S>>, Error = Error<S>> 
                     }
                 }));
 
-        let node = spanned(type_name()).or_not()
+        let node = spanned(ident().delimited_by(just('('), just(')'))).or_not()
             .then(spanned(ident()))
             .then(
                 node_space()

@@ -35,7 +35,7 @@ pub type SpannedNode<S> = Spanned<Node<S>, S>;
 pub struct Node<S> {
     /// A type name if specified in parenthesis
     #[cfg_attr(feature = "minicbor", n(0))]
-    pub type_name: Option<Spanned<TypeName, S>>,
+    pub type_name: Option<SpannedName<S>>,
     /// A node name
     #[cfg_attr(feature = "minicbor", n(1))]
     pub node_name: SpannedName<S>,

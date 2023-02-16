@@ -373,8 +373,27 @@ fn parse_filtered_children() {
             ]
         }
     );
+    assert_decode_children!(
+        r#"left "v1"; right "v2"; left "v3""#,
+        Parent {
+            lefts: vec![
+                Left { name: Some("v1".into()) },
+                Left { name: Some("v3".into()) },
+            ],
+            rights: vec![
+                Right { name: Some("v2".into()) },
+            ]
+        }
+    );
     assert_decode!(
         r#"parent { right; left; }"#,
+        Parent {
+            lefts: vec![Left { name: None }],
+            rights: vec![Right { name: None }]
+        }
+    );
+    assert_decode_children!(
+        r#"right; left"#,
         Parent {
             lefts: vec![Left { name: None }],
             rights: vec![Right { name: None }]
@@ -383,27 +402,6 @@ fn parse_filtered_children() {
     assert_decode_error!(Parent,
         r#"some"#,
         "unexpected node `some`");
-
-    // assert_eq!(parse_doc::<FilteredChildren>(
-    //                r#"left "v1"; right "v2"; left "v3""#),
-    //            FilteredChildren {
-    //                left: vec![
-    //                    OptArg { name: Some("v1".into()) },
-    //                    OptArg { name: Some("v3".into()) },
-    //                ],
-    //                right: vec![
-    //                    OptArg { name: Some("v2".into()) },
-    //                ]
-    //            });
-    // assert_eq!(parse_doc::<FilteredChildren>(r#"right; left"#),
-    //            FilteredChildren {
-    //                left: vec![
-    //                    OptArg { name: None },
-    //                ],
-    //                right: vec![
-    //                    OptArg { name: None },
-    //                ]
-    //            });
 }
 
 #[test]
@@ -505,6 +503,54 @@ fn parse_child_default_value() {
         Parent { main: Child { label: "val1".into() } });
     assert_decode!(r#"parent"#,
         Parent { main: Child { label: "prop1".into() } });
+}
+
+// #[test]
+// fn parse_enum_named() {
+//     #[derive(Decode, Debug, PartialEq)]
+//     enum Enum {
+//         Var0,
+//         Var1 {
+//             #[kfl(argument)]
+//             name: String,
+//         },
+//         Var2 {
+//             #[kfl(property)]
+//             name: String,
+//         },
+//         #[kfl(skip)]
+//         #[allow(dead_code)]
+//         Var3(u32),
+//     }
+//     assert_decode!(r#"var0"#, Enum::Var0);
+//     assert_decode!(r#"var1 "hello""#,
+//         Enum::Var1 { name: "hello".into() });
+//     assert_decode!(r#"var2 name="hello""#,
+//         Enum::Var2 { name: "hello".into() });
+//     assert_decode_error!(Enum,
+//         r#"something"#,
+//         "expected one of `var0`, `var1`, `var2`");
+// }
+
+#[test]
+fn parse_enum_unnamed() {
+    #[derive(Decode, Debug, PartialEq)]
+    enum Enum {
+        Var0,
+        Var1(#[kfl(argument)] String),
+        Var2(#[kfl(property(name = "name"))] String),
+        #[kfl(skip)]
+        #[allow(dead_code)]
+        Var3(u32),
+    }
+    assert_decode!(r#"var0"#, Enum::Var0);
+    assert_decode!(r#"var1 "hello""#,
+        Enum::Var1("hello".into()));
+    assert_decode!(r#"var2 name="hello""#,
+        Enum::Var2("hello".into()));
+    assert_decode_error!(Enum,
+        r#"something"#,
+        "expected one of `var0`, `var1`, `var2`");
 }
 
 // #[test]

@@ -63,10 +63,11 @@ fn check_type(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
         &s.object.ident.unraw().to_string()[..]);
     Ok(quote! {
         if let Some(type_name) = #node.type_name.as_ref() {
+            let type_name = type_name.as_ref();
             if type_name != #name {
                 return Err(::kfl::errors::DecodeError::unexpected(
                     #node, "node", format!("unexpected node `({}){}`",
-                    #node.type_name.as_ref(),
+                    type_name,
                     #node.node_name.as_ref())
                 ))
             }

@@ -6,15 +6,18 @@ macro_rules! assert_decode {
         let node = kfl::decode("<test>", $input).unwrap();
         let output = $output;
         common::hint_same_type(&node, &output);
-        assert!(node == output);
+        assert_eq!(node, output);
     }
 }
 
 #[macro_export]
 macro_rules! assert_decode_error {
     ($ty:ty, $input:literal, $output:literal) => {
-        let err = kfl::decode::<$ty>("<test>", $input).unwrap_err().to_string();
-        assert!(err == $output);
+        let err = kfl::decode::<$ty>("<test>", $input).unwrap_err();
+        let err = <kfl::Error as miette::Diagnostic>::related(&err).unwrap()
+            .map(|e| e.to_string()).collect::<Vec<_>>()
+            .join("\n");
+        assert_eq!(err, $output);
     }
 }
 
@@ -24,7 +27,7 @@ macro_rules! assert_decode_children {
         let node = kfl::decode_children("<test>", $input).unwrap();
         let output = $output;
         common::hint_same_type(&node, &output);
-        assert!(node == output);
+        assert_eq!(node, output);
     }
 }
 

@@ -36,10 +36,9 @@ fn parse_argument_named() {
     assert_decode_error!(Node,
         r#"node "hello" "world""#,
         "unexpected argument");
-    // TODO(rnarkk)
-    // assert_decode_error!(Node,
-    //     r#"(some)node "hello""#,
-    //     "no type name expected for this node");
+    assert_decode_error!(Node,
+        r#"(some)node "hello""#,
+        "no type name expected for this node");
     assert_decode_error!(Node,
         r#"node"#,
         "additional argument `name` is required");
@@ -58,10 +57,9 @@ fn parse_argument_unnamed() {
     assert_decode_error!(Node,
         r#"node "hello" "world""#,
         "unexpected argument");
-    // TODO(rnarkk)
-    // assert_decode_error!(Node,
-    //     r#"(some)node "hello""#,
-    //     "no type name expected for this node");
+    assert_decode_error!(Node,
+        r#"(some)node "hello""#,
+        "no type name expected for this node");
     assert_decode_error!(Node,
         r#"node"#,
         "additional argument is required");
@@ -79,10 +77,9 @@ fn parse_argument_raw_ident() {
     assert_decode_error!(Node,
         r#"node "hello" "world""#,
         "unexpected argument");
-    // TODO(rnarkk)
-    // assert_decode_error!(Node,
-    //     r#"(some)node "hello""#,
-    //     "no type name expected for this node");
+    assert_decode_error!(Node,
+        r#"(some)node "hello""#,
+        "no type name expected for this node");
     assert_decode_error!(Node,
         r#"node"#,
         "additional argument `type` is required");

@@ -422,7 +422,7 @@ impl StructBuilder {
 
 impl Struct {
     fn new(ident: syn::Ident, trait_props: TraitProps, generics: syn::Generics,
-           fields: impl Iterator<Item=syn::Field>)
+           fields: impl Iterator<Item = syn::Field>)
         -> syn::Result<Self>
     {
         let mut bld = StructBuilder::new(ident, trait_props, generics);

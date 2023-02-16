@@ -230,11 +230,15 @@ fn check_type(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     let name = heck::ToKebabCase::to_kebab_case(
         &s.object.ident.unraw().to_string()[..]);
     Ok(quote! {
+        if let Some(type_name) = &#node.type_name {
+            return Err(::kfl::errors::DecodeError::unexpected(
+                       type_name, "type name",
+                       "no type name expected for this node"));
+        }
         if #node.node_name.as_ref() != #name {
             return Err(::kfl::errors::DecodeError::unexpected(
                 #node, "node", format!("unexpected node `{}`",
-                #node.node_name.as_ref())
-            ))
+                #node.node_name.as_ref())));
         }
     })
 }
@@ -267,17 +271,6 @@ fn decode_specials(s: &Common, node: &syn::Ident)
     //         };
     //     }
     // });
-    // let validate_type = if s.object.type_names.is_empty() {
-    //     Some(quote! {
-    //         if let Some(type_name) = &#node.type_name {
-    //             #ctx.emit_error(::kfl::errors::DecodeError::unexpected(
-    //                         type_name, "type name",
-    //                         "no type name expected for this node"));
-    //         }
-    //     })
-    // } else {
-    //     None
-    // };
     Ok(quote! {
         #(#spans)*
     })

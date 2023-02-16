@@ -221,10 +221,9 @@ impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
                             }
                         }
                         #[cfg(not(feature = "base64"))] {
-                            ctx.emit_error(DecodeError::unsupported(
+                            Err(DecodeError::unsupported(
                                     &value.value,
-                                    "base64 support is not compiled in"));
-                            Ok(Default::default())
+                                    "base64 support is not compiled in"))
                         }
                     }
                     _ => Ok(Default::default())

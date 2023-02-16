@@ -2,40 +2,36 @@ mod common;
 
 use kfl::{Decode, DecodeScalar};
 
-// #[derive(Decode, Default, Debug, PartialEq)]
-// struct Prop1 {
-//     #[kfl(property)]
-//     label: Option<String>,
-// }
-
-// #[derive(Decode, Debug, PartialEq)]
-// struct FlatProp {
-//     #[kfl(flatten(property))]
-//     props: Prop1,
-// }
-
 // #[test]
 // fn parse_struct_scalar_properties() {
-//     assert_eq!(parse::<FlatProp>(r#"node label="hello""#),
-//         FlatProp { props: Prop1 { label: Some("hello".into()) } } );
-//     assert_eq!(parse_err::<FlatProp>(r#"node something="world""#),
-//         "unexpected property `something`");
+//     #[derive(Decode, Debug, PartialEq)]
+//     struct Node {
+//         #[kfl(flatten)]
+//         props: Props
+//     }
+//     #[derive(Decode, Default, Debug, PartialEq)]
+//     struct Props {
+//         #[kfl(property)]
+//         label: Option<String>,
+//     }
+//     assert_decode!(r#"node label="hello""#,
+//                    Node { props: Prop1 { label: Some("hello".into()) } } );
+//     assert_decode_error!(Node, r#"node something="world""#,
+//                          "unexpected property `something`");
 // }
-
-#[derive(DecodeScalar, Debug, PartialEq)]
-enum SomeScalar {
-    First,
-    AnotherOption,
-}
-
-#[derive(Decode, Debug, PartialEq)]
-struct Node {
-    #[kfl(argument)]
-    value: SomeScalar,
-}
 
 #[test]
 fn parse_enum_scalar() {
+    #[derive(Decode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(argument)]
+        value: SomeScalar,
+    }
+    #[derive(DecodeScalar, Debug, PartialEq)]
+    enum SomeScalar {
+        First,
+        AnotherOption,
+    }
     assert_decode!(
         r#"node "first""#,
         Node { value: SomeScalar::First });

@@ -25,3 +25,4 @@
 - Remove `DecodeMode`
 - `DecodeScalar`
   - Separation of `check_type` and `raw_decode` is inefficient when implementing `bytes` for `Vec<u8>`
+  - You have to return default values

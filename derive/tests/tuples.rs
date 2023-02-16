@@ -1,70 +1,75 @@
-// mod common;
+mod common;
 
-// use std::fmt::Debug;
-// use kfl::{Decode, span::Span};
+use std::fmt::Debug;
+use kfl::Decode;
 // use miette::Diagnostic;
 
-// #[derive(Debug, Decode, PartialEq)]
-// struct Unit;
+#[test]
+fn parse_unit() {
+    #[derive(Debug, Decode, PartialEq)]
+    struct Node;
+    assert_decode!(r#"node"#, Node);
+    assert_decode_error!(Node,
+        r#"node something="world""#,
+        "unexpected property `something`");
+}
 
-// #[derive(Debug, Decode, PartialEq)]
-// struct Arg(#[kfl(argument)] u32);
+#[test]
+fn parse_argument() {
+    #[derive(Debug, Decode, PartialEq)]
+    struct Node(#[kfl(argument)] u32);
+    assert_decode!(r#"node 123"#, Node(123));
+    assert_decode_error!(Node,
+        r#"node something="world""#,
+        "additional argument is required");
+}
 
-// #[derive(Debug, Decode, PartialEq)]
-// struct Opt(Option<Arg>);
+#[test]
+fn parse_extra() {
+    #[derive(Debug, Decode, PartialEq)]
+    struct Node(#[kfl(argument, default)] Option<String>, u32);
+    assert_decode!(r#"node "123""#,
+                   Node(Some("123".into()), 0));
+    assert_decode!(r#"node"#,
+                   Node(None, 0));
+    assert_decode_error!(Node,
+        r#"node "123" 456"#,
+        "unexpected argument");
+}
 
-// #[derive(Debug, Decode, PartialEq)]
-// struct Extra(#[kfl(argument)] Option<String>, u32);
-
-// #[derive(Debug, Decode, PartialEq)]
-// enum Enum {
-//     Unit,
-//     Arg(#[kfl(argument)] u32),
-//     Opt(Option<Arg>),
-//     Extra(#[kfl(argument)] Option<String>, u32),
-// }
+#[test]
+fn parse_enum() {
+    #[derive(Debug, Decode, PartialEq)]
+    enum Enum {
+        Unit,
+        Arg(#[kfl(argument)] u32),
+        // Opt(Option<Arg>),
+        Extra(#[kfl(argument, default)] Option<String>, u32),
+    }
+    assert_decode!(r#"unit"#, Enum::Unit);
+    assert_decode!(r#"arg 123"#, Enum::Arg(123));
+    // assert_decode!(r#"opt 123"#, Enum::Opt(Some(Arg(123))));
+    // assert_decode!(r#"opt"#, Enum::Opt(None));
+    assert_decode!(r#"extra"#, Enum::Extra(None, 0));
+    assert_decode_error!(Enum,
+        r#"unit something="world""#,
+        "unexpected property `something`");
+    assert_decode_error!(Enum,
+        r#"other something="world""#,
+        "expected one of `unit`, `arg`, `extra`");
+    assert_decode_error!(Enum,
+        r#"extra "hello" "world""#,
+        "unexpected argument");
+}
 
 // #[test]
-// fn parse_unit() {
-//     assert_eq!(parse::<Unit>(r#"node"#), Unit);
-//     assert_eq!(parse_err::<Unit>(r#"node something="world""#),
-//         "unexpected property `something`");
-// }
-
-// #[test]
-// fn parse_arg() {
-//     assert_eq!(parse::<Arg>(r#"node 123"#), Arg(123));
-//     assert_eq!(parse_err::<Arg>(r#"node something="world""#),
-//         "additional argument is required");
-// }
-
-// #[test]
-// fn parse_extra() {
-//     assert_eq!(parse::<Extra>(r#"node "123""#), Extra(Some("123".into()), 0));
-//     assert_eq!(parse::<Extra>(r#"node"#), Extra(None, 0));
-//     assert_eq!(parse_err::<Extra>(r#"node "123" 456"#),
-//         "unexpected argument");
-// }
-
-// #[test]
-// fn parse_opt() {
+// fn parse_option_argument() {
+//     #[derive(Debug, Decode, PartialEq)]
+//     struct Opt(Option<Child>);
+//     #[derive(Debug, Decode, PartialEq)]
+//     struct Child(#[kfl(argument)] u32);
 //     assert_eq!(parse::<Opt>(r#"node 123"#), Opt(Some(Arg(123))));
 //     assert_eq!(parse::<Opt>(r#"node"#), Opt(None));
 //     assert_eq!(parse_err::<Opt>(r#"node something="world""#),
 //         "additional argument is required");
-// }
-
-// #[test]
-// fn parse_enum() {
-//     assert_eq!(parse::<Enum>(r#"unit"#), Enum::Unit);
-//     assert_eq!(parse::<Enum>(r#"arg 123"#), Enum::Arg(123));
-//     assert_eq!(parse::<Enum>(r#"opt 123"#), Enum::Opt(Some(Arg(123))));
-//     assert_eq!(parse::<Enum>(r#"opt"#), Enum::Opt(None));
-//     assert_eq!(parse::<Enum>(r#"extra"#), Enum::Extra(None, 0));
-//     assert_eq!(parse_err::<Enum>(r#"unit something="world""#),
-//         "unexpected property `something`");
-//     assert_eq!(parse_err::<Enum>(r#"other something="world""#),
-//         "expected `unit`, `arg`, or one of 2 others");
-//     assert_eq!(parse_err::<Enum>(r#"extra "hello" "world""#),
-//         "unexpected argument");
 // }

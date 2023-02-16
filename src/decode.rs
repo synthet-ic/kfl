@@ -8,9 +8,9 @@ use std::{
 };
 
 use crate::{
-    ast::{Literal, SpannedNode},
+    ast::Literal,
     errors::DecodeError,
-    traits::{ErrorSpan, Decode}
+    traits::ErrorSpan
 };
 
 /// Context is passed through all the decode operations and can be used for:
@@ -42,56 +42,6 @@ pub enum Kind {
     Bool,
     /// The null value (usually corresponds to `None` in Rust)
     Null,
-}
-
-/// Emits error(s) if node is not a flag node
-///
-/// Flag node is a node that has no arguments, properties or children.
-///
-/// Used internally by `#[kfl(child)] x: bool,`. But can be used
-/// manually for implementing [`DecodeScalar`](crate::traits::DecodeScalar).
-pub fn check_flag_node<S: ErrorSpan>(
-    node: &SpannedNode<S>, ctx: &mut Context<S>)
-{
-    for arg in &node.arguments {
-        ctx.emit_error(DecodeError::unexpected(
-                &arg.literal, "argument",
-                "unexpected argument"));
-    }
-    for (name, _) in &node.properties {
-        ctx.emit_error(DecodeError::unexpected(
-            name, "property",
-            format!("unexpected property `{}`",
-                    name.escape_default())));
-    }
-    if let Some(children) = &node.children {
-        for child in children.iter() {
-            ctx.emit_error(
-                DecodeError::unexpected(
-                    child, "node",
-                    format!("unexpected node `{}`",
-                        child.node_name.escape_default())
-                ));
-        }
-    }
-}
-
-/// Parse single KDL node from AST
-pub fn node<T, S>(ast: &SpannedNode<S>) -> Result<T, Vec<DecodeError<S>>>
-    where T: Decode<S>,
-          S: ErrorSpan,
-{
-    let mut ctx = Context::new();
-    match Decode::decode(ast, &mut ctx) {
-        Ok(_) if ctx.has_errors() => {
-            Err(ctx.into_errors())
-        }
-        Err(e) => {
-            ctx.emit_error(e);
-            Err(ctx.into_errors())
-        }
-        Ok(v) => Ok(v)
-    }
 }
 
 impl<S: ErrorSpan> Context<S> {

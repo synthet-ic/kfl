@@ -38,6 +38,24 @@ pub fn decode<T>(file_name: &str, text: &str) -> Result<T, Error>
     })
 }
 
+// /// Parse single KDL node from AST
+// pub fn decode_node<T, S>(ast: &SpannedNode<S>) -> Result<T, Vec<DecodeError<S>>>
+//     where T: Decode<S>,
+//           S: ErrorSpan,
+// {
+//     let mut ctx = Context::new();
+//     match Decode::decode(ast, &mut ctx) {
+//         Ok(_) if ctx.has_errors() => {
+//             Err(ctx.into_errors())
+//         }
+//         Err(e) => {
+//             ctx.emit_error(e);
+//             Err(ctx.into_errors())
+//         }
+//         Ok(v) => Ok(v)
+//     }
+// }
+
 /// Parse KDL text and decode Rust object
 pub fn decode_children<T>(file_name: &str, text: &str) -> Result<T, Error>
     where T: DecodeChildren<Span>,

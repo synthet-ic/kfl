@@ -87,13 +87,13 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                 branches.push(quote! {
                     #name => {
                         for arg in &#node.arguments {
-                            #ctx.emit_error(
+                            return Err(
                                 ::kfl::errors::DecodeError::unexpected(
                                     &arg.literal, "argument",
                                     "unexpected argument"));
                         }
                         for (name, _) in &#node.properties {
-                            #ctx.emit_error(
+                            return Err(
                                 ::kfl::errors::DecodeError::unexpected(
                                     name, "property",
                                     format!("unexpected property `{}`",
@@ -101,7 +101,7 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                         }
                         if let Some(children) = &#node.children {
                             for child in children.iter() {
-                                #ctx.emit_error(
+                                return Err(
                                     ::kfl::errors::DecodeError::unexpected(
                                         child, "node",
                                         format!("unexpected node `{}`",

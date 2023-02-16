@@ -170,7 +170,7 @@ pub fn emit_new_type(s: &NewType) -> syn::Result<TokenStream> {
     })
 }
 
-pub(crate) fn decode_enum_item(s: &Common,
+pub(crate) fn decode_variant(s: &Common,
     s_name: impl ToTokens, node: &syn::Ident, named: bool)
     -> syn::Result<TokenStream>
 {

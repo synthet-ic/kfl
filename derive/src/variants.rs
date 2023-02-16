@@ -125,7 +125,7 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                     ctx,
                     span_type: e.span_type,
                 };
-                let decode = node::decode_enum_item(
+                let decode = node::decode_variant(
                     &common,
                     quote!(#enum_name::#variant_name),
                     node,
@@ -135,7 +135,22 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                     #name => { #decode }
                 });
             }
-            VariantKind::Named(_) => todo!(),
+            VariantKind::Named(s) => {
+                let common = node::Common {
+                    object: s,
+                    ctx,
+                    span_type: e.span_type,
+                };
+                let decode = node::decode_variant(
+                    &common,
+                    quote!(#enum_name::#variant_name),
+                    node,
+                    true,
+                )?;
+                branches.push(quote! {
+                    #name => { #decode }
+                });
+            },
         }
     }
     // TODO(tailhook) use strsim to find similar names

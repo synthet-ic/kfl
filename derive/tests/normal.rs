@@ -505,32 +505,32 @@ fn parse_child_default_value() {
         Parent { main: Child { label: "prop1".into() } });
 }
 
-// #[test]
-// fn parse_enum_named() {
-//     #[derive(Decode, Debug, PartialEq)]
-//     enum Enum {
-//         Var0,
-//         Var1 {
-//             #[kfl(argument)]
-//             name: String,
-//         },
-//         Var2 {
-//             #[kfl(property)]
-//             name: String,
-//         },
-//         #[kfl(skip)]
-//         #[allow(dead_code)]
-//         Var3(u32),
-//     }
-//     assert_decode!(r#"var0"#, Enum::Var0);
-//     assert_decode!(r#"var1 "hello""#,
-//         Enum::Var1 { name: "hello".into() });
-//     assert_decode!(r#"var2 name="hello""#,
-//         Enum::Var2 { name: "hello".into() });
-//     assert_decode_error!(Enum,
-//         r#"something"#,
-//         "expected one of `var0`, `var1`, `var2`");
-// }
+#[test]
+fn parse_enum_named() {
+    #[derive(Decode, Debug, PartialEq)]
+    enum Enum {
+        Var0,
+        Var1 {
+            #[kfl(argument)]
+            name: String,
+        },
+        Var2 {
+            #[kfl(property)]
+            name: String,
+        },
+        #[kfl(skip)]
+        #[allow(dead_code)]
+        Var3(u32),
+    }
+    assert_decode!(r#"var0"#, Enum::Var0);
+    assert_decode!(r#"var1 "hello""#,
+        Enum::Var1 { name: "hello".into() });
+    assert_decode!(r#"var2 name="hello""#,
+        Enum::Var2 { name: "hello".into() });
+    assert_decode_error!(Enum,
+        r#"something"#,
+        "expected one of `var0`, `var1`, `var2`");
+}
 
 #[test]
 fn parse_enum_unnamed() {

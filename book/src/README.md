@@ -5,6 +5,7 @@
 
 # TODO
 
+- [ ] `-`
 - [ ] Struct variants and tuple variants
 - [ ] `DecodePartial` compatibility cannot automatically be detected (except `Unit` useless case)
   - Because we discard `option` parameter and also switch to manually implementing it for `Option<T>` and `Vec<T>`

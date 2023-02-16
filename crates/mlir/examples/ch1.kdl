@@ -1,5 +1,5 @@
-module {
-  function {
+mod {
+  fn {
     proto "multiply_transpose" "@test/examples/toy/ch1/ast.toy:4:1"
     params "a" "b"
     block {
@@ -15,7 +15,7 @@ module {
       }
     }
   }
-  function {
+  fn {
     proto "main" "@test/examples/toy/ch1/ast.toy:8:1"
     params
     block {

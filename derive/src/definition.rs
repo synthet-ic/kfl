@@ -39,16 +39,9 @@ pub enum FieldMode {
     Span,
 }
 
-#[derive(Debug, Clone)]
-pub enum DecodeMode {
-    Normal,
-    Bytes,
-}
-
 #[derive(Debug)]
 pub enum Attr {
     Skip,
-    DecodeMode(DecodeMode),
     FieldMode(FieldMode),
     Unwrap(FieldAttrs),
     Default(Option<syn::Expr>),
@@ -58,7 +51,6 @@ pub enum Attr {
 #[derive(Debug, Clone)]
 pub struct FieldAttrs {
     pub mode: Option<FieldMode>,
-    pub decode: Option<DecodeMode>,
     pub unwrap: Option<Box<FieldAttrs>>,
     pub default: Option<Option<syn::Expr>>,
 }
@@ -88,25 +80,21 @@ pub struct SpanField {
 
 pub struct Arg {
     pub field: Field,
-    pub decode: DecodeMode,
     pub default: Option<Option<syn::Expr>>,
 }
 
 pub struct VarArgs {
     pub field: Field,
-    pub decode: DecodeMode,
 }
 
 pub struct Prop {
     pub field: Field,
     pub name: String,
-    pub decode: DecodeMode,
     pub default: Option<Option<syn::Expr>>,
 }
 
 pub struct VarProps {
     pub field: Field,
-    pub decode: DecodeMode,
 }
 
 pub enum ChildMode {
@@ -333,7 +321,6 @@ impl StructBuilder {
                 }
                 self.arguments.push(Arg {
                     field,
-                    decode: attrs.decode.clone().unwrap_or(DecodeMode::Normal),
                     default: attrs.default.clone(),
                 });
             }
@@ -345,7 +332,6 @@ impl StructBuilder {
                 }
                 self.var_args = Some(VarArgs {
                     field,
-                    decode: attrs.decode.clone().unwrap_or(DecodeMode::Normal),
                 });
             }
             Some(FieldMode::Property { name }) => {
@@ -367,7 +353,6 @@ impl StructBuilder {
                 self.properties.push(Prop {
                     field,
                     name,
-                    decode: attrs.decode.clone().unwrap_or(DecodeMode::Normal),
                     default: attrs.default.clone(),
                 });
             }
@@ -379,7 +364,6 @@ impl StructBuilder {
                 }
                 self.var_props = Some(VarProps {
                     field,
-                    decode: attrs.decode.clone().unwrap_or(DecodeMode::Normal),
                 });
             }
             Some(FieldMode::Child) => {
@@ -516,7 +500,6 @@ impl FieldAttrs {
     fn new() -> FieldAttrs {
         FieldAttrs {
             mode: None,
-            decode: None,
             unwrap: None,
             default: None,
         }
@@ -539,15 +522,6 @@ impl FieldAttrs {
                         emit_error!(span, "`unwrap` specified twice");
                     }
                     self.unwrap = Some(Box::new(val));
-                }
-                DecodeMode(mode) => {
-                    if self.decode.is_some() {
-                        emit_error!(span,
-                            "only single attribute that defines parser of the \
-                            field is allowed");
-                    }
-                    self.decode = Some(mode);
-
                 }
                 Default(value) => {
                     if self.default.is_some() {
@@ -664,9 +638,6 @@ impl Attr {
         } else if lookahead.peek(kw::skip) {
             let _kw: kw::skip = input.parse()?;
             Ok(Attr::Skip)
-        } else if lookahead.peek(kw::bytes) {
-            let _kw: kw::bytes = input.parse()?;
-            Ok(Attr::DecodeMode(DecodeMode::Bytes))
         } else if lookahead.peek(kw::flatten) {
             let _kw: kw::flatten = input.parse()?;
             Ok(Attr::FieldMode(FieldMode::Flatten))

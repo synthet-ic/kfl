@@ -4,9 +4,9 @@ use std::{
 };
 
 use crate::{
-    ast::{SpannedNode, Literal, TypeName},
+    ast::{SpannedNode, Literal, TypeName, BuiltinType},
     decode::Context,
-    errors::DecodeError,
+    errors::{DecodeError, ExpectedType},
     span::Spanned,
     traits::{Decode, DecodePartial, DecodeChildren, DecodeScalar},
     traits::{ErrorSpan, DecodeSpan, Span}
@@ -181,6 +181,58 @@ impl<S: ErrorSpan, T: Decode<S>> DecodeChildren<S> for Vec<T> {
             }
         }
         Ok(result)
+    }
+}
+
+impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
+    fn type_check(type_name: &Option<Spanned<TypeName, S>>,
+                  ctx: &mut Context<S>) {
+        if let Some(ty) = type_name {
+            match ty.as_builtin() {
+                Some(&BuiltinType::Base64)
+                    => ctx.set::<BuiltinType>(BuiltinType::Base64),
+                _ => {
+                    ctx.emit_error(DecodeError::TypeName {
+                        span: ty.span().clone(),
+                        found: Some(ty.value.clone()),
+                        expected: ExpectedType::optional(BuiltinType::Base64),
+                        rust_type: "bytes",
+                    });
+                }
+            }
+        }
+    }
+    fn raw_decode(value: &Spanned<Literal, S>, ctx: &mut Context<S>)
+        -> Result<Self, DecodeError<S>>
+    {
+        match &**value {
+            Literal::String(ref s) => {
+                match ctx.get::<BuiltinType>() {
+                    None => Ok(s.as_bytes().to_vec()),
+                    Some(BuiltinType::Base64) => {
+                        #[cfg(feature = "base64")] {
+                            use base64::{Engine as _,
+                                         engine::general_purpose::STANDARD};
+                            match STANDARD.decode(s.as_bytes()) {
+                                Ok(vec) => Ok(vec),
+                                Err(e) => {
+                                    Err(DecodeError::conversion(&value, e))
+                                }
+                            }
+                        }
+                        #[cfg(not(feature = "base64"))] {
+                            ctx.emit_error(DecodeError::unsupported(
+                                    &value.value,
+                                    "base64 support is not compiled in"));
+                            Ok(Default::default())
+                        }
+                    }
+                    _ => Ok(Default::default())
+                }
+            }
+            _ => Err(DecodeError::scalar_kind(crate::decode::Kind::String,
+                                              &value))
+        }
     }
 }
 

@@ -2,7 +2,7 @@ use proc_macro2::{TokenStream, Span};
 use quote::{format_ident, quote, ToTokens};
 use syn::ext::IdentExt;
 
-use crate::definition::{Struct, DecodeMode, NewType, ExtraKind, ChildMode};
+use crate::definition::{Struct, NewType, ExtraKind, ChildMode};
 
 pub(crate) struct Common<'a> {
     pub object: &'a Struct,
@@ -207,23 +207,11 @@ pub(crate) fn decode_variant(s: &Common,
     })
 }
 
-fn decode_value(val: &syn::Ident, ctx: &syn::Ident, mode: &DecodeMode)
-    -> syn::Result<TokenStream>
+fn decode_scalar(val: &syn::Ident, ctx: &syn::Ident) -> syn::Result<TokenStream>
 {
-    match mode {
-        DecodeMode::Normal => {
-            Ok(quote! {
-                ::kfl::traits::DecodeScalar::decode(#val, #ctx)
-            })
-        }
-        DecodeMode::Bytes => {
-            Ok(quote! {
-                ::kfl::decode::bytes(#val, #ctx).try_into()
-                .map_err(|e| ::kfl::errors::DecodeError::conversion(
-                        &#val.literal, e))
-            })
-        }
-    }
+    Ok(quote! {
+        ::kfl::traits::DecodeScalar::decode(#val, #ctx)
+    })
 }
 
 fn check_type(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
@@ -286,7 +274,7 @@ fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     for arg in &s.object.arguments {
         let fld = &arg.field.tmp_name;
         let val = syn::Ident::new("val", Span::mixed_site());
-        let decode_value = decode_value(&val, ctx, &arg.decode)?;
+        let decode_scalar = decode_scalar(&val, ctx)?;
         match &arg.default {
             None => {
                 let error = if arg.field.is_indexed() {
@@ -300,7 +288,7 @@ fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                             ::kfl::errors::DecodeError::missing(
                                 #node, #error)
                         })?;
-                    let #fld = #decode_value?;
+                    let #fld = #decode_scalar?;
                 });
             }
             Some(default_value) => {
@@ -311,7 +299,7 @@ fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                 };
                 decoder.push(quote! {
                     let #fld = #iter_args.next().map(|#val| {
-                        #decode_value
+                        #decode_scalar
                     }).transpose()?.unwrap_or_else(|| {
                         #default
                     });
@@ -322,10 +310,10 @@ fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     if let Some(var_args) = &s.object.var_args {
         let fld = &var_args.field.tmp_name;
         let val = syn::Ident::new("val", Span::mixed_site());
-        let decode_value = decode_value(&val, ctx, &var_args.decode)?;
+        let decode_scalar = decode_scalar(&val, ctx)?;
         decoder.push(quote! {
             let #fld = #iter_args.map(|#val| {
-                #decode_value
+                #decode_scalar
             }).collect::<Result<_, _>>()?;
         });
     } else {
@@ -366,14 +354,14 @@ fn decode_props(s: &Common, node: &syn::Ident)
                 => {}
             });
         } else {
-            let decode_value = decode_value(&val, ctx, &prop.decode)?;
+            let decode_scalar = decode_scalar(&val, ctx)?;
             declare_empty.push(quote! {
                 let mut #fld = None;
                 let mut #seen_name = false;
             });
             match_branches.push(quote! {
                 #prop_name => {
-                    #fld = Some(#decode_value?);
+                    #fld = Some(#decode_scalar?);
                 }
             });
             let req_msg = format!("property `{}` is required", prop_name);
@@ -398,7 +386,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
     }
     if let Some(var_props) = &s.object.var_props {
         let fld = &var_props.field.tmp_name;
-        let decode_value = decode_value(&val, ctx, &var_props.decode)?;
+        let decode_scalar = decode_scalar(&val, ctx)?;
         declare_empty.push(quote! {
             let mut #fld = Vec::new();
         });
@@ -410,7 +398,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
                     })?;
                 #fld.push((
                     converted_name,
-                    #decode_value?,
+                    #decode_scalar?,
                 ));
             }
         });
@@ -526,11 +514,10 @@ fn decode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
 //                 => Ok(true),
 //             });
 //         } else {
-//             let decode_value = decode_value(&value, ctx, &prop.decode,
-//                                             &prop.field.ty)?;
+//             let decode_scalar = decode_scalar(&value, ctx, &prop.decode)?;
 //             match_branches.push(quote! {
 //                 #prop_name => {
-//                     #dest = Some(#decode_value?);
+//                     #dest = Some(#decode_scalar?);
 //                     Ok(true)
 //                 }
 //             });

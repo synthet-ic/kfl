@@ -4,16 +4,12 @@
 use std::{
     any::{Any, TypeId},
     collections::HashMap,
-    default::Default,
     fmt::Display
 };
 
-#[cfg(feature = "base64")] 
-use base64::{Engine as _, engine::general_purpose::STANDARD};
-
 use crate::{
-    ast::{Literal, BuiltinType, Value, SpannedNode},
-    errors::{DecodeError, ExpectedType},
+    ast::{Literal, SpannedNode},
+    errors::DecodeError,
     traits::{ErrorSpan, Decode}
 };
 
@@ -46,62 +42,6 @@ pub enum Kind {
     Bool,
     /// The null value (usually corresponds to `None` in Rust)
     Null,
-}
-
-/// Decodes KDL value as bytes
-///
-/// Used internally by `#[kfl(..., bytes)]` attribute. But can be used
-/// manually for implementing [`DecodeScalar`](crate::traits::DecodeScalar).
-pub fn bytes<S: ErrorSpan>(value: &Value<S>, ctx: &mut Context<S>) -> Vec<u8> {
-    if let Some(typ) = &value.type_name {
-        match typ.as_builtin() {
-            Some(&BuiltinType::Base64) => {
-                #[cfg(feature="base64")] {
-                    match &*value.literal {
-                        Literal::String(s) => {
-                            match STANDARD.decode(s.as_bytes()) {
-                                Ok(vec) => vec,
-                                Err(e) => {
-                                    ctx.emit_error(DecodeError::conversion(
-                                        &value.literal, e));
-                                    Default::default()
-                                }
-                            }
-                        }
-                        _ => {
-                            ctx.emit_error(DecodeError::scalar_kind(
-                                Kind::String, &value.literal));
-                            Default::default()
-                        }
-                    }
-                }
-                #[cfg(not(feature="base64"))] {
-                    ctx.emit_error(DecodeError::unsupported(
-                            &value.literal,
-                            "base64 support is not compiled in"));
-                    Default::default()
-                }
-            }
-            _ => {
-                ctx.emit_error(DecodeError::TypeName {
-                    span: typ.span().clone(),
-                    found: Some(typ.value.clone()),
-                    expected: ExpectedType::optional(BuiltinType::Base64),
-                    rust_type: "bytes",
-                });
-                Default::default()
-            }
-        }
-    } else {
-        match &*value.literal {
-            Literal::String(s) => s.as_bytes().to_vec(),
-            _ => {
-                ctx.emit_error(DecodeError::scalar_kind(
-                    Kind::String, &value.literal));
-                Default::default()
-            }
-        }
-    }
 }
 
 /// Emits error(s) if node is not a flag node

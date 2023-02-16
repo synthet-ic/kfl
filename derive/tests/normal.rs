@@ -3,25 +3,9 @@ mod common;
 use std::{
     collections::BTreeMap,
     default::Default,
+    net::SocketAddr
 };
 use kfl::Decode;
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct Extra {
-//     field: String,
-// }
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct Bytes {
-//     #[kfl(argument, bytes)]
-//     data: Vec<u8>,
-// }
-
-// #[derive(kfl_derive::Decode, Debug, PartialEq)]
-// struct OptBytes {
-//     #[kfl(property, bytes)]
-//     data: Option<Vec<u8>>,
-// }
 
 #[test]
 fn parse_argument_named() {
@@ -438,13 +422,14 @@ fn parse_child() {
             child1: Child1 { name: "primary".into() },
             child2: Some(Child2 { name: "replica".into() }),
         });
+    // TODO(rnarkk)
     // assert_decode_error!(Parent,
     //     r#"parent { something; }"#,
     //     "unexpected node `something`\n\
-    //     child node `child1` is required");
-    // assert_decode_error!(Parent,
-    //     r#"parent"#,
-    //     "child node `child1` is required");
+    //     child node for struct field `child1` is required");
+    assert_decode_error!(Parent,
+        r#"parent"#,
+        "child node for struct field `child1` is required");
     assert_decode_children!(
         r#"child1 name="val1""#,
         Parent {
@@ -586,7 +571,7 @@ fn parse_str() {
     #[derive(Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument)]  /* str */
-        listen: std::net::SocketAddr,
+        listen: SocketAddr,
     }
     assert_decode!(r#"node "127.0.0.1:8080""#,
                Node { listen: "127.0.0.1:8080".parse().unwrap() });
@@ -600,7 +585,7 @@ fn parse_option_str() {
     #[derive(Decode, Debug, PartialEq)]
     struct Server {
         #[kfl(property, default)]  /* str */
-        listen: Option<std::net::SocketAddr>,  /* TODO strip std::net:: */
+        listen: Option<SocketAddr>,
     }
     assert_decode!(r#"server listen="127.0.0.1:8080""#,
                    Server { listen: Some("127.0.0.1:8080".parse().unwrap()) });
@@ -611,27 +596,52 @@ fn parse_option_str() {
                    Server { listen: None });
 }
 
-// #[test]
-// fn parse_bytes() {
-//     assert_eq!(parse::<Bytes>(r#"bytes (base64)"aGVsbG8=""#),
-//                Bytes { data: b"hello".to_vec() });
-//     assert_eq!(parse::<Bytes>(r#"bytes "world""#),
-//                Bytes { data: b"world".to_vec() });
-//     assert_eq!(parse_err::<Bytes>(r#"bytes (base64)"2/3""#),
-//         "Invalid padding");
+#[test]
+fn parse_bytes() {
+    #[derive(Decode, Debug, PartialEq)]
+    struct Bytes {
+        #[kfl(argument)]  /* bytes */
+        data: Vec<u8>,
+    }
+    assert_decode!(
+        r#"bytes (base64)"aGVsbG8=""#,
+        Bytes { data: b"hello".to_vec() });
+    assert_decode!(
+        r#"bytes "world""#,
+        Bytes { data: b"world".to_vec() });
+    assert_decode_error!(Bytes,
+        r#"bytes (base64)"2/3""#,
+        "Invalid padding");
+}
 
-//     assert_eq!(parse::<OptBytes>(r#"node data=(base64)"aGVsbG8=""#),
-//                OptBytes { data: Some(b"hello".to_vec()) });
-//     assert_eq!(parse::<OptBytes>(r#"node data="world""#),
-//                OptBytes { data: Some(b"world".to_vec()) });
-//     assert_eq!(parse::<OptBytes>(r#"node data=null"#),
-//                OptBytes { data: None });
-// }
+#[test]
+fn parse_option_bytes() {
+    #[derive(Decode, Debug, PartialEq)]
+    struct Bytes {
+        #[kfl(property)]  /* bytes */
+        data: Option<Vec<u8>>,
+    }
+    assert_decode!(
+        r#"bytes data=(base64)"aGVsbG8=""#,
+        Bytes { data: Some(b"hello".to_vec()) });
+    assert_decode!(
+        r#"bytes data="world""#,
+        Bytes { data: Some(b"world".to_vec()) });
+    assert_decode!(
+        r#"bytes data=null"#,
+        Bytes { data: None });
+}
 
-// #[test]
-// fn parse_extra() {
-//     assert_eq!(parse::<Extra>(r#"data"#),
-//                Extra { field: "".into() });
-//     assert_eq!(parse_err::<Extra>(r#"data x=1"#),
-//         "unexpected property `x`");
-// }
+#[test]
+fn parse_extra() {
+    #[derive(Decode, Debug, PartialEq)]
+    struct Node {
+        field: String,
+    }
+    assert_decode!(
+        r#"node"#,
+        Node { field: "".into() });
+    assert_decode_error!(Node,
+        r#"node x=1"#,
+        "unexpected property `x`");
+}

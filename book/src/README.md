@@ -3,7 +3,12 @@
 - Nominal Typing
 - Trait-Based
 
-# TODO
+## KDL
+
+- KDL as algebraic data type with exponential
+- KDL as token tree (≠ AST, ≠ token stream)
+
+## TODO
 
 - [ ] `-`
 - [ ] Struct variants and tuple variants

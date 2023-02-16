@@ -487,7 +487,11 @@ fn main() {
 </ul>
 </li>
 <li>NodeName</li>
-<li>TypeName</li>
+<li>TypeName
+<ul>
+<li>hence type annotations for nodes and scalars are different</li>
+</ul>
+</li>
 <li>bool child</li>
 </ul>
 </li>
@@ -497,7 +501,11 @@ fn main() {
 </ul>
 </li>
 <li>unwrap</li>
-<li><code>NewType</code> for structs and <code>Nested</code> for enums</li>
+<li><code>NewType</code> for structs and <code>Nested</code> for enums
+<ul>
+<li>Every data in KDL appears either as a scalar wrapped in a node or a node itself. Therefore every type can exsist only in an already <code>newtype</code>ed form.</li>
+</ul>
+</li>
 <li><code>str</code> and <code>bytes</code> → simply implement <code>DecodeScalar</code> for <code>SocketAddr</code> and <code>Vec&lt;u8&gt;</code></li>
 </ul>
 <h1 id=""><a class="header" href="#"></a></h1>

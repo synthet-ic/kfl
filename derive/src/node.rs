@@ -159,7 +159,7 @@ pub fn emit_new_type(s: &NewType) -> syn::Result<TokenStream> {
                     #node.properties.len() > 0 ||
                     #node.children.is_some()
                 {
-                    ::kfl::traits::Decode::decode_node(#node, #ctx)
+                    ::kfl::traits::Decode::decode(#node, #ctx)
                         .map(Some)
                         .map(#s_name)
                 } else {

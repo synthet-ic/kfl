@@ -20,3 +20,4 @@
 - [ ] `Encode`
   - [ ] `EncodePartial` as an analogous to `skip_serializing_none`
 - [ ] Compare TokenStream with Scalar, TokenTree with Node
+- [ ] property-level enum or union?

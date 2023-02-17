@@ -15,7 +15,7 @@ pub struct PList {
 pub enum Element {
     Array(#[kfl(children)] Vec<Box<Element>>),
     Data(#[kfl(argument)] Vec<u8>),
-    // Date(#[kfl(argument)] NaiveDateTime),
+    Date(#[kfl(argument)] NaiveDateTime),
     Dict(#[kfl(flatten)] Box<Dict>),
     Real(#[kfl(argument, default)] f32),
     Integer(#[kfl(argument, default)] i32),

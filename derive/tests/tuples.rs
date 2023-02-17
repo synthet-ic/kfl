@@ -25,6 +25,17 @@ fn parse_argument() {
 }
 
 #[test]
+fn parse_option_argument() {
+    #[derive(Debug, Decode, PartialEq)]
+    struct Node(#[kfl(argument, default)] Option<u32>);
+    assert_decode!(r#"node 123"#, Node(Some(123)));
+    assert_decode!(r#"node"#, Node(None));
+    assert_decode_error!(Node,
+        r#"node something="world""#,
+        "unexpected property `something`");
+}
+
+#[test]
 fn parse_extra() {
     #[derive(Debug, Decode, PartialEq)]
     struct Node(#[kfl(argument, default)] Option<String>, u32);
@@ -61,15 +72,3 @@ fn parse_enum() {
         r#"extra "hello" "world""#,
         "unexpected argument");
 }
-
-// #[test]
-// fn parse_option_argument() {
-//     #[derive(Debug, Decode, PartialEq)]
-//     struct Opt(Option<Child>);
-//     #[derive(Debug, Decode, PartialEq)]
-//     struct Child(#[kfl(argument)] u32);
-//     assert_eq!(parse::<Opt>(r#"node 123"#), Opt(Some(Arg(123))));
-//     assert_eq!(parse::<Opt>(r#"node"#), Opt(None));
-//     assert_eq!(parse_err::<Opt>(r#"node something="world""#),
-//         "additional argument is required");
-// }

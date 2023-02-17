@@ -2,6 +2,12 @@
 name = "kfl-plist"
 version = "0.0.0"
 edition = "2021"
+description = "KFL modelling of XML Property List (.plist)"
+license = "MIT/Apache-2.0"
+homepage = "https://github.com/synthet-ic/kfl"
+documentation = "https://docs.rs/kfl-plist"
+rust-version = "1.62.0"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

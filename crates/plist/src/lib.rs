@@ -1,9 +1,7 @@
-/*!
-<https://www.apple.com/DTDs/PropertyList-1.0.dtd>
-*/
+//! <https://www.apple.com/DTDs/PropertyList-1.0.dtd>
 
 use chrono::NaiveDateTime;
-use kfl::Decode;
+use kfl::{Decode, DecodePartial};
 
 #[derive(Debug, Decode)]
 pub struct PList {
@@ -15,17 +13,18 @@ pub struct PList {
 
 #[derive(Debug, Decode)]
 pub enum Element {
-    Array(#[kfl(children)] pub Vec<Box<Element>>),
-    Data(#[kfl(argument, bytes)] pub Vec<u8>),
-    Date(#[kfl(argument, str)] pub NaiveDateTime),
-    Dict(pub Box<Dict>),
-    Real(#[kfl(argument, default)] pub f32),
-    Integer(#[kfl(argument, default)] pub i32),
-    String(#[kfl(argument, default)] pub String),
-    Bool(#[kfl(argument)] bool)
+    Array(#[kfl(children)] Vec<Box<Element>>),
+    Data(#[kfl(argument)] Vec<u8>),
+    // Date(#[kfl(argument)] NaiveDateTime),
+    Dict(#[kfl(flatten)] Box<Dict>),
+    Real(#[kfl(argument, default)] f32),
+    Integer(#[kfl(argument, default)] i32),
+    String(#[kfl(argument, default)] String),
+    True,
+    False
 }
 
-#[derive(Debug, Decode)]
+#[derive(Debug, DecodePartial, Default)]
 pub struct Dict {
     #[kfl(children)]
     pub keys: Vec<Key>,

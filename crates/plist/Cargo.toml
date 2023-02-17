@@ -14,4 +14,3 @@ readme = "README.md"
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
 kfl = { path = "../..", version = "0", features = ["default", "chrono"] }
-

@@ -152,7 +152,7 @@ pub fn emit_new_type(s: &NewType) -> syn::Result<TokenStream> {
             ::kfl::traits::Decode<S> for #s_name
         {
             fn decode(#node: &::kfl::ast::SpannedNode<S>,
-                           #ctx: &mut ::kfl::decode::Context<S>)
+                      #ctx: &mut ::kfl::decode::Context<S>)
                 -> Result<Self, ::kfl::errors::DecodeError<S>>
             {
                 if #node.arguments.len() > 0 ||

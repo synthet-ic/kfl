@@ -1,5 +1,4 @@
 use std::{
-    default::Default,
     net::SocketAddr,
     path::PathBuf,
     str::FromStr
@@ -14,7 +13,7 @@ use crate::{
 };
 
 macro_rules! impl_integer {
-    ($typ: ident, $marker: ident) => {
+    ($typ:ident, $marker:ident) => {
         impl TryFrom<&Integer> for $typ {
             type Error = <$typ as FromStr>::Err;
             fn try_from(val: &Integer) -> Result<$typ, <$typ as FromStr>::Err>
@@ -29,24 +28,13 @@ macro_rules! impl_integer {
         }
 
         impl<S: ErrorSpan> DecodeScalar<S> for $typ {
-            fn raw_decode(val: &Spanned<Literal, S>, ctx: &mut Context<S>)
+            fn raw_decode(val: &Spanned<Literal, S>, _: &mut Context<S>)
                 -> Result<Self, DecodeError<S>>
             {
                 match &**val {
-                    Literal::Int(ref value) => {
-                        match value.try_into() {
-                            Ok(val) => Ok(val),
-                            Err(e) => {
-                                ctx.emit_error(DecodeError::conversion(val, e));
-                                Ok(0)
-                            }
-                        }
-                    }
-                    _ => {
-                        ctx.emit_error(DecodeError::scalar_kind(
-                                Kind::String, val));
-                        Ok(0)
-                    }
+                    Literal::Int(ref value) => value.try_into()
+                        .map_err(|err| DecodeError::conversion(val, err)),
+                    _ => Err(DecodeError::scalar_kind(Kind::String, val))
                 }
             }
             fn type_check(type_name: &Option<Spanned<TypeName, S>>,
@@ -80,7 +68,7 @@ impl_integer!(isize, Isize);
 impl_integer!(usize, Usize);
 
 macro_rules! impl_decimal {
-    ($typ: ident, $marker: ident) => {
+    ($typ:ident, $marker:ident) => {
         impl TryFrom<&Integer> for $typ {
             type Error = <$typ as FromStr>::Err;
             fn try_from(val: &Integer) -> Result<$typ, <$typ as FromStr>::Err>
@@ -98,33 +86,15 @@ macro_rules! impl_decimal {
         }
 
         impl<S: ErrorSpan> DecodeScalar<S> for $typ {
-            fn raw_decode(val: &Spanned<Literal, S>, ctx: &mut Context<S>)
+            fn raw_decode(val: &Spanned<Literal, S>, _: &mut Context<S>)
                 -> Result<Self, DecodeError<S>>
             {
                 match &**val {
-                    Literal::Int(ref value) => {
-                        match value.try_into() {
-                            Ok(val) => Ok(val),
-                            Err(e) => {
-                                ctx.emit_error(DecodeError::conversion(val, e));
-                                Ok(0.0)
-                            }
-                        }
-                    }
-                    Literal::Decimal(ref value) => {
-                        match value.try_into() {
-                            Ok(val) => Ok(val),
-                            Err(e) => {
-                                ctx.emit_error(DecodeError::conversion(val, e));
-                                Ok(0.0)
-                            }
-                        }
-                    }
-                    _ => {
-                        ctx.emit_error(DecodeError::scalar_kind(
-                                Kind::String, val));
-                        Ok(0.0)
-                    }
+                    Literal::Int(ref value) => value.try_into()
+                        .map_err(|err| DecodeError::conversion(val, err)),
+                    Literal::Decimal(ref value) => value.try_into()
+                        .map_err(|err| DecodeError::conversion(val, err)),
+                    _ => Err(DecodeError::scalar_kind(Kind::String, val))
                 }
             }
             fn type_check(type_name: &Option<Spanned<TypeName, S>>,
@@ -150,15 +120,12 @@ impl_decimal!(f32, F32);
 impl_decimal!(f64, F64);
 
 impl<S: ErrorSpan> DecodeScalar<S> for String {
-    fn raw_decode(val: &Spanned<Literal, S>, ctx: &mut Context<S>)
+    fn raw_decode(value: &Spanned<Literal, S>, _: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        match &**val {
+        match &**value {
             Literal::String(ref s) => Ok(s.clone().into()),
-            _ => {
-                ctx.emit_error(DecodeError::scalar_kind(Kind::String, val));
-                Ok(String::new())
-            }
+            _ => Err(DecodeError::scalar_kind(Kind::String, value))
         }
     }
     fn type_check(type_name: &Option<Spanned<TypeName, S>>,
@@ -175,72 +142,46 @@ impl<S: ErrorSpan> DecodeScalar<S> for String {
     }
 }
 
-impl<S: ErrorSpan> DecodeScalar<S> for PathBuf {
-    fn raw_decode(val: &Spanned<Literal, S>, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
-    {
-        match &**val {
-            Literal::String(ref s) => Ok(String::from(s.clone()).into()),
-            _ => {
-                ctx.emit_error(DecodeError::scalar_kind(Kind::String, val));
-                Ok(Default::default())
-            }
-        }
-    }
-    fn type_check(type_name: &Option<Spanned<TypeName, S>>,
-                  ctx: &mut Context<S>)
-    {
-        if let Some(typ) = type_name {
-            ctx.emit_error(DecodeError::TypeName {
-                span: typ.span().clone(),
-                found: Some(typ.value.clone()),
-                expected: ExpectedType::no_type(),
-                rust_type: "PathBuf",
-            });
-        }
-    }
-}
-
-impl<S: ErrorSpan> DecodeScalar<S> for SocketAddr {
-    fn raw_decode(value: &Spanned<Literal, S>, _: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
-    {
-        match &**value {
-            Literal::String(ref s) => {
-                match SocketAddr::from_str(&s) {
-                    Ok(value) => Ok(value),
-                    Err(e) => Err(DecodeError::conversion(value, e))
+macro_rules! impl_from_str {
+    ($ty:ty, $display:literal) => {
+        impl<S: ErrorSpan> DecodeScalar<S> for $ty {
+            fn raw_decode(value: &Spanned<Literal, S>, _: &mut Context<S>)
+                -> Result<Self, DecodeError<S>>
+            {
+                match &**value {
+                    Literal::String(ref s) => <$ty>::from_str(&s)
+                        .map_err(|err| DecodeError::conversion(value, err)),
+                    _ => Err(DecodeError::scalar_kind(Kind::String, value))
                 }
             }
-            _ => {
-                Err(DecodeError::scalar_kind(Kind::String, value))
+            fn type_check(type_name: &Option<Spanned<TypeName, S>>,
+                          ctx: &mut Context<S>)
+            {
+                if let Some(type_name) = type_name {
+                    ctx.emit_error(DecodeError::TypeName {
+                        span: type_name.span().clone(),
+                        found: Some(type_name.value.clone()),
+                        expected: ExpectedType::no_type(),
+                        rust_type: $display,
+                    });
+                }
             }
-        }
-    }
-    fn type_check(type_name: &Option<Spanned<TypeName, S>>,
-                  ctx: &mut Context<S>)
-    {
-        if let Some(typ) = type_name {
-            ctx.emit_error(DecodeError::TypeName {
-                span: typ.span().clone(),
-                found: Some(typ.value.clone()),
-                expected: ExpectedType::no_type(),
-                rust_type: "SocketAddr",
-            });
         }
     }
 }
 
+impl_from_str!(PathBuf, "PathBuf");
+impl_from_str!(SocketAddr, "SocketAddr");
+#[cfg(feature = "chrono")]
+impl_from_str!(chrono::NaiveDateTime, "NaiveDateTime");
+
 impl<S: ErrorSpan> DecodeScalar<S> for bool {
-    fn raw_decode(val: &Spanned<Literal, S>, ctx: &mut Context<S>)
-        -> Result<bool, DecodeError<S>>
+    fn raw_decode(val: &Spanned<Literal, S>, _: &mut Context<S>)
+        -> Result<Self, DecodeError<S>>
     {
         match &**val {
             Literal::Bool(value) => Ok(*value),
-            _ => {
-                ctx.emit_error(DecodeError::scalar_kind(Kind::Bool, &val));
-                Ok(Default::default())
-            }
+            _ => Err(DecodeError::scalar_kind(Kind::Bool, &val))
         }
     }
     fn type_check(type_name: &Option<Spanned<TypeName, S>>,

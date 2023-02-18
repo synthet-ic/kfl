@@ -11,7 +11,6 @@
 ## TODO
 
 - [ ] `-`
-- [ ] Struct variants and tuple variants
 - [ ] Implement `DecodeScalar` for struct as the replacement of `flatten(properties)` and support `flatten(arguments)` equivalent as well
 - [ ] Span
 - [ ] Detect name conflicts between fields in the same struct
@@ -20,4 +19,4 @@
 - [ ] `Encode`
   - [ ] `EncodePartial` as an analogous to `skip_serializing_none`
 - [ ] Compare TokenStream with Scalar, TokenTree with Node
-- [ ] property-level enum or union?
+- [ ] property enum or union

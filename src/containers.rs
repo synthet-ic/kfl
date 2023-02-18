@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    ast::{SpannedNode, Literal, TypeName, BuiltinType},
+    ast::{SpannedNode, Literal, BuiltinType},
     decode::Context,
     errors::{DecodeError, ExpectedType},
     span::Spanned,
@@ -44,14 +44,10 @@ impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Box<T> {
 }
 
 impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Box<T> {
-    fn type_check(type_name: &Option<Spanned<TypeName, S>>,
-                  ctx: &mut Context<S>) {
-        <T as DecodeScalar<S>>::type_check(type_name, ctx)
-    }
-    fn raw_decode(value: &Spanned<Literal, S>, ctx: &mut Context<S>)
+    fn decode(value: &crate::ast::Value<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        <T as DecodeScalar<S>>::raw_decode(value, ctx).map(Box::new)
+        <T as DecodeScalar<S>>::decode(value, ctx).map(Box::new)
     }
 }
 
@@ -89,15 +85,10 @@ impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Arc<T> {
 }
 
 impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Arc<T> {
-    fn type_check(type_name: &Option<Spanned<TypeName, S>>,
-                  ctx: &mut Context<S>)
-    {
-        <T as DecodeScalar<S>>::type_check(type_name, ctx)
-    }
-    fn raw_decode(value: &Spanned<Literal, S>, ctx: &mut Context<S>)
+    fn decode(value: &crate::ast::Value<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        <T as DecodeScalar<S>>::raw_decode(value, ctx).map(Arc::new)
+        <T as DecodeScalar<S>>::decode(value, ctx).map(Arc::new)
     }
 }
 
@@ -135,15 +126,10 @@ impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Rc<T> {
 }
 
 impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Rc<T> {
-    fn type_check(type_name: &Option<Spanned<TypeName, S>>,
-                  ctx: &mut Context<S>)
-    {
-        <T as DecodeScalar<S>>::type_check(type_name, ctx)
-    }
-    fn raw_decode(value: &Spanned<Literal, S>, ctx: &mut Context<S>)
+    fn decode(value: &crate::ast::Value<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        <T as DecodeScalar<S>>::raw_decode(value, ctx).map(Rc::new)
+        <T as DecodeScalar<S>>::decode(value, ctx).map(Rc::new)
     }
 }
 
@@ -185,14 +171,14 @@ impl<S: ErrorSpan, T: Decode<S>> DecodeChildren<S> for Vec<T> {
 }
 
 impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
-    fn type_check(type_name: &Option<Spanned<TypeName, S>>,
-                  ctx: &mut Context<S>) {
-        if let Some(ty) = type_name {
+    fn decode(value: &crate::ast::Value<S>, _: &mut Context<S>)
+        -> Result<Self, DecodeError<S>>
+    {
+        let is_base64 = if let Some(ty) = value.type_name.as_ref() {
             match ty.as_builtin() {
-                Some(&BuiltinType::Base64)
-                    => ctx.set::<BuiltinType>(BuiltinType::Base64),
+                Some(&BuiltinType::Base64) => true,
                 _ => {
-                    ctx.emit_error(DecodeError::TypeName {
+                    return Err(DecodeError::TypeName {
                         span: ty.span().clone(),
                         found: Some(ty.value.clone()),
                         expected: ExpectedType::optional(BuiltinType::Base64),
@@ -200,36 +186,30 @@ impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
                     });
                 }
             }
-        }
-    }
-    fn raw_decode(value: &Spanned<Literal, S>, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
-    {
-        match &**value {
+        } else { false };
+        match &*value.literal {
             Literal::String(ref s) => {
-                match ctx.get::<BuiltinType>() {
-                    None => Ok(s.as_bytes().to_vec()),
-                    Some(BuiltinType::Base64) => {
-                        #[cfg(feature = "base64")] {
-                            use base64::{Engine as _,
-                                         engine::general_purpose::STANDARD};
-                            match STANDARD.decode(s.as_bytes()) {
-                                Ok(vec) => Ok(vec),
-                                Err(e) => {
-                                    Err(DecodeError::conversion(&value, e))
-                                }
+                if is_base64 {
+                    #[cfg(feature = "base64")] {
+                        use base64::{Engine as _,
+                                     engine::general_purpose::STANDARD};
+                        match STANDARD.decode(s.as_bytes()) {
+                            Ok(vec) => Ok(vec),
+                            Err(e) => {
+                                Err(DecodeError::conversion(&value.literal, e))
                             }
                         }
-                        #[cfg(not(feature = "base64"))] {
-                            Err(DecodeError::unsupported(&value,
-                                "base64 support is not compiled in"))
-                        }
                     }
-                    _ => Ok(Default::default())
+                    #[cfg(not(feature = "base64"))] {
+                        Err(DecodeError::unsupported(&value,
+                            "base64 support is not compiled in"))
+                    }
+                } else {
+                    Ok(s.as_bytes().to_vec())
                 }
             }
             _ => Err(DecodeError::scalar_kind(crate::decode::Kind::String,
-                                              &value))
+                                              &value.literal))
         }
     }
 }
@@ -267,16 +247,12 @@ impl<S: ErrorSpan, T: Decode<S>> DecodePartial<S> for Option<T> {
 }
 
 impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Option<T> {
-    fn type_check(type_name: &Option<Spanned<TypeName, S>>,
-                  ctx: &mut Context<S>) {
-        <T as DecodeScalar<S>>::type_check(type_name, ctx)
-    }
-    fn raw_decode(value: &Spanned<Literal, S>, ctx: &mut Context<S>)
+    fn decode(value: &crate::ast::Value<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        match &**value {
+        match &*value.literal {
             Literal::Null => Ok(None),
-            _ => <T as DecodeScalar<S>>::raw_decode(value, ctx).map(Some),
+            _ => <T as DecodeScalar<S>>::decode(value, ctx).map(Some),
         }
     }
 }
@@ -285,18 +261,12 @@ impl<T: DecodeScalar<S>, S, Q> DecodeScalar<S> for Spanned<T, Q>
     where S: Span,
           Q: DecodeSpan<S>
 {
-    fn type_check(type_name: &Option<Spanned<TypeName, S>>,
-                  ctx: &mut Context<S>)
-    {
-        T::type_check(type_name, ctx)
-    }
-    fn raw_decode(value: &Spanned<Literal, S>, ctx: &mut Context<S>)
+    fn decode(value: &crate::ast::Value<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        let decoded = T::raw_decode(value, ctx)?;
-        Ok(Spanned {
-            span: DecodeSpan::decode_span(&value.span, ctx),
-            value: decoded,
+        <T as DecodeScalar<S>>::decode(value, ctx).map(|v| Spanned {
+            span: DecodeSpan::decode_span(&value.literal.span, ctx),
+            value: v,
         })
     }
 }

@@ -38,18 +38,18 @@ impl Enum {
         -> syn::Result<Self>
     {
         let mut variants = Vec::new();
-        for var in src_variants {
-            match var.fields {
+        for variant in src_variants {
+            match variant.fields {
                 syn::Fields::Unit => {
                     let name = heck::ToKebabCase
-                        ::to_kebab_case(&var.ident.unraw().to_string()[..]);
+                        ::to_kebab_case(&variant.ident.unraw().to_string()[..]);
                     variants.push(Variant {
-                        ident: var.ident,
+                        ident: variant.ident,
                         name,
                     });
                 }
                 _ => {
-                    return Err(syn::Error::new(var.span(),
+                    return Err(syn::Error::new(variant.span(),
                         "only unit variants are allowed for DecodeScalar"));
                 }
             }
@@ -111,40 +111,34 @@ pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
     Ok(quote! {
         impl<S: ::kfl::traits::ErrorSpan> ::kfl::DecodeScalar<S>
                 for #e_name {
-            fn raw_decode(val: &::kfl::span::Spanned<
-                          ::kfl::ast::Literal, S>,
-                          ctx: &mut ::kfl::decode::Context<S>)
-                -> Result<#e_name, ::kfl::errors::DecodeError<S>>
+            fn decode(value: &::kfl::ast::Value<S>,
+                      ctx: &mut ::kfl::decode::Context<S>)
+                -> Result<Self, ::kfl::errors::DecodeError<S>>
             {
-                match &**val {
+                if let Some(typ) = value.type_name.as_ref() {
+                    return Err(::kfl::errors::DecodeError::TypeName {
+                        span: typ.span().clone(),
+                        found: Some((**typ).clone()),
+                        expected: ::kfl::errors::ExpectedType::no_type(),
+                        rust_type: stringify!(#e_name),
+                    });
+                }
+                match &*value.literal {
                     ::kfl::ast::Literal::String(ref s) => {
                         match &s[..] {
                             #(#match_branches,)*
                             _ => {
                                 Err(::kfl::errors::DecodeError::conversion(
-                                        val, #value_err))
+                                    &value.literal, #value_err))
                             }
                         }
                     }
                     _ => {
                         Err(::kfl::errors::DecodeError::scalar_kind(
                             ::kfl::decode::Kind::String,
-                            &val,
+                            &value.literal,
                         ))
                     }
-                }
-            }
-            fn type_check(type_name: &Option<::kfl::span::Spanned<
-                          ::kfl::ast::TypeName, S>>,
-                          ctx: &mut ::kfl::decode::Context<S>)
-            {
-                if let Some(typ) = type_name {
-                    ctx.emit_error(::kfl::errors::DecodeError::TypeName {
-                        span: typ.span().clone(),
-                        found: Some((**typ).clone()),
-                        expected: ::kfl::errors::ExpectedType::no_type(),
-                        rust_type: stringify!(#e_name),
-                    });
                 }
             }
         }

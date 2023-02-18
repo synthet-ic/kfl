@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Node, SpannedNode, TypeName, Literal, Value},
+    ast::{Node, SpannedNode, Literal, Value},
     decode::Context,
     errors::DecodeError,
     span::Spanned,
@@ -53,19 +53,7 @@ impl<S, T> Decode<S> for SpannedNode<T>
     }
 }
 
-impl<S, T> DecodeScalar<S> for Value<T>
-    where S: Span,
-          T: DecodeSpan<S>
-{
-    fn type_check(_type_name: &Option<Spanned<TypeName, S>>,
-                  _ctx: &mut Context<S>)
-    {
-    }
-    fn raw_decode(_value: &Spanned<Literal, S>, _ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
-    {
-        panic!("called `raw_decode` directly on the `Value`");
-    }
+impl<S: Span, T: DecodeSpan<S>> DecodeScalar<S> for Value<T> {
     fn decode(value: &Value<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
@@ -76,16 +64,10 @@ impl<S, T> DecodeScalar<S> for Value<T>
     }
 }
 
-impl<S> DecodeScalar<S> for Literal
-    where S: Span,
-{
-    fn type_check(_type_name: &Option<Spanned<TypeName, S>>,
-                  _ctx: &mut Context<S>)
-    {
-    }
-    fn raw_decode(value: &Spanned<Literal, S>, _ctx: &mut Context<S>)
+impl<S: Span> DecodeScalar<S> for Literal {
+    fn decode(value: &Value<S>, _: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        Ok((**value).clone())
+        Ok((*value.literal).clone())
     }
 }

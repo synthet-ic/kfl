@@ -7,8 +7,7 @@
 use std::fmt::Debug;
 
 use crate::{
-    ast::{SpannedNode, Literal, Value, TypeName},
-    span::Spanned,
+    ast::{SpannedNode, Value},
     errors::{DecodeError, EncodeError},
     decode::Context
 };
@@ -55,30 +54,27 @@ pub trait DecodePartial<S: ErrorSpan>: Sized + Default {
 
 /// The trait that decodes scalar value and checks its type
 pub trait DecodeScalar<S: ErrorSpan>: Sized {
-    /// Typecheck the value
-    ///
-    /// This method can only emit errors to the context in type mismatch case.
-    /// Errors emitted to the context are considered fatal once the whole data
-    /// is processed but non fatal when encountered. So even if there is a type
-    /// in type name we can proceed and try parsing actual value.
-    fn type_check(type_name: &Option<Spanned<TypeName, S>>,
-                  ctx: &mut Context<S>);
-    /// Decode value without typecheck
-    ///
-    /// This can be used by wrappers to parse some know value but use a
-    /// different typename (kinda emulated subclassing)
-    fn raw_decode(value: &Spanned<Literal, S>, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>;
+    // /// Typecheck the value
+    // ///
+    // /// This method can only emit errors to the context in type mismatch case.
+    // /// Errors emitted to the context are considered fatal once the whole data
+    // /// is processed but non fatal when encountered. So even if there is a type
+    // /// in type name we can proceed and try parsing actual value.
+    // #[allow(unused)]
+    // fn type_check(type_name: &Option<Spanned<TypeName, S>>,
+    //               ctx: &mut Context<S>) {}
+    // /// Decode value without typecheck
+    // ///
+    // /// This can be used by wrappers to parse some known value but use a
+    // /// different typename (kinda emulated subclassing)
+    // fn raw_decode(value: &Spanned<Literal, S>, ctx: &mut Context<S>)
+    //     -> Result<Self, DecodeError<S>>;
     /// Decode the value and typecheck
     ///
     /// This should not be overriden and uses `type_check` in combination with
     /// `raw_decode`.
     fn decode(value: &Value<S>, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
-    {
-        Self::type_check(&value.type_name, ctx);
-        Self::raw_decode(&value.literal, ctx)
-    }
+        -> Result<Self, DecodeError<S>>;
 }
 
 /// The trait that decodes span into the final structure

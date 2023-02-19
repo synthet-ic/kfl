@@ -1,6 +1,6 @@
 //! Structures that represent abstract syntax tree (AST) of the KDL document
 //!
-//! All of these types are parameterized by the `S` type which is a span type
+//! All of these types are parameteried by the `S` type which is a span type
 //! (perhaps implements [`Span`](crate::traits::Span). The idea is that most of
 //! the time spans are used for errors (either at parsing time, or at runtime),
 //! and original source is somewhere around to show in error snippets. So it's

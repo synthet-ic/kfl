@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     ast::{Literal, Integer, Decimal, Radix, BuiltinType},
-    decode::{Context, Kind},
+    decode::Context,
     errors::{DecodeError, ExpectedType},
     traits::{ErrorSpan, DecodeScalar}
 };
@@ -45,7 +45,7 @@ macro_rules! impl_integer {
                     Literal::Int(ref v) => v.try_into()
                         .map_err(|err| DecodeError::conversion(
                             &value.literal, err)),
-                    _ => Err(DecodeError::scalar_kind(Kind::String,
+                    _ => Err(DecodeError::scalar_kind("string",
                              &value.literal))
                 }
             }
@@ -104,7 +104,7 @@ macro_rules! impl_decimal {
                     Literal::Decimal(ref v) => v.try_into()
                         .map_err(|err| DecodeError::conversion(
                             &value.literal, err)),
-                    _ => Err(DecodeError::scalar_kind(Kind::String,
+                    _ => Err(DecodeError::scalar_kind("string",
                              &value.literal))
                 }
             }
@@ -129,7 +129,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for String {
         }
         match &*value.literal {
             Literal::String(ref s) => Ok(s.clone().into()),
-            _ => Err(DecodeError::scalar_kind(Kind::String, &value.literal))
+            _ => Err(DecodeError::scalar_kind("string", &value.literal))
         }
     }
 }
@@ -152,7 +152,7 @@ macro_rules! impl_from_str {
                     Literal::String(ref s) => <$ty>::from_str(&s)
                         .map_err(|err| DecodeError::conversion(
                                  &value.literal, err)),
-                    _ => Err(DecodeError::scalar_kind(Kind::String,
+                    _ => Err(DecodeError::scalar_kind("string",
                              &value.literal))
                 }
             }
@@ -179,7 +179,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for bool {
         }
         match &*value.literal {
             Literal::Bool(v) => Ok(*v),
-            _ => Err(DecodeError::scalar_kind(Kind::Bool, &value.literal))
+            _ => Err(DecodeError::scalar_kind("boolean", &value.literal))
         }
     }
 }

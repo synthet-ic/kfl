@@ -69,7 +69,7 @@ pub enum DecodeError<S: ErrorSpan> {
         #[label("unexpected {}", found)]
         span: S,
         /// Scalar kind (or multiple) expected at this position
-        expected: ExpectedKind,
+        expected: &'static str,
         /// Kind of scalar that is found
         found: Kind,
     },
@@ -442,11 +442,12 @@ impl<S: ErrorSpan> DecodeError<S> {
             source: err.into(),
         }
     }
+    // TODO(rnarkk) improve `&'static str`
     /// Construct [`DecodeError::ScalarKind`] error
-    pub fn scalar_kind(expected: Kind, found: &Spanned<Literal, S>) -> Self {
+    pub fn scalar_kind(expected: &'static str, found: &Spanned<Literal, S>) -> Self {
         DecodeError::ScalarKind {
             span: found.span().clone(),
-            expected: expected.into(),
+            expected,
             found: (&found.value).into(),
         }
     }
@@ -561,24 +562,5 @@ impl Display for ExpectedType {
             }
             Ok(())
         }
-    }
-}
-
-
-/// Declares kind of value expected for the scalar value
-///
-/// Use [`Kind`](crate::decode::Kind) and `.into()` to create this value.
-#[derive(Debug)]
-pub struct ExpectedKind(Kind);
-
-impl From<Kind> for ExpectedKind {
-    fn from(kind: Kind) -> ExpectedKind {
-        ExpectedKind(kind)
-    }
-}
-
-impl Display for ExpectedKind {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0.as_str())
     }
 }

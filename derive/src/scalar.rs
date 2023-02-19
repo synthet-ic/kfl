@@ -135,7 +135,7 @@ pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
                     }
                     _ => {
                         Err(::kfl::errors::DecodeError::scalar_kind(
-                            ::kfl::decode::Kind::String,
+                            "string",
                             &value.literal,
                         ))
                     }

@@ -208,7 +208,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
                     Ok(s.as_bytes().to_vec())
                 }
             }
-            _ => Err(DecodeError::scalar_kind(crate::decode::Kind::String,
+            _ => Err(DecodeError::scalar_kind("string",
                                               &value.literal))
         }
     }

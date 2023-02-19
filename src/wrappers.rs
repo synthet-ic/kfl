@@ -18,7 +18,7 @@ pub fn parse<S: traits::Span>(ctx: &mut Context, text: &str)
     .parse(S::stream(text))
     .map_err(|errors| {
         Error {
-            source_code: NamedSource::new(ctx::get<File>, text.to_string()),
+            source_code: NamedSource::new(ctx::get<&str>, text.to_string()),
             errors: errors.into_iter().map(Into::into).collect(),
         }
     })
@@ -29,7 +29,7 @@ pub fn decode<T>(file_name: &str, text: &str) -> Result<T, Error>
     where T: Decode<Span>,
 {
     let mut ctx = Context::new();
-    cxt.set::<File>(file_name);
+    cxt.set::<&str>(file_name);
     let nodes = parse::<Span>(ctx, text)?;
     Decode::decode(&nodes[0], &mut ctx).map_err(|error| {
         Error {

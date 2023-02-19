@@ -256,17 +256,3 @@ impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Option<T> {
         }
     }
 }
-
-impl<T: DecodeScalar<S>, S, Q> DecodeScalar<S> for Spanned<T, Q>
-    where S: Span,
-          Q: DecodeSpan<S>
-{
-    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
-    {
-        <T as DecodeScalar<S>>::decode(scalar, ctx).map(|v| Spanned {
-            span: DecodeSpan::decode_span(ctx),
-            value: v,
-        })
-    }
-}

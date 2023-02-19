@@ -77,22 +77,6 @@ pub trait DecodeScalar<S: ErrorSpan>: Sized {
         -> Result<Self, DecodeError<S>>;
 }
 
-/// The trait that decodes span into the final structure
-pub trait DecodeSpan<S: ErrorSpan>: Sized {
-    /// Decode span
-    ///
-    /// This method can use some extra data (say file name) from the context.
-    /// Although, by default context is empty and end users are expected to use
-    /// [`parse_with_context`](crate::parse_with_context) to add some values.
-    fn decode_span(ctx: &mut Context<S>) -> Self;
-}
-
-impl<T: ErrorSpan> DecodeSpan<T> for T {
-    fn decode_span(ctx: &mut Context<T>) -> Self {
-        ctx.span()
-    }
-}
-
 /// Span must implement this trait to be used in the error messages
 ///
 /// Custom span types can be used for this unlike for [`Span`]

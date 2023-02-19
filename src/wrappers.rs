@@ -11,7 +11,7 @@ use crate::{
 };
 
 /// Parse KDL text and return AST
-pub fn parse<S: traits::Span>(ctx: &mut Context, text: &str)
+pub fn parse<S: traits::Span>(ctx: &mut Context<S>, text: &str)
     -> Result<Vec<Node>, Error>
 {
     grammar::document(ctx.clone())

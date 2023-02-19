@@ -4,7 +4,7 @@ use chumsky::prelude::*;
 
 use crate::{
     ast::{Literal, TypeName, Node, Scalar, Integer, Decimal, Radix},
-    ast::{SpannedName, SpannedNode},
+    ast::SpannedName,
     decode::Context,
     span::Spanned,
     traits::Span,
@@ -355,7 +355,7 @@ fn type_name<S: Span>() -> impl Parser<char, TypeName, Error = Error<S>> {
     ident().delimited_by(just('('), just(')')).map(TypeName::from_string)
 }
 
-fn spanned<T, S, P>(p: P, ctx: &Context<S>) -> impl Parser<char, Spanned<T, S>, Error = Error<S>>
+fn spanned<T, S, P>(p: P, ctx: &Context<S>) -> impl Parser<char, T, Error = Error<S>>
     where P: Parser<char, T, Error = Error<S>>,
           S: Span,
 {
@@ -475,7 +475,7 @@ fn line_space<S: Span>() -> impl Parser<char, (), Error = Error<S>> {
     newline().or(ws()).or(comment())
 }
 
-fn nodes<S: Span>(ctx: &mut Context<S>) -> impl Parser<char, Vec<SpannedNode<S>>, Error = Error<S>> {
+fn nodes<S: Span>(ctx: &mut Context<S>) -> impl Parser<char, Vec<Node>, Error = Error<S>> {
     use PropOrArg::*;
     recursive(|nodes: chumsky::recursive::Recursive<char, _, Error<S>>| {
         let braced_nodes =

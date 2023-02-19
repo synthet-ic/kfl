@@ -44,8 +44,8 @@ macro_rules! impl_integer {
                 match &scalar.literal {
                     Literal::Int(ref v) => v.try_into()
                         .map_err(|err| DecodeError::conversion(
-                            &ctx.span(), err)),
-                    _ => Err(DecodeError::scalar_kind(&ctx.span(), "string",
+                                 &ctx.span(&scalar), err)),
+                    _ => Err(DecodeError::scalar_kind(&ctx.span(&scalar), "string",
                              &scalar.literal))
                 }
             }
@@ -124,11 +124,11 @@ macro_rules! impl_decimal {
                 match &scalar.literal {
                     Literal::Int(ref v) => v.try_into()
                         .map_err(|err| DecodeError::conversion(
-                            &ctx.span(), err)),
+                                 &ctx.span(&scalar), err)),
                     Literal::Decimal(ref v) => v.try_into()
                         .map_err(|err| DecodeError::conversion(
-                            &ctx.span(), err)),
-                    _ => Err(DecodeError::scalar_kind(&ctx.span(), "string",
+                                 &ctx.span(&scalar), err)),
+                    _ => Err(DecodeError::scalar_kind(&ctx.span(&scalar), "string",
                              &scalar.literal))
                 }
             }
@@ -153,7 +153,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for String {
         }
         match &scalar.literal {
             Literal::String(ref s) => Ok(s.clone().into()),
-            _ => Err(DecodeError::scalar_kind(&ctx.span(), "string",
+            _ => Err(DecodeError::scalar_kind(&ctx.span(&scalar), "string",
                                               &scalar.literal))
         }
     }
@@ -176,8 +176,8 @@ macro_rules! impl_from_str {
                 match &scalar.literal {
                     Literal::String(ref s) => <$ty>::from_str(&s)
                         .map_err(|err| DecodeError::conversion(
-                                 &ctx.span(), err)),
-                    _ => Err(DecodeError::scalar_kind(&ctx.span(), "string",
+                                 &ctx.span(&scalar), err)),
+                    _ => Err(DecodeError::scalar_kind(&ctx.span(&scalar), "string",
                              &scalar.literal))
                 }
             }
@@ -204,7 +204,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for bool {
         }
         match &scalar.literal {
             Literal::Bool(v) => Ok(*v),
-            _ => Err(DecodeError::scalar_kind(&ctx.span(), "boolean", &scalar.literal))
+            _ => Err(DecodeError::scalar_kind(&ctx.span(&scalar), "boolean", &scalar.literal))
         }
     }
 }

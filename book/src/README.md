@@ -107,6 +107,7 @@ See description of [Decode](derive@Decode) and [DecodeScalar](derive@DecodeScala
 
 ## TODO
 
+- [ ] Use previous version of KFL itself when testing grammar, instead of serde/serde_json
 - [ ] `-`
 - [ ] Implement `DecodeScalar` for struct as the replacement of `flatten(properties)` and support `flatten(arguments)` equivalent as well
 - [ ] Span

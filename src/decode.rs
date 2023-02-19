@@ -27,6 +27,7 @@ pub struct Context<S: ErrorSpan> {
 impl<S: ErrorSpan> Context<S> {
     pub(crate) fn new() -> Context<S> {
         Context {
+            spans: HashMap::new(),
             errors: Vec::new(),
             extensions: HashMap::new(),
         }

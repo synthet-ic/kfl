@@ -182,7 +182,7 @@ pub enum Literal {
 impl<S> Node<S> {
     /// Returns node children
     pub fn children(&self)
-        -> impl Iterator<Item=&Spanned<Node<S>, S>> +
+        -> impl Iterator<Item = &Spanned<Node<S>, S>> +
                 ExactSizeIterator
     {
         self.children.as_ref().map(|c| c.iter()).unwrap_or_else(|| [].iter())

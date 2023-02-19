@@ -2,12 +2,12 @@ use chumsky::Parser;
 use miette::NamedSource;
 
 use crate::{
-    ast::Document,
+    ast::{Document, SpannedNode},
     decode::Context,
     errors::Error,
     grammar,
     span::Span,
-    traits::{self, Decode, DecodeChildren}
+    traits::{self, Decode, DecodeChildren, Encode},
 };
 
 /// Parse KDL text and return AST
@@ -93,14 +93,36 @@ pub fn decode_with_context<T, S, F>(file_name: &str, text: &str, set_ctx: F)
     })
 }
 
-/*
-/// Encode Rust object and print KDL text
-pub fn print<T>(file_name: &str, document: T) -> Result<String, Error>
-    where T: EncodeChildren<Span, _>,
+/// Print ast and return KDL text
+pub fn print<S: traits::Span>(file_name: &str, node: SpannedNode<S>)
+    -> Result<String, Error>
 {
-    print_with_context(file_name, document, |_| {})
+    Ok("".into())
+    // grammar::document()
+    // .parse(S::stream(text))
+    // .map_err(|errors| {
+    //     Error {
+    //         source_code: NamedSource::new(file_name, text.to_string()),
+    //         errors: errors.into_iter().map(Into::into).collect(),
+    //     }
+    // })
 }
 
+/// Encode Rust object and print it into KDL text
+pub fn encode<T>(file_name: &str, t: &T) -> Result<String, Error>
+    where T: Encode<Span> + std::fmt::Debug,
+{
+    let mut ctx = Context::new();
+    let node = t.encode(&mut ctx).map_err(|error| {
+        Error {
+            source_code: NamedSource::new(file_name, format!("{:?}", &t)),
+            errors: vec![error.into()],
+        }
+    })?;
+    print(file_name, node)
+}
+
+/*
 /// Decode Rust object providing extra context for the
 /// decoder and print KDL text
 pub fn print_with_context<T, S, F>(file_name: &str, document: T, set_ctx: F)

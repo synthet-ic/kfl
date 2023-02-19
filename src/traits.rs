@@ -109,17 +109,17 @@ impl<T> ErrorSpan for T
 /// [`DecodeSpan`] to convert spans whenever needed.
 pub trait Span: sealed::Sealed + chumsky::Span + ErrorSpan {}
 
-///
-pub trait Encode<S: ErrorSpan, T: Decode<S>> {
-    ///
-    fn encode(node: &T, ctx: &mut Context<S>)
+/// Trait to encode the ast into KDL node
+pub trait Encode<S: ErrorSpan>: Decode<S> {
+    /// Encodes the ast from the node
+    fn encode(&self, ctx: &mut Context<S>)
         -> Result<SpannedNode<S>, EncodeError<S>>;
 }
 
 ///
-pub trait EncodePartial<S: ErrorSpan, T: DecodePartial<S>> {
+pub trait EncodePartial<S: ErrorSpan>: DecodePartial<S> {
     ///
-    fn encode_partial(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn encode_partial(&self, node: &SpannedNode<S>, ctx: &mut Context<S>)
         -> Result<bool, EncodeError<S>>;
 }
 
@@ -130,10 +130,10 @@ pub trait EncodeChildren<S: ErrorSpan, T: DecodeChildren<S>> {
         -> Result<Vec<SpannedNode<S>>, EncodeError<S>>;
 }
 
-///
-pub trait EncodeScalar<S: ErrorSpan, T: DecodeScalar<S>>: Sized {
+/// The trait that encodes scalar value and checks its type
+pub trait EncodeScalar<S: ErrorSpan>: DecodeScalar<S> {
     ///
-    fn encode(scalar: &T, ctx: &mut Context<S>)
+    fn encode(&self, ctx: &mut Context<S>)
         -> Result<Value<S>, EncodeError<S>>;
 }
 
@@ -151,7 +151,7 @@ pub(crate) mod sealed {
     }
 
     impl<I, T> Iterator for Map<I, T>
-         where I: Iterator<Item=char>,
+         where I: Iterator<Item = char>,
                T: SpanTracker,
     {
         type Item = (char, T::Span);
@@ -161,7 +161,7 @@ pub(crate) mod sealed {
     }
 
     pub trait Sealed {
-        type Tracker: SpanTracker<Span=Self>;
+        type Tracker: SpanTracker<Span = Self>;
         /// Note assuming ascii, single-width, non-newline chars here
         fn at_start(&self, chars: usize) -> Self;
         fn at_end(&self) -> Self;

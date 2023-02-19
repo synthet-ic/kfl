@@ -42,3 +42,24 @@ macro_rules! assert_decode_children_error {
         assert_eq!(err, $output);
     }
 }
+
+#[macro_export]
+macro_rules! assert_encode {
+    ($input:expr, $output:literal) => {
+        let input = kfl::encode("<test>", $input).unwrap();
+        let output = $output;
+        common::hint_same_type(&input, &output);
+        assert_eq!(input, output);
+    }
+}
+
+// #[macro_export]
+// macro_rules! assert_encode_error {
+//     ($ty:ty, $input:literal, $output:literal) => {
+//         let err = kfl::eecode::<$ty>("<test>", $input).unwrap_err();
+//         let err = <kfl::Error as miette::Diagnostic>::related(&err).unwrap()
+//             .map(|e| e.to_string()).collect::<Vec<_>>()
+//             .join("\n");
+//         assert_eq!(err, $output);
+//     }
+// }

@@ -28,7 +28,7 @@ pub fn parse<S: traits::Span>(file_name: &str, text: &str)
 pub fn decode<T>(file_name: &str, text: &str) -> Result<T, Error>
     where T: Decode<Span>,
 {
-    let nodes = parse(file_name, text)?;
+    let nodes = parse::<Span>(file_name, text)?;
     let mut ctx = Context::new();
     Decode::decode(&nodes[0], &mut ctx).map_err(|error| {
         Error {
@@ -119,7 +119,7 @@ pub fn encode<T>(file_name: &str, t: &T) -> Result<String, Error>
             errors: vec![error.into()],
         }
     })?;
-    print::<S>(file_name, node)
+    print::<Span>(file_name, node)
 }
 
 #[test]

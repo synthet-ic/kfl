@@ -14,7 +14,7 @@ use crate::{
 pub fn parse<S: traits::Span>(ctx: &mut Context<S>, text: &str)
     -> Result<Vec<Node>, Error>
 {
-    grammar::document(ctx.clone())
+    grammar::document(ctx)
     .parse(S::stream(text))
     .map_err(|errors| {
         Error {

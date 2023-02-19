@@ -31,3 +31,5 @@
   - Separation of `check_type` and `raw_decode` is inefficient when implementing `bytes` for `Vec<u8>`
     - We need to return default values
   - We can expect more that one kind of value, so DecodeError::ScalarKind cannot expect one fixed Kind
+- Remove `Document` struct as root of nodes
+  - [ ] Make `DecodeChildren` sealed?

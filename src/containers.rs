@@ -9,7 +9,7 @@ use crate::{
     errors::{DecodeError, ExpectedType},
     span::Spanned,
     traits::{Decode, DecodePartial, DecodeChildren, DecodeScalar},
-    traits::{ErrorSpan, DecodeSpan, Span}
+    traits::{ErrorSpan, Span}
 };
 
 impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Box<T> {

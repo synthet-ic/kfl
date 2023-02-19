@@ -27,10 +27,10 @@ macro_rules! impl_integer {
         }
 
         impl<S: ErrorSpan> DecodeScalar<S> for $typ {
-            fn decode(value: &crate::ast::Scalar<S>, _: &mut Context<S>)
+            fn decode(scalar: &crate::ast::Scalar<S>, _: &mut Context<S>)
                 -> Result<Self, DecodeError<S>>
             {
-                if let Some(typ) = value.type_name.as_ref() {
+                if let Some(typ) = scalar.type_name.as_ref() {
                     if typ.as_builtin() != Some(&BuiltinType::$marker) {
                         return Err(DecodeError::TypeName {
                             span: typ.span().clone(),
@@ -41,12 +41,12 @@ macro_rules! impl_integer {
                         });
                     }
                 }
-                match &*value.literal {
+                match &*scalar.literal {
                     Literal::Int(ref v) => v.try_into()
                         .map_err(|err| DecodeError::conversion(
-                            &value.literal, err)),
+                            &scalar.literal, err)),
                     _ => Err(DecodeError::scalar_kind("string",
-                             &value.literal))
+                             &scalar.literal))
                 }
             }
         }
@@ -83,10 +83,10 @@ macro_rules! impl_decimal {
         }
 
         impl<S: ErrorSpan> DecodeScalar<S> for $typ {
-            fn decode(value: &crate::ast::Scalar<S>, _: &mut Context<S>)
+            fn decode(scalar: &crate::ast::Scalar<S>, _: &mut Context<S>)
                 -> Result<Self, DecodeError<S>>
             {
-                if let Some(typ) = value.type_name.as_ref() {
+                if let Some(typ) = scalar.type_name.as_ref() {
                     if typ.as_builtin() != Some(&BuiltinType::$marker) {
                         return Err(DecodeError::TypeName {
                             span: typ.span().clone(),
@@ -97,15 +97,15 @@ macro_rules! impl_decimal {
                         });
                     }
                 }
-                match &*value.literal {
+                match &*scalar.literal {
                     Literal::Int(ref v) => v.try_into()
                         .map_err(|err| DecodeError::conversion(
-                            &value.literal, err)),
+                            &scalar.literal, err)),
                     Literal::Decimal(ref v) => v.try_into()
                         .map_err(|err| DecodeError::conversion(
-                            &value.literal, err)),
+                            &scalar.literal, err)),
                     _ => Err(DecodeError::scalar_kind("string",
-                             &value.literal))
+                             &scalar.literal))
                 }
             }
         }
@@ -116,10 +116,10 @@ impl_decimal!(f32, F32);
 impl_decimal!(f64, F64);
 
 impl<S: ErrorSpan> DecodeScalar<S> for String {
-    fn decode(value: &crate::ast::Scalar<S>, _: &mut Context<S>)
+    fn decode(scalar: &crate::ast::Scalar<S>, _: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        if let Some(typ) = value.type_name.as_ref() {
+        if let Some(typ) = scalar.type_name.as_ref() {
             return Err(DecodeError::TypeName {
                 span: typ.span().clone(),
                 found: Some(typ.value.clone()),
@@ -127,9 +127,9 @@ impl<S: ErrorSpan> DecodeScalar<S> for String {
                 rust_type: "String",
             });
         }
-        match &*value.literal {
+        match &*scalar.literal {
             Literal::String(ref s) => Ok(s.clone().into()),
-            _ => Err(DecodeError::scalar_kind("string", &value.literal))
+            _ => Err(DecodeError::scalar_kind("string", &scalar.literal))
         }
     }
 }
@@ -137,10 +137,10 @@ impl<S: ErrorSpan> DecodeScalar<S> for String {
 macro_rules! impl_from_str {
     ($ty:ty, $display:literal) => {
         impl<S: ErrorSpan> DecodeScalar<S> for $ty {
-            fn decode(value: &crate::ast::Scalar<S>, _: &mut Context<S>)
+            fn decode(scalar: &crate::ast::Scalar<S>, _: &mut Context<S>)
                 -> Result<Self, DecodeError<S>>
             {
-                if let Some(typ) = value.type_name.as_ref() {
+                if let Some(typ) = scalar.type_name.as_ref() {
                     return Err(DecodeError::TypeName {
                         span: typ.span().clone(),
                         found: Some(typ.value.clone()),
@@ -148,12 +148,12 @@ macro_rules! impl_from_str {
                         rust_type: $display,
                     });
                 }
-                match &*value.literal {
+                match &*scalar.literal {
                     Literal::String(ref s) => <$ty>::from_str(&s)
                         .map_err(|err| DecodeError::conversion(
-                                 &value.literal, err)),
+                                 &scalar.literal, err)),
                     _ => Err(DecodeError::scalar_kind("string",
-                             &value.literal))
+                             &scalar.literal))
                 }
             }
         }
@@ -166,10 +166,10 @@ impl_from_str!(SocketAddr, "SocketAddr");
 impl_from_str!(chrono::NaiveDateTime, "NaiveDateTime");
 
 impl<S: ErrorSpan> DecodeScalar<S> for bool {
-    fn decode(value: &crate::ast::Scalar<S>, _: &mut Context<S>)
+    fn decode(scalar: &crate::ast::Scalar<S>, _: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        if let Some(typ) = value.type_name.as_ref() {
+        if let Some(typ) = scalar.type_name.as_ref() {
             return Err(DecodeError::TypeName {
                 span: typ.span().clone(),
                 found: Some(typ.value.clone()),
@@ -177,9 +177,9 @@ impl<S: ErrorSpan> DecodeScalar<S> for bool {
                 rust_type: "bool",
             });
         }
-        match &*value.literal {
+        match &*scalar.literal {
             Literal::Bool(v) => Ok(*v),
-            _ => Err(DecodeError::scalar_kind("boolean", &value.literal))
+            _ => Err(DecodeError::scalar_kind("boolean", &scalar.literal))
         }
     }
 }

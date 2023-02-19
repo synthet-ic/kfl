@@ -47,7 +47,7 @@ pub trait DecodePartial<S: ErrorSpan>: Sized + Default {
     // /// Returns `Ok(true)` if the property is "consumed" (i.e. stored in this
     // /// structure).
     // fn insert_property(&mut self,
-    //                    name: &Spanned<Box<str>, S>, value: &Scalar<S>,
+    //                    name: &Spanned<Box<str>, S>, scalar: &Scalar<S>,
     //                    ctx: &mut Context<S>)
     //     -> Result<bool, DecodeError<S>>;
 }

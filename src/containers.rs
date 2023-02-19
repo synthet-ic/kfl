@@ -35,7 +35,7 @@ impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Box<T> {
         (**self).decode_partial(node, ctx)
     }
     // fn insert_property(&mut self,
-    //                    name: &Spanned<Box<str>, S>, value: &Scalar<S>,
+    //                    name: &Spanned<Box<str>, S>, scalar: &Scalar<S>,
     //                    ctx: &mut Context<S>)
     //     -> Result<bool, DecodeError<S>>
     // {
@@ -44,10 +44,10 @@ impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Box<T> {
 }
 
 impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Box<T> {
-    fn decode(value: &crate::ast::Scalar<S>, ctx: &mut Context<S>)
+    fn decode(scalar: &crate::ast::Scalar<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        <T as DecodeScalar<S>>::decode(value, ctx).map(Box::new)
+        <T as DecodeScalar<S>>::decode(scalar, ctx).map(Box::new)
     }
 }
 
@@ -75,7 +75,7 @@ impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Arc<T> {
             .decode_partial(node, ctx)
     }
     // fn insert_property(&mut self,
-    //                    name: &Spanned<Box<str>, S>, value: &Scalar<S>,
+    //                    name: &Spanned<Box<str>, S>, scalar: &Scalar<S>,
     //                    ctx: &mut Context<S>)
     //     -> Result<bool, DecodeError<S>>
     // {
@@ -85,10 +85,10 @@ impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Arc<T> {
 }
 
 impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Arc<T> {
-    fn decode(value: &crate::ast::Scalar<S>, ctx: &mut Context<S>)
+    fn decode(scalar: &crate::ast::Scalar<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        <T as DecodeScalar<S>>::decode(value, ctx).map(Arc::new)
+        <T as DecodeScalar<S>>::decode(scalar, ctx).map(Arc::new)
     }
 }
 
@@ -116,7 +116,7 @@ impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Rc<T> {
             .decode_partial(node, ctx)
     }
     // fn insert_property(&mut self,
-    //                    name: &Spanned<Box<str>, S>, value: &Scalar<S>,
+    //                    name: &Spanned<Box<str>, S>, scalar: &Scalar<S>,
     //                    ctx: &mut Context<S>)
     //     -> Result<bool, DecodeError<S>>
     // {
@@ -126,10 +126,10 @@ impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Rc<T> {
 }
 
 impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Rc<T> {
-    fn decode(value: &crate::ast::Scalar<S>, ctx: &mut Context<S>)
+    fn decode(scalar: &crate::ast::Scalar<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        <T as DecodeScalar<S>>::decode(value, ctx).map(Rc::new)
+        <T as DecodeScalar<S>>::decode(scalar, ctx).map(Rc::new)
     }
 }
 
@@ -171,10 +171,10 @@ impl<S: ErrorSpan, T: Decode<S>> DecodeChildren<S> for Vec<T> {
 }
 
 impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
-    fn decode(value: &crate::ast::Scalar<S>, _: &mut Context<S>)
+    fn decode(scalar: &crate::ast::Scalar<S>, _: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        let is_base64 = if let Some(ty) = value.type_name.as_ref() {
+        let is_base64 = if let Some(ty) = scalar.type_name.as_ref() {
             match ty.as_builtin() {
                 Some(&BuiltinType::Base64) => true,
                 _ => {
@@ -187,7 +187,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
                 }
             }
         } else { false };
-        match &*value.literal {
+        match &*scalar.literal {
             Literal::String(ref s) => {
                 if is_base64 {
                     #[cfg(feature = "base64")] {
@@ -196,7 +196,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
                         match STANDARD.decode(s.as_bytes()) {
                             Ok(vec) => Ok(vec),
                             Err(e) => {
-                                Err(DecodeError::conversion(&value.literal, e))
+                                Err(DecodeError::conversion(&scalar.literal, e))
                             }
                         }
                     }
@@ -209,7 +209,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
                 }
             }
             _ => Err(DecodeError::scalar_kind("string",
-                                              &value.literal))
+                                              &scalar.literal))
         }
     }
 }
@@ -247,12 +247,12 @@ impl<S: ErrorSpan, T: Decode<S>> DecodePartial<S> for Option<T> {
 }
 
 impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Option<T> {
-    fn decode(value: &crate::ast::Scalar<S>, ctx: &mut Context<S>)
+    fn decode(scalar: &crate::ast::Scalar<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        match &*value.literal {
+        match &*scalar.literal {
             Literal::Null => Ok(None),
-            _ => <T as DecodeScalar<S>>::decode(value, ctx).map(Some),
+            _ => <T as DecodeScalar<S>>::decode(scalar, ctx).map(Some),
         }
     }
 }
@@ -261,11 +261,11 @@ impl<T: DecodeScalar<S>, S, Q> DecodeScalar<S> for Spanned<T, Q>
     where S: Span,
           Q: DecodeSpan<S>
 {
-    fn decode(value: &crate::ast::Scalar<S>, ctx: &mut Context<S>)
+    fn decode(scalar: &crate::ast::Scalar<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        <T as DecodeScalar<S>>::decode(value, ctx).map(|v| Spanned {
-            span: DecodeSpan::decode_span(&value.literal.span, ctx),
+        <T as DecodeScalar<S>>::decode(scalar, ctx).map(|v| Spanned {
+            span: DecodeSpan::decode_span(&scalar.literal.span, ctx),
             value: v,
         })
     }

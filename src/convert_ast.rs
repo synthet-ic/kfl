@@ -54,20 +54,20 @@ impl<S, T> Decode<S> for SpannedNode<T>
 }
 
 impl<S: Span, T: DecodeSpan<S>> DecodeScalar<S> for Scalar<T> {
-    fn decode(value: &Scalar<S>, ctx: &mut Context<S>)
+    fn decode(scalar: &Scalar<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
         Ok(Scalar {
-            type_name: value.type_name.as_ref().map(|n| n.clone_as(ctx)),
-            literal: value.literal.clone_as(ctx),
+            type_name: scalar.type_name.as_ref().map(|n| n.clone_as(ctx)),
+            literal: scalar.literal.clone_as(ctx),
         })
     }
 }
 
 impl<S: Span> DecodeScalar<S> for Literal {
-    fn decode(value: &Scalar<S>, _: &mut Context<S>)
+    fn decode(scalar: &Scalar<S>, _: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        Ok((*value.literal).clone())
+        Ok((*scalar.literal).clone())
     }
 }

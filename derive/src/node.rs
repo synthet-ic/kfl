@@ -72,9 +72,9 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
         if is_partial_compatible(&s) {
             let node = syn::Ident::new("node", Span::mixed_site());
             // let name = syn::Ident::new("name", Span::mixed_site());
-            // let value = syn::Ident::new("value", Span::mixed_site());
+            // let scalar = syn::Ident::new("scalar", Span::mixed_site());
             let decode_partial = decode_partial(&common, &node)?;
-            // let insert_property = insert_property(&common, &name, &value)?;
+            // let insert_property = insert_property(&common, &name, &scalar)?;
             extra_traits.push(quote! {
                 impl #impl_gen ::kfl::traits::DecodePartial #trait_gen
                     for #s_name #type_gen
@@ -89,7 +89,7 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
                     }
                     // fn insert_property(&mut self,
                     //     #name: &::kfl::span::Spanned<Box<str>, #span_ty>,
-                    //     #value: &::kfl::ast::Scalar<#span_ty>,
+                    //     #scalar: &::kfl::ast::Scalar<#span_ty>,
                     //     #ctx: &mut ::kfl::decode::Context<#span_ty>)
                     //     -> Result<bool, ::kfl::errors::DecodeError<#span_ty>>
                     // {

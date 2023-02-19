@@ -19,10 +19,7 @@ use std::{
     ops::{Deref, DerefMut, Range}
 };
 
-use crate::{
-    decode::Context,
-    traits
-};
+use crate::traits;
 
 /// Reexport of [miette::SourceSpan] trait that we use for parsing
 pub use miette::SourceSpan as ErrorSpan;

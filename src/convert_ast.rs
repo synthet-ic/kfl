@@ -6,10 +6,7 @@ use crate::{
     traits::{Decode, DecodeScalar, DecodeSpan, Span}
 };
 
-impl<S, T> Decode<S> for Node
-    where S: Span,
-          T: DecodeSpan<S>
-{
+impl<S: Span> Decode<S> for Node {
     fn decode(node: &Node, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
@@ -25,15 +22,9 @@ impl<S, T> Decode<S> for Node
                 })
                 .collect::<Result<_, _>>()?,
             children: node.children.as_ref().map(|sc| {
-                Ok(Spanned {
-                    span: DecodeSpan::decode_span(&sc.span, ctx),
-                    value: sc.iter()
-                        .map(|node| Ok(Spanned {
-                            span: DecodeSpan::decode_span(&node.span, ctx),
-                            value: Decode::decode(node, ctx)?,
-                        }))
-                        .collect::<Result<_, _>>()?,
-                })
+                Ok(sc.iter()
+                    .map(|node| Ok(Decode::decode(node, ctx)?))
+                    .collect::<Result<_, _>>()?)
             }).transpose()?,
         })
     }
@@ -47,13 +38,13 @@ impl<S, T> Decode<S> for SpannedNode<T>
         -> Result<Self, DecodeError<S>>
     {
         Ok(Spanned {
-            span: DecodeSpan::decode_span(&node.span, ctx),
+            span: DecodeSpan::decode_span(&ctx.span()),
             value: Decode::decode(node, ctx)?,
         })
     }
 }
 
-impl<S: Span, T: DecodeSpan<S>> DecodeScalar<S> for Scalar {
+impl<S: Span> DecodeScalar<S> for Scalar {
     fn decode(scalar: &Scalar, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {

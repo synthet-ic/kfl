@@ -7,7 +7,7 @@
 use std::fmt::Debug;
 
 use crate::{
-    ast::{SpannedNode, Scalar},
+    ast::{Node, Scalar},
     errors::{DecodeError, EncodeError},
     decode::Context
 };
@@ -15,14 +15,14 @@ use crate::{
 /// Trait to decode KDL node from the AST
 pub trait Decode<S: ErrorSpan>: Sized {
     /// Decodes the node from the ast
-    fn decode(node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn decode(node: &Node, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>;
 }
 
 /// Trait to decode children of the KDL node, mostly used for root document
 pub trait DecodeChildren<S: ErrorSpan>: Sized {
     /// Decodes from a list of chidren ASTs
-    fn decode_children(nodes: &[SpannedNode<S>], ctx: &mut Context<S>)
+    fn decode_children(nodes: &[Node], ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>;
 }
 
@@ -39,7 +39,7 @@ pub trait DecodePartial<S: ErrorSpan>: Sized + Default {
     ///
     /// Returns `Ok(true)` if the child is "consumed" (i.e. stored in this
     /// structure).
-    fn decode_partial(&mut self, node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn decode_partial(&mut self, node: &Node, ctx: &mut Context<S>)
         -> Result<bool, DecodeError<S>>;
     // /// The method is called when unknown property is encountered by parent
     // /// structure
@@ -47,7 +47,7 @@ pub trait DecodePartial<S: ErrorSpan>: Sized + Default {
     // /// Returns `Ok(true)` if the property is "consumed" (i.e. stored in this
     // /// structure).
     // fn insert_property(&mut self,
-    //                    name: &Spanned<Box<str>, S>, scalar: &Scalar<S>,
+    //                    name: &Spanned<Box<str>, S>, scalar: &Scalar,
     //                    ctx: &mut Context<S>)
     //     -> Result<bool, DecodeError<S>>;
 }
@@ -73,7 +73,7 @@ pub trait DecodeScalar<S: ErrorSpan>: Sized {
     ///
     /// This should not be overriden and uses `type_check` in combination with
     /// `raw_decode`.
-    fn decode(scalar: &Scalar<S>, ctx: &mut Context<S>)
+    fn decode(scalar: &Scalar, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>;
 }
 
@@ -113,13 +113,13 @@ pub trait Span: sealed::Sealed + chumsky::Span + ErrorSpan {}
 pub trait Encode<S: ErrorSpan>: Decode<S> {
     /// Encodes the ast from the node
     fn encode(&self, ctx: &mut Context<S>)
-        -> Result<SpannedNode<S>, EncodeError<S>>;
+        -> Result<Node, EncodeError<S>>;
 }
 
 ///
 pub trait EncodePartial<S: ErrorSpan>: DecodePartial<S> {
     ///
-    fn encode_partial(&self, node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn encode_partial(&self, node: &Node, ctx: &mut Context<S>)
         -> Result<bool, EncodeError<S>>;
 }
 
@@ -127,14 +127,14 @@ pub trait EncodePartial<S: ErrorSpan>: DecodePartial<S> {
 pub trait EncodeChildren<S: ErrorSpan, T: DecodeChildren<S>> {
     ///
     fn encode_children(nodes: &[T], ctx: &mut Context<S>)
-        -> Result<Vec<SpannedNode<S>>, EncodeError<S>>;
+        -> Result<Vec<Node>, EncodeError<S>>;
 }
 
 /// The trait that encodes scalar value and checks its type
 pub trait EncodeScalar<S: ErrorSpan>: DecodeScalar<S> {
     ///
     fn encode(&self, ctx: &mut Context<S>)
-        -> Result<Scalar<S>, EncodeError<S>>;
+        -> Result<Scalar, EncodeError<S>>;
 }
 
 #[allow(missing_debug_implementations)]

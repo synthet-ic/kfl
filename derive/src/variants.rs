@@ -47,7 +47,7 @@ pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
         impl #impl_gen ::kfl::Decode #trait_gen for #name #type_gen
             #bounds
         {
-            fn decode(#node: &::kfl::ast::SpannedNode<#span_ty>,
+            fn decode(#node: &::kfl::ast::Node,
                            #ctx: &mut ::kfl::decode::Context<#span_ty>)
                 -> Result<Self, ::kfl::errors::DecodeError<#span_ty>>
             {

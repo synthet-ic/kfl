@@ -6,11 +6,11 @@ use crate::{
     traits::{Decode, DecodeScalar, DecodeSpan, Span}
 };
 
-impl<S, T> Decode<S> for Node<T>
+impl<S, T> Decode<S> for Node
     where S: Span,
           T: DecodeSpan<S>
 {
-    fn decode(node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn decode(node: &Node, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
         Ok(Node {
@@ -43,7 +43,7 @@ impl<S, T> Decode<S> for SpannedNode<T>
     where S: Span,
           T: DecodeSpan<S>
 {
-    fn decode(node: &SpannedNode<S>, ctx: &mut Context<S>)
+    fn decode(node: &Node, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
         Ok(Spanned {
@@ -53,8 +53,8 @@ impl<S, T> Decode<S> for SpannedNode<T>
     }
 }
 
-impl<S: Span, T: DecodeSpan<S>> DecodeScalar<S> for Scalar<T> {
-    fn decode(scalar: &Scalar<S>, ctx: &mut Context<S>)
+impl<S: Span, T: DecodeSpan<S>> DecodeScalar<S> for Scalar {
+    fn decode(scalar: &Scalar, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
         Ok(Scalar {
@@ -65,7 +65,7 @@ impl<S: Span, T: DecodeSpan<S>> DecodeScalar<S> for Scalar<T> {
 }
 
 impl<S: Span> DecodeScalar<S> for Literal {
-    fn decode(scalar: &Scalar<S>, _: &mut Context<S>)
+    fn decode(scalar: &Scalar, _: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
         Ok(scalar.literal.clone())

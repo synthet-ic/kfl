@@ -376,17 +376,17 @@ fn node_terminator<S: Span>() -> impl Parser<char, (), Error = Error<S>> {
 }
 
 enum PropOrArg<S> {
-    Prop(SpannedName<S>, Scalar<S>),
-    Arg(Scalar<S>),
+    Prop(SpannedName<S>, Scalar),
+    Arg(Scalar),
     Ignore,
 }
 
-fn type_name_value<S: Span>() -> impl Parser<char, Scalar<S>, Error = Error<S>> {
+fn type_name_value<S: Span>() -> impl Parser<char, Scalar, Error = Error<S>> {
     spanned(type_name()).then(spanned(literal()))
     .map(|(type_name, literal)| Scalar { type_name: Some(type_name), literal })
 }
 
-fn value<S: Span>() -> impl Parser<char, Scalar<S>, Error = Error<S>> {
+fn value<S: Span>() -> impl Parser<char, Scalar, Error = Error<S>> {
     type_name_value()
     .or(spanned(literal()).map(|literal| Scalar { type_name: None, literal }))
 }

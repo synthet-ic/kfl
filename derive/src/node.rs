@@ -81,7 +81,7 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
                     #bounds
                 {
                     fn decode_partial(&mut self,
-                        #node: &::kfl::ast::SpannedNode<#span_ty>,
+                        #node: &::kfl::ast::Node,
                         #ctx: &mut ::kfl::decode::Context<#span_ty>)
                         -> Result<bool, ::kfl::errors::DecodeError<#span_ty>>
                     {
@@ -109,7 +109,7 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
                 #bounds
             {
                 fn decode_children(
-                    #children: &[::kfl::ast::SpannedNode<#span_ty>],
+                    #children: &[::kfl::ast::Node],
                     #ctx: &mut ::kfl::decode::Context<#span_ty>)
                     -> Result<Self, ::kfl::errors::DecodeError<#span_ty>>
                 {
@@ -125,7 +125,7 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
         impl #impl_gen ::kfl::traits::Decode #trait_gen for #s_name #type_gen
             #bounds
         {
-            fn decode(#node: &::kfl::ast::SpannedNode<#span_ty>,
+            fn decode(#node: &::kfl::ast::Node,
                            #ctx: &mut ::kfl::decode::Context<#span_ty>)
                 -> Result<Self, ::kfl::errors::DecodeError<#span_ty>>
             {
@@ -151,7 +151,7 @@ pub fn emit_new_type(s: &NewType) -> syn::Result<TokenStream> {
         impl<S: ::kfl::traits::ErrorSpan>
             ::kfl::traits::Decode<S> for #s_name
         {
-            fn decode(#node: &::kfl::ast::SpannedNode<S>,
+            fn decode(#node: &::kfl::ast::Node,
                       #ctx: &mut ::kfl::decode::Context<S>)
                 -> Result<Self, ::kfl::errors::DecodeError<S>>
             {
@@ -452,7 +452,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
 //     let decode_children = decode_children(&common, &children,
 //                                           Some(quote!(#node.span())))?;
 //     Ok(quote! {
-//         let mut #func = |#node: &::kfl::ast::SpannedNode<#span_ty>,
+//         let mut #func = |#node: &::kfl::ast::Node,
 //                          #ctx: &mut ::kfl::decode::Context<#span_ty>|
 //         {
 //             #decode_args

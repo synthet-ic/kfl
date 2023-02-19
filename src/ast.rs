@@ -27,27 +27,27 @@ pub type SpannedChildren<S> = Spanned<Vec<SpannedNode<S>>, S>;
 /// KDL names with span information are represented using this type
 pub type SpannedName<S> = Spanned<Box<str>, S>;
 /// A KDL node with span of the whole node (including children)
-pub type SpannedNode<S> = Spanned<Node<S>, S>;
+pub type SpannedNode<S> = Spanned<Node, S>;
 
 /// Single node of the KDL document
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
-pub struct Node<S> {
+pub struct Node {
     /// A type name if specified in parenthesis
     #[cfg_attr(feature = "minicbor", n(0))]
-    pub type_name: Option<SpannedName<S>>,
+    pub type_name: Option<Box<str>>,
     /// A node name
     #[cfg_attr(feature = "minicbor", n(1))]
-    pub node_name: SpannedName<S>,
+    pub node_name: Box<str>,
     /// Positional arguments
     #[cfg_attr(feature = "minicbor", n(2))]
-    pub arguments: Vec<Scalar<S>>,
+    pub arguments: Vec<Scalar>,
     /// Named properties
     #[cfg_attr(feature = "minicbor", n(3))]
-    pub properties: BTreeMap<SpannedName<S>, Scalar<S>>,
+    pub properties: BTreeMap<Box<str>, Scalar>,
     /// Node's children. This field is not none if there are braces `{..}`
     #[cfg_attr(feature = "minicbor", n(4))]
-    pub children: Option<SpannedChildren<S>>,
+    pub children: Option<Vec<Node>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -86,10 +86,10 @@ pub struct Decimal(
 /// Possibly typed KDL scalar value
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
-pub struct Scalar<S> {
+pub struct Scalar {
     /// A type name if specified in parenthesis
     #[cfg_attr(feature = "minicbor", n(0))]
-    pub type_name: Option<Spanned<TypeName, S>>,
+    pub type_name: Option<TypeName>,
     /// The actual value literal
     #[cfg_attr(feature = "minicbor", n(1))]
     pub literal: Literal,
@@ -170,10 +170,10 @@ pub enum Literal {
     ),
 }
 
-impl<S> Node<S> {
+impl Node {
     /// Returns node children
     pub fn children(&self)
-        -> impl Iterator<Item = &Spanned<Node<S>, S>> +
+        -> impl Iterator<Item = &Node> +
                 ExactSizeIterator
     {
         self.children.as_ref().map(|c| c.iter()).unwrap_or_else(|| [].iter())

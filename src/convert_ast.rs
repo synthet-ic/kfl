@@ -3,7 +3,7 @@ use crate::{
     decode::Context,
     errors::DecodeError,
     span::Spanned,
-    traits::{Decode, DecodeScalar, DecodeSpan, Span}
+    traits::{Decode, DecodeScalar, Span}
 };
 
 impl<S: Span> Decode<S> for Node {
@@ -26,20 +26,6 @@ impl<S: Span> Decode<S> for Node {
                     .map(|node| Ok(Decode::decode(node, ctx)?))
                     .collect::<Result<_, _>>()?)
             }).transpose()?,
-        })
-    }
-}
-
-impl<S, T> Decode<S> for SpannedNode<T>
-    where S: Span,
-          T: DecodeSpan<S>
-{
-    fn decode(node: &Node, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
-    {
-        Ok(Spanned {
-            span: DecodeSpan::decode_span(&ctx.span()),
-            value: Decode::decode(node, ctx)?,
         })
     }
 }

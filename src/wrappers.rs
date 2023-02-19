@@ -18,7 +18,7 @@ pub fn parse<S: traits::Span>(ctx: &mut Context<S>, text: &str)
     .parse(S::stream(text))
     .map_err(|errors| {
         Error {
-            source_code: NamedSource::new(ctx::get<&str>, text.to_string()),
+            source_code: NamedSource::new(ctx.get::<&str>, text.to_string()),
             errors: errors.into_iter().map(Into::into).collect(),
         }
     })

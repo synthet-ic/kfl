@@ -29,7 +29,7 @@ pub fn decode<T>(file_name: &str, text: &str) -> Result<T, Error>
     where T: Decode<Span>,
 {
     let mut ctx = Context::new();
-    cxt.set::<&str>(file_name);
+    ctx.set::<&str>(file_name);
     let nodes = parse::<Span>(ctx, text)?;
     Decode::decode(&nodes[0], &mut ctx).map_err(|error| {
         Error {

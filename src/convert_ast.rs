@@ -1,8 +1,7 @@
 use crate::{
-    ast::{Node, SpannedNode, Literal, Scalar},
+    ast::{Node, Literal, Scalar},
     decode::Context,
     errors::DecodeError,
-    span::Spanned,
     traits::{Decode, DecodeScalar, Span}
 };
 

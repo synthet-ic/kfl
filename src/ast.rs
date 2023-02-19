@@ -30,7 +30,7 @@ pub type SpannedName<S> = Spanned<Box<str>, S>;
 pub type SpannedNode<S> = Spanned<Node, S>;
 
 /// Single node of the KDL document
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Pointer)]
 #[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
 pub struct Node {
     /// A type name if specified in parenthesis
@@ -84,7 +84,7 @@ pub struct Decimal(
 );
 
 /// Possibly typed KDL scalar value
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Pointer)]
 #[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
 pub struct Scalar {
     /// A type name if specified in parenthesis
@@ -96,7 +96,7 @@ pub struct Scalar {
 }
 
 /// Type identifier
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Pointer)]
 pub struct TypeName(TypeNameInner);
 
 #[derive(Debug, Clone, PartialEq, Eq)]

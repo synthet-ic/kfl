@@ -11,14 +11,14 @@ use crate::{
 };
 
 /// Parse KDL text and return AST
-pub fn parse<S: traits::Span>(file_name: &str, text: &str)
+pub fn parse<S: traits::Span>(ctx: &mut Context, text: &str)
     -> Result<Vec<Node>, Error>
 {
-    grammar::document()
+    grammar::document(ctx.clone())
     .parse(S::stream(text))
     .map_err(|errors| {
         Error {
-            source_code: NamedSource::new(file_name, text.to_string()),
+            source_code: NamedSource::new(ctx::get<File>, text.to_string()),
             errors: errors.into_iter().map(Into::into).collect(),
         }
     })
@@ -28,8 +28,9 @@ pub fn parse<S: traits::Span>(file_name: &str, text: &str)
 pub fn decode<T>(file_name: &str, text: &str) -> Result<T, Error>
     where T: Decode<Span>,
 {
-    let nodes = parse::<Span>(file_name, text)?;
     let mut ctx = Context::new();
+    cxt.set::<File>(file_name);
+    let nodes = parse::<Span>(ctx, text)?;
     Decode::decode(&nodes[0], &mut ctx).map_err(|error| {
         Error {
             source_code: NamedSource::new(file_name, text.to_string()),

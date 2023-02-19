@@ -41,10 +41,10 @@ pub struct Node<S> {
     pub node_name: SpannedName<S>,
     /// Positional arguments
     #[cfg_attr(feature = "minicbor", n(2))]
-    pub arguments: Vec<Value<S>>,
+    pub arguments: Vec<Scalar<S>>,
     /// Named properties
     #[cfg_attr(feature = "minicbor", n(3))]
-    pub properties: BTreeMap<SpannedName<S>, Value<S>>,
+    pub properties: BTreeMap<SpannedName<S>, Scalar<S>>,
     /// Node's children. This field is not none if there are braces `{..}`
     #[cfg_attr(feature = "minicbor", n(4))]
     pub children: Option<SpannedChildren<S>>,
@@ -86,7 +86,7 @@ pub struct Decimal(
 /// Possibly typed KDL scalar value
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
-pub struct Value<S> {
+pub struct Scalar<S> {
     /// A type name if specified in parenthesis
     #[cfg_attr(feature = "minicbor", n(0))]
     pub type_name: Option<Spanned<TypeName, S>>,

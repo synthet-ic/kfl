@@ -3,7 +3,7 @@ use std::collections::{BTreeSet, BTreeMap};
 use chumsky::prelude::*;
 
 use crate::{
-    ast::{Literal, TypeName, Node, Value, Integer, Decimal, Radix},
+    ast::{Literal, TypeName, Node, Scalar, Integer, Decimal, Radix},
     ast::{SpannedName, SpannedNode},
     span::Spanned,
     traits::Span,
@@ -376,19 +376,19 @@ fn node_terminator<S: Span>() -> impl Parser<char, (), Error = Error<S>> {
 }
 
 enum PropOrArg<S> {
-    Prop(SpannedName<S>, Value<S>),
-    Arg(Value<S>),
+    Prop(SpannedName<S>, Scalar<S>),
+    Arg(Scalar<S>),
     Ignore,
 }
 
-fn type_name_value<S: Span>() -> impl Parser<char, Value<S>, Error = Error<S>> {
+fn type_name_value<S: Span>() -> impl Parser<char, Scalar<S>, Error = Error<S>> {
     spanned(type_name()).then(spanned(literal()))
-    .map(|(type_name, literal)| Value { type_name: Some(type_name), literal })
+    .map(|(type_name, literal)| Scalar { type_name: Some(type_name), literal })
 }
 
-fn value<S: Span>() -> impl Parser<char, Value<S>, Error = Error<S>> {
+fn value<S: Span>() -> impl Parser<char, Scalar<S>, Error = Error<S>> {
     type_name_value()
-    .or(spanned(literal()).map(|literal| Value { type_name: None, literal }))
+    .or(spanned(literal()).map(|literal| Scalar { type_name: None, literal }))
 }
 
 fn prop_or_arg_inner<S: Span>()
@@ -427,7 +427,7 @@ fn prop_or_arg_inner<S: Span>()
                             help: "consider enclosing in double quotes \"..\"",
                         })
                     }
-                    (value, None) => Ok(Arg(Value {
+                    (value, None) => Ok(Arg(Scalar {
                         type_name: None,
                         literal: Spanned {
                             span: name_span,
@@ -455,7 +455,7 @@ fn prop_or_arg_inner<S: Span>()
                 } else {
                     // this is invalid, but we already emitted error
                     // in validate() above, so doing a sane fallback
-                    Arg(Value {
+                    Arg(Scalar {
                         type_name: None,
                         literal: name.map(Literal::String),
                     })

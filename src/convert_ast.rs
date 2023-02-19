@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Node, SpannedNode, Literal, Value},
+    ast::{Node, SpannedNode, Literal, Scalar},
     decode::Context,
     errors::DecodeError,
     span::Spanned,
@@ -53,11 +53,11 @@ impl<S, T> Decode<S> for SpannedNode<T>
     }
 }
 
-impl<S: Span, T: DecodeSpan<S>> DecodeScalar<S> for Value<T> {
-    fn decode(value: &Value<S>, ctx: &mut Context<S>)
+impl<S: Span, T: DecodeSpan<S>> DecodeScalar<S> for Scalar<T> {
+    fn decode(value: &Scalar<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        Ok(Value {
+        Ok(Scalar {
             type_name: value.type_name.as_ref().map(|n| n.clone_as(ctx)),
             literal: value.literal.clone_as(ctx),
         })
@@ -65,7 +65,7 @@ impl<S: Span, T: DecodeSpan<S>> DecodeScalar<S> for Value<T> {
 }
 
 impl<S: Span> DecodeScalar<S> for Literal {
-    fn decode(value: &Value<S>, _: &mut Context<S>)
+    fn decode(value: &Scalar<S>, _: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
         Ok((*value.literal).clone())

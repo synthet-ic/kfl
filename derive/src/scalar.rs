@@ -111,7 +111,7 @@ pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
     Ok(quote! {
         impl<S: ::kfl::traits::ErrorSpan> ::kfl::DecodeScalar<S>
                 for #e_name {
-            fn decode(value: &::kfl::ast::Value<S>,
+            fn decode(value: &::kfl::ast::Scalar<S>,
                       ctx: &mut ::kfl::decode::Context<S>)
                 -> Result<Self, ::kfl::errors::DecodeError<S>>
             {

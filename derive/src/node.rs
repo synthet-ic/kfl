@@ -89,7 +89,7 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
                     }
                     // fn insert_property(&mut self,
                     //     #name: &::kfl::span::Spanned<Box<str>, #span_ty>,
-                    //     #value: &::kfl::ast::Value<#span_ty>,
+                    //     #value: &::kfl::ast::Scalar<#span_ty>,
                     //     #ctx: &mut ::kfl::decode::Context<#span_ty>)
                     //     -> Result<bool, ::kfl::errors::DecodeError<#span_ty>>
                     // {

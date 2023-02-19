@@ -7,7 +7,7 @@
 use std::fmt::Debug;
 
 use crate::{
-    ast::{SpannedNode, Value},
+    ast::{SpannedNode, Scalar},
     errors::{DecodeError, EncodeError},
     decode::Context
 };
@@ -47,7 +47,7 @@ pub trait DecodePartial<S: ErrorSpan>: Sized + Default {
     // /// Returns `Ok(true)` if the property is "consumed" (i.e. stored in this
     // /// structure).
     // fn insert_property(&mut self,
-    //                    name: &Spanned<Box<str>, S>, value: &Value<S>,
+    //                    name: &Spanned<Box<str>, S>, value: &Scalar<S>,
     //                    ctx: &mut Context<S>)
     //     -> Result<bool, DecodeError<S>>;
 }
@@ -73,7 +73,7 @@ pub trait DecodeScalar<S: ErrorSpan>: Sized {
     ///
     /// This should not be overriden and uses `type_check` in combination with
     /// `raw_decode`.
-    fn decode(value: &Value<S>, ctx: &mut Context<S>)
+    fn decode(scalar: &Scalar<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>;
 }
 
@@ -134,7 +134,7 @@ pub trait EncodeChildren<S: ErrorSpan, T: DecodeChildren<S>> {
 pub trait EncodeScalar<S: ErrorSpan>: DecodeScalar<S> {
     ///
     fn encode(&self, ctx: &mut Context<S>)
-        -> Result<Value<S>, EncodeError<S>>;
+        -> Result<Scalar<S>, EncodeError<S>>;
 }
 
 #[allow(missing_debug_implementations)]

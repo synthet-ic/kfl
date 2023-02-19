@@ -148,17 +148,94 @@
 <li>Nominal Typing</li>
 <li>Trait-Based</li>
 </ul>
-<h1 id="todo"><a class="header" href="#todo">TODO</a></h1>
+<h1 id="about-kdl"><a class="header" href="#about-kdl">About KDL</a></h1>
+<p>To give you some background on the KDL format. Here is a small example:</p>
+<pre><code class="language-kdl">foo 1 &quot;three&quot; key=&quot;val&quot; {
+    bar
+    (role)baz 1 2
+}
+</code></pre>
+<p>Here is what are annotations for all the datum as described by the [specification] and this guide:</p>
+<pre><code class="language-text">foo 1 &quot;three&quot; key=&quot;val&quot; {                           ╮
+─┬─ ┬ ───┬─── ────┬────                             │
+ │  │    │        ╰───── property (can be multiple) │
+ │  │    │                                          │
+ │  ╰────┴────────────── arguments                  │
+ │                                                  │
+ ╰── node name                                      ├─ node &quot;foo&quot;, with
+                                                    │  &quot;bar&quot; and &quot;baz&quot;
+    bar                                             │  being children
+    (role)baz 1 2                                   │
+     ──┬─                                           │
+       ╰────── type name for node named &quot;baz&quot;       │
+}                                                   ╯
+</code></pre>
+<p>(note, the order of properties doesn't matter as well as the order of properties with respect to arguments, so I've moved arguments to have less intersections for the arrows)</p>
+<h1 id="usage"><a class="header" href="#usage">Usage</a></h1>
+<p>Most common usage of this library is using <code>derive</code> and [parse] function:</p>
+<pre><pre class="playground"><code class="language-rust">use kfl::Decode;
+
+#[derive(Decode)]
+struct Config {
+    #[kfl(children)]
+    routes: Vec&lt;Route&gt;,
+    #[kfl(children)]
+    plugins: Vec&lt;Plugin&gt;,
+}
+
+#[derive(Decode)]
+struct Route {
+    #[kfl(argument)]
+    path: String,
+    #[kfl(children)]
+    subroutes: Vec&lt;Route&gt;,
+}
+
+#[derive(Decode)]
+struct Plugin {
+    #[kfl(argument)]
+    name: String,
+    #[kfl(property)]
+    url: String,
+}
+
+<span class="boring">fn main() -&gt; miette::Result&lt;()&gt; {
+</span>let config = kfl::decode_children::&lt;Config&gt;(&quot;example.kdl&quot;, r#&quot;
+    route &quot;/api&quot; {
+        route &quot;/api/v1&quot;
+    }
+    plugin &quot;http&quot; url=&quot;https://example.org/http&quot;
+&quot;#)?;
+<span class="boring">Ok(())
+</span><span class="boring">}</span></code></pre></pre>
+<p>This parses into a vector of nodes as enums <code>Config</code>, but you also use some node as a root of the document if there is no properties and arguments declared:</p>
+<pre><code class="language-rust ignore">#[derive(Decode)]
+struct Document {
+    #[kfl(child, unwrap(argument))]
+    version: Option&lt;String&gt;,
+    #[kfl(children)]
+    routes: Vec&lt;Route&gt;,
+    #[kfl(children)]
+    plugins: Vec&lt;Plugin&gt;,
+}
+
+let config = kfl::decode_children::&lt;Document&gt;(&quot;example.kdl&quot;, r#&quot;
+    version &quot;2.0&quot;
+    route &quot;/api&quot; {
+        route &quot;/api/v1&quot;
+    }
+    plugin &quot;http&quot; url=&quot;https://example.org/http&quot;
+&quot;#)?;</code></pre>
+<p>See description of <a href="derive@Decode">Decode</a> and <a href="derive@DecodeScalar">DecodeScalar</a> for the full reference on allowed attributes and parse modes.</p>
+<h2 id="kdl"><a class="header" href="#kdl">KDL</a></h2>
 <ul>
-<li><input disabled="" type="checkbox"/>
-Struct variants and tuple variants</li>
-<li><input disabled="" type="checkbox"/>
-<code>DecodePartial</code> compatibility cannot automatically be detected (except <code>Unit</code> useless case)
-<ul>
-<li>Because we discard <code>option</code> parameter and also switch to manually implementing it for <code>Option&lt;T&gt;</code> and <code>Vec&lt;T&gt;</code></li>
-<li>Beautiful fact is that default <code>Decode</code> behaviour anyway coerce <code>T</code> into <code>Option&lt;T&gt;</code> when <code>ChildMode::Normal</code> or <code>Vec&lt;T&gt;</code> when <code>ChildMode::Multi</code> at decoding (and then unwrap or into_iter.collect)</li>
+<li>KDL as algebraic data type with exponential</li>
+<li>KDL as token tree (≠ AST, ≠ token stream)</li>
 </ul>
-</li>
+<h2 id="todo"><a class="header" href="#todo">TODO</a></h2>
+<ul>
+<li><input disabled="" type="checkbox"/>
+<code>-</code></li>
 <li><input disabled="" type="checkbox"/>
 Implement <code>DecodeScalar</code> for struct as the replacement of <code>flatten(properties)</code> and support <code>flatten(arguments)</code> equivalent as well</li>
 <li><input disabled="" type="checkbox"/>
@@ -176,6 +253,10 @@ Test organisation, provide utility macros</li>
 <code>EncodePartial</code> as an analogous to <code>skip_serializing_none</code></li>
 </ul>
 </li>
+<li><input disabled="" type="checkbox"/>
+Compare TokenStream with Scalar, TokenTree with Node</li>
+<li><input disabled="" type="checkbox"/>
+property enum or union</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
 <table>
@@ -508,7 +589,28 @@ fn main() {
 </li>
 <li><code>str</code> and <code>bytes</code> → simply implement <code>DecodeScalar</code> for <code>SocketAddr</code> and <code>Vec&lt;u8&gt;</code></li>
 </ul>
-<h1 id=""><a class="header" href="#"></a></h1>
+<h1 id="implementation"><a class="header" href="#implementation">Implementation</a></h1>
+<h1 id="change-list"><a class="header" href="#change-list">Change List</a></h1>
+<ul>
+<li>Struct variants and tuple variants</li>
+<li><code>DecodePartial</code> compatibility cannot automatically be detected (except <code>Unit</code> useless case)
+<ul>
+<li>Because we discard <code>option</code> parameter and also switch to manually implementing it for <code>Option&lt;T&gt;</code> and <code>Vec&lt;T&gt;</code></li>
+<li>Beautiful fact is that default <code>Decode</code> behaviour anyway coerce <code>T</code> into <code>Option&lt;T&gt;</code> when <code>ChildMode::Normal</code> or <code>Vec&lt;T&gt;</code> when <code>ChildMode::Multi</code> at decoding (and then unwrap or into_iter.collect)</li>
+</ul>
+</li>
+<li>Remove <code>DecodeMode</code></li>
+<li><code>DecodeScalar</code>
+<ul>
+<li>Separation of <code>check_type</code> and <code>raw_decode</code> is inefficient when implementing <code>bytes</code> for <code>Vec&lt;u8&gt;</code>
+<ul>
+<li>We need to return default values</li>
+</ul>
+</li>
+<li>We can expect more that one kind of value, so DecodeError::ScalarKind cannot expect one fixed Kind</li>
+</ul>
+</li>
+</ul>
 
                     </main>
 

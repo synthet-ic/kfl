@@ -179,7 +179,28 @@
 </li>
 <li><code>str</code> and <code>bytes</code> → simply implement <code>DecodeScalar</code> for <code>SocketAddr</code> and <code>Vec&lt;u8&gt;</code></li>
 </ul>
-<h1 id=""><a class="header" href="#"></a></h1>
+<h1 id="implementation"><a class="header" href="#implementation">Implementation</a></h1>
+<h1 id="change-list"><a class="header" href="#change-list">Change List</a></h1>
+<ul>
+<li>Struct variants and tuple variants</li>
+<li><code>DecodePartial</code> compatibility cannot automatically be detected (except <code>Unit</code> useless case)
+<ul>
+<li>Because we discard <code>option</code> parameter and also switch to manually implementing it for <code>Option&lt;T&gt;</code> and <code>Vec&lt;T&gt;</code></li>
+<li>Beautiful fact is that default <code>Decode</code> behaviour anyway coerce <code>T</code> into <code>Option&lt;T&gt;</code> when <code>ChildMode::Normal</code> or <code>Vec&lt;T&gt;</code> when <code>ChildMode::Multi</code> at decoding (and then unwrap or into_iter.collect)</li>
+</ul>
+</li>
+<li>Remove <code>DecodeMode</code></li>
+<li><code>DecodeScalar</code>
+<ul>
+<li>Separation of <code>check_type</code> and <code>raw_decode</code> is inefficient when implementing <code>bytes</code> for <code>Vec&lt;u8&gt;</code>
+<ul>
+<li>We need to return default values</li>
+</ul>
+</li>
+<li>We can expect more that one kind of value, so DecodeError::ScalarKind cannot expect one fixed Kind</li>
+</ul>
+</li>
+</ul>
 
                     </main>
 

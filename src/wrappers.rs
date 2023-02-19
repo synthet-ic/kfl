@@ -71,7 +71,7 @@ pub fn decode_with_context<T, S, F>(file_name: &str, text: &str, set_ctx: F)
           T: DecodeChildren<S>,
           S: traits::Span,
 {
-    let nodes = parse(file_name, text)?;
+    let nodes = parse::<S>(file_name, text)?;
     let mut ctx = Context::new();
     set_ctx(&mut ctx);
     let errors = match <T as DecodeChildren<S>>
@@ -119,7 +119,7 @@ pub fn encode<T>(file_name: &str, t: &T) -> Result<String, Error>
             errors: vec![error.into()],
         }
     })?;
-    print(file_name, node)
+    print::<S>(file_name, node)
 }
 
 #[test]

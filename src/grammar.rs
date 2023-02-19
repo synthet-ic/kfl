@@ -5,6 +5,7 @@ use chumsky::prelude::*;
 use crate::{
     ast::{Literal, TypeName, Node, Scalar, Integer, Decimal, Radix},
     ast::{SpannedName, SpannedNode},
+    decode::Context,
     span::Spanned,
     traits::Span,
     errors::{ParseError as Error, TokenFormat}
@@ -354,11 +355,11 @@ fn type_name<S: Span>() -> impl Parser<char, TypeName, Error = Error<S>> {
     ident().delimited_by(just('('), just(')')).map(TypeName::from_string)
 }
 
-fn spanned<T, S, P>(p: P) -> impl Parser<char, Spanned<T, S>, Error = Error<S>>
+fn spanned<T, S, P>(p: P, ctx: &Context<S>) -> impl Parser<char, Spanned<T, S>, Error = Error<S>>
     where P: Parser<char, T, Error = Error<S>>,
           S: Span,
 {
-    p.map_with_span(|value, span| Spanned { span, value })
+    p.map_with_span(|value, span| { ctx.add_span(&value, span); value })
 }
 
 fn esc_line<S: Span>() -> impl Parser<char, (), Error = Error<S>> {
@@ -391,7 +392,7 @@ fn value<S: Span>() -> impl Parser<char, Scalar, Error = Error<S>> {
     .or(spanned(literal()).map(|literal| Scalar { type_name: None, literal }))
 }
 
-fn prop_or_arg_inner<S: Span>()
+fn prop_or_arg_inner<S: Span>(ctx: &mut Context<S>)
     -> impl Parser<char, PropOrArg<S>, Error = Error<S>>
 {
     use PropOrArg::*;
@@ -401,11 +402,8 @@ fn prop_or_arg_inner<S: Span>()
                 let name_span = name.span;
                 match (name.value, value) {
                     (Literal::String(s), Some(value)) => {
-                        let name = Spanned {
-                            span: name_span,
-                            value: s,
-                        };
-                        Ok(Prop(name, value))
+                        ctx.set_span(&s, name_span);
+                        Ok(Prop(s, value))
                     }
                     (Literal::Bool(_) | Literal::Null, Some(_)) => {
                         Err(Error::Unexpected {
@@ -427,13 +425,13 @@ fn prop_or_arg_inner<S: Span>()
                             help: "consider enclosing in double quotes \"..\"",
                         })
                     }
-                    (value, None) => Ok(Arg(Scalar {
-                        type_name: None,
-                        literal: Spanned {
-                            span: name_span,
-                            value,
-                        },
-                    })),
+                    (value, None) => {
+                        ctx.set_span(&value, name_span);
+                        Ok(Arg(Scalar {
+                            type_name: None,
+                            literal: value,
+                        }))
+                    },
                 }
             }),
         spanned(bare_ident()).then(just('=').ignore_then(value()).or_not())
@@ -477,8 +475,7 @@ fn line_space<S: Span>() -> impl Parser<char, (), Error = Error<S>> {
     newline().or(ws()).or(comment())
 }
 
-
-fn nodes<S: Span>() -> impl Parser<char, Vec<SpannedNode<S>>, Error = Error<S>> {
+fn nodes<S: Span>(ctx: &mut Context<S>) -> impl Parser<char, Vec<SpannedNode<S>>, Error = Error<S>> {
     use PropOrArg::*;
     recursive(|nodes: chumsky::recursive::Recursive<char, _, Error<S>>| {
         let braced_nodes =
@@ -558,10 +555,10 @@ fn nodes<S: Span>() -> impl Parser<char, Vec<SpannedNode<S>>, Error = Error<S>> 
     })
 }
 
-pub(crate) fn document<S: Span>()
+pub(crate) fn document<S: Span>(ctx: &mut Context<S>)
     -> impl Parser<char, Vec<SpannedNode<S>>, Error = Error<S>>
 {
-    nodes().then_ignore(end())
+    nodes(ctx).then_ignore(end())
 }
 
 #[cfg(test)]

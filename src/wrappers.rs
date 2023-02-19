@@ -2,7 +2,7 @@ use chumsky::Parser;
 use miette::NamedSource;
 
 use crate::{
-    ast::SpannedNode,
+    ast::Node,
     decode::Context,
     errors::Error,
     grammar,
@@ -12,7 +12,7 @@ use crate::{
 
 /// Parse KDL text and return AST
 pub fn parse<S: traits::Span>(file_name: &str, text: &str)
-    -> Result<Vec<SpannedNode<S>>, Error>
+    -> Result<Vec<Node>, Error>
 {
     grammar::document()
     .parse(S::stream(text))
@@ -94,7 +94,7 @@ pub fn decode_with_context<T, S, F>(file_name: &str, text: &str, set_ctx: F)
 
 /// Print ast and return KDL text
 #[allow(unused)]
-pub fn print<S: traits::Span>(file_name: &str, node: SpannedNode<S>)
+pub fn print<S: traits::Span>(file_name: &str, node: Node)
     -> Result<String, Error>
 {
     Ok("".into())

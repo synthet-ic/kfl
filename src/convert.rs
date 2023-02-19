@@ -44,7 +44,7 @@ macro_rules! impl_integer {
                 match &scalar.literal {
                     Literal::Int(ref v) => v.try_into()
                         .map_err(|err| DecodeError::conversion(
-                                 &ctx.span(&scalar), err)),
+                                 ctx.span(&scalar), err)),
                     _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "string",
                              &scalar.literal))
                 }
@@ -124,10 +124,10 @@ macro_rules! impl_decimal {
                 match &scalar.literal {
                     Literal::Int(ref v) => v.try_into()
                         .map_err(|err| DecodeError::conversion(
-                                 &ctx.span(&scalar), err)),
+                                 ctx.span(&scalar), err)),
                     Literal::Decimal(ref v) => v.try_into()
                         .map_err(|err| DecodeError::conversion(
-                                 &ctx.span(&scalar), err)),
+                                 ctx.span(&scalar), err)),
                     _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "string",
                              &scalar.literal))
                 }
@@ -176,7 +176,7 @@ macro_rules! impl_from_str {
                 match &scalar.literal {
                     Literal::String(ref s) => <$ty>::from_str(&s)
                         .map_err(|err| DecodeError::conversion(
-                                 &ctx.span(&scalar), err)),
+                                 ctx.span(&scalar), err)),
                     _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "string",
                              &scalar.literal))
                 }

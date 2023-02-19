@@ -17,7 +17,7 @@ impl<S: Span> Decode<S> for Node {
                 .collect::<Result<_, _>>()?,
             properties: node.properties.iter()
                 .map(|(k, v)| {
-                    Ok((k.clone_as(ctx), DecodeScalar::decode(v, ctx)?))
+                    Ok((k.clone(), DecodeScalar::decode(v, ctx)?))
                 })
                 .collect::<Result<_, _>>()?,
             children: node.children.as_ref().map(|sc| {
@@ -34,8 +34,8 @@ impl<S: Span> DecodeScalar<S> for Scalar {
         -> Result<Self, DecodeError<S>>
     {
         Ok(Scalar {
-            type_name: scalar.type_name.as_ref().map(|n| n.clone_as(ctx)),
-            literal: scalar.literal.clone_as(ctx),
+            type_name: scalar.type_name.as_ref().map(|n| n.clone()),
+            literal: scalar.literal.clone(),
         })
     }
 }

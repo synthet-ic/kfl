@@ -75,30 +75,6 @@ let config = kfl::decode_children::<Config>("example.kdl", r#"
 # }
 ```
 
-This parses into a vector of nodes as enums `Config`, but you also use some node as a root of the document if there is no properties and arguments declared:
-
-```rust,ignore
-#[derive(Decode)]
-struct Document {
-    #[kfl(child, unwrap(argument))]
-    version: Option<String>,
-    #[kfl(children)]
-    routes: Vec<Route>,
-    #[kfl(children)]
-    plugins: Vec<Plugin>,
-}
-
-let config = kfl::decode_children::<Document>("example.kdl", r#"
-    version "2.0"
-    route "/api" {
-        route "/api/v1"
-    }
-    plugin "http" url="https://example.org/http"
-"#)?;
-```
-
-See description of [Decode](derive@Decode) and [DecodeScalar](derive@DecodeScalar) for the full reference on allowed attributes and parse modes.
-
 License
 =======
 

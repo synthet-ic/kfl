@@ -7,9 +7,8 @@ use crate::{
     ast::{Node, Literal, BuiltinType},
     decode::Context,
     errors::{DecodeError, ExpectedType},
-    span::Spanned,
     traits::{Decode, DecodePartial, DecodeChildren, DecodeScalar},
-    traits::{ErrorSpan, Span}
+    traits::ErrorSpan
 };
 
 impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Box<T> {

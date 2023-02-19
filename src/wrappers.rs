@@ -30,7 +30,7 @@ pub fn decode<T>(file_name: &str, text: &str) -> Result<T, Error>
 {
     let mut ctx = Context::new();
     ctx.set::<&str>(file_name);
-    let nodes = parse::<Span>(ctx, text)?;
+    let nodes = parse::<Span>(& mut ctx, text)?;
     Decode::decode(&nodes[0], &mut ctx).map_err(|error| {
         Error {
             source_code: NamedSource::new(file_name, text.to_string()),
@@ -72,8 +72,8 @@ pub fn decode_with_context<T, S, F>(file_name: &str, text: &str, set_ctx: F)
           T: DecodeChildren<S>,
           S: traits::Span,
 {
-    let nodes = parse::<S>(file_name, text)?;
     let mut ctx = Context::new();
+    let nodes = parse::<S>(&mut ctx, text)?;
     set_ctx(&mut ctx);
     let errors = match <T as DecodeChildren<S>>
         ::decode_children(&nodes, &mut ctx)

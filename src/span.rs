@@ -171,7 +171,7 @@ impl chumsky::Span for LineSpan {
     fn end(&self) -> LinePos { self.1 }
 }
 
-#[cfg(feature="line-numbers")]
+#[cfg(feature = "line-numbers")]
 impl traits::sealed::SpanTracker for sealed::LineTracker {
     type Span = LineSpan;
     fn next_span(&mut self, c: char) -> LineSpan {

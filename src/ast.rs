@@ -92,7 +92,7 @@ pub struct Scalar<S> {
     pub type_name: Option<Spanned<TypeName, S>>,
     /// The actual value literal
     #[cfg_attr(feature = "minicbor", n(1))]
-    pub literal: Spanned<Literal, S>,
+    pub literal: Literal,
 }
 
 /// Type identifier

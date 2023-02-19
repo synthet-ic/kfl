@@ -171,7 +171,7 @@ impl<S: ErrorSpan, T: Decode<S>> DecodeChildren<S> for Vec<T> {
 }
 
 impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
-    fn decode(scalar: &crate::ast::Scalar<S>, _: &mut Context<S>)
+    fn decode(scalar: &crate::ast::Scalar<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
         let is_base64 = if let Some(ty) = scalar.type_name.as_ref() {
@@ -187,7 +187,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
                 }
             }
         } else { false };
-        match &*scalar.literal {
+        match &scalar.literal {
             Literal::String(ref s) => {
                 if is_base64 {
                     #[cfg(feature = "base64")] {
@@ -196,7 +196,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
                         match STANDARD.decode(s.as_bytes()) {
                             Ok(vec) => Ok(vec),
                             Err(e) => {
-                                Err(DecodeError::conversion(&scalar.literal, e))
+                                Err(DecodeError::conversion(&ctx.span(), e))
                             }
                         }
                     }
@@ -208,7 +208,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
                     Ok(s.as_bytes().to_vec())
                 }
             }
-            _ => Err(DecodeError::scalar_kind("string",
+            _ => Err(DecodeError::scalar_kind(&ctx.span(), "string",
                                               &scalar.literal))
         }
     }
@@ -250,7 +250,7 @@ impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Option<T> {
     fn decode(scalar: &crate::ast::Scalar<S>, ctx: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        match &*scalar.literal {
+        match &scalar.literal {
             Literal::Null => Ok(None),
             _ => <T as DecodeScalar<S>>::decode(scalar, ctx).map(Some),
         }
@@ -265,7 +265,7 @@ impl<T: DecodeScalar<S>, S, Q> DecodeScalar<S> for Spanned<T, Q>
         -> Result<Self, DecodeError<S>>
     {
         <T as DecodeScalar<S>>::decode(scalar, ctx).map(|v| Spanned {
-            span: DecodeSpan::decode_span(&scalar.literal.span, ctx),
+            span: DecodeSpan::decode_span(ctx),
             value: v,
         })
     }

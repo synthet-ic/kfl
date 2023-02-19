@@ -14,7 +14,6 @@ use miette::{Diagnostic, NamedSource};
 use crate::{
     ast::{TypeName, Literal, SpannedNode},
     span::Spanned,
-    decode::Kind,
     traits::{ErrorSpan, Span}
 };
 
@@ -71,7 +70,7 @@ pub enum DecodeError<S: ErrorSpan> {
         /// Scalar kind (or multiple) expected at this position
         expected: &'static str,
         /// Kind of scalar that is found
-        found: Kind,
+        found: &'static str,
     },
     /// Some required element is missing
     ///
@@ -434,21 +433,21 @@ impl<S: Span> chumsky::Error<char> for ParseError<S> {
 
 impl<S: ErrorSpan> DecodeError<S> {
     /// Construct [`DecodeError::Conversion`] error
-    pub fn conversion<T, E>(span: &Spanned<T, S>, err: E) -> Self
+    pub fn conversion<T, E>(span: S, err: E) -> Self
         where E: Into<Box<dyn std::error::Error + Send + Sync + 'static>>,
     {
         DecodeError::Conversion {
-            span: span.span().clone(),
+            span,
             source: err.into(),
         }
     }
     // TODO(rnarkk) improve `&'static str`
     /// Construct [`DecodeError::ScalarKind`] error
-    pub fn scalar_kind(expected: &'static str, found: &Spanned<Literal, S>) -> Self {
+    pub fn scalar_kind(span: S, expected: &'static str, found: &Literal) -> Self {
         DecodeError::ScalarKind {
-            span: found.span().clone(),
+            span,
             expected,
-            found: (&found.value).into(),
+            found: &found.as_str(),
         }
     }
     /// Construct [`DecodeError::Missing`] error

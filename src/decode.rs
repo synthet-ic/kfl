@@ -4,7 +4,6 @@
 use std::{
     any::{Any, TypeId},
     collections::HashMap,
-    fmt::Display
 };
 
 use crate::{
@@ -21,27 +20,6 @@ use crate::{
 pub struct Context<S: ErrorSpan> {
     errors: Vec<DecodeError<S>>,
     extensions: HashMap<TypeId, Box<dyn Any>>,
-}
-
-/// Scalar value kind
-///
-/// Currently used only for error reporting
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum Kind {
-    /// An unquoted integer value, signed or unsigned. Having no decimal point.
-    /// Can be of virtually unlimited length. Can be expressed in binary, octal,
-    /// decimal, or hexadecimal notation.
-    Int,
-    /// A number that has either decimal point or exponential part. Can be only
-    /// in decimal notation. Can represent either decimal or floating value
-    /// value. No quotes.
-    Decimal,
-    /// A string in `"double quotes"` or `r##"raw quotes"##`
-    String,
-    /// A boolean value of `true` or `false`
-    Bool,
-    /// The null value (usually corresponds to `None` in Rust)
-    Null,
 }
 
 impl<S: ErrorSpan> Context<S> {
@@ -89,37 +67,17 @@ impl<S: ErrorSpan> Context<S> {
     }
 }
 
-impl Display for Kind {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&'_ Literal> for Kind {
-    fn from(lit: &Literal) -> Kind {
-        use Literal as L;
-        use Kind as K;
-        match lit {
-            L::Int(_) => K::Int,
-            L::Decimal(_) => K::Decimal,
-            L::String(_) => K::String,
-            L::Bool(_) => K::Bool,
-            L::Null => K::Null,
-        }
-    }
-}
-
-impl Kind {
-    /// Returns the string representation of `Kind`
+impl Literal {
+    /// Returns the string representation of `Literal`
     ///
     /// This is currently used in error messages.
     pub const fn as_str(&self) -> &'static str {
-        use Kind::*;
+        use Literal::*;
         match self {
-            Int => "integer",
-            Decimal => "decimal",
-            String => "string",
-            Bool => "boolean",
+            Int(_) => "integer",
+            Decimal(_) => "decimal",
+            String(_) => "string",
+            Bool(_) => "boolean",
             Null => "null",
         }
     }

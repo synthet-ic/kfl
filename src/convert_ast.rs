@@ -68,6 +68,6 @@ impl<S: Span> DecodeScalar<S> for Literal {
     fn decode(scalar: &Scalar<S>, _: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
-        Ok((*scalar.literal).clone())
+        Ok(scalar.literal.clone())
     }
 }

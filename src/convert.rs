@@ -33,8 +33,8 @@ macro_rules! impl_integer {
                 if let Some(typ) = scalar.type_name.as_ref() {
                     if typ.as_builtin() != Some(&BuiltinType::$marker) {
                         return Err(DecodeError::TypeName {
-                            span: typ.span().clone(),
-                            found: Some(typ.value.clone()),
+                            span: ctx.span(&typ),
+                            found: Some(typ.clone()),
                             expected: ExpectedType::optional(
                                 BuiltinType::$marker),
                             rust_type: stringify!($ty),
@@ -45,7 +45,7 @@ macro_rules! impl_integer {
                     Literal::Int(ref v) => v.try_into()
                         .map_err(|err| DecodeError::conversion(
                                  &ctx.span(&scalar), err)),
-                    _ => Err(DecodeError::scalar_kind(&ctx.span(&scalar), "string",
+                    _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "string",
                              &scalar.literal))
                 }
             }
@@ -113,8 +113,8 @@ macro_rules! impl_decimal {
                 if let Some(typ) = scalar.type_name.as_ref() {
                     if typ.as_builtin() != Some(&BuiltinType::$marker) {
                         return Err(DecodeError::TypeName {
-                            span: typ.span().clone(),
-                            found: Some(typ.value.clone()),
+                            span: ctx.span(&typ).clone(),
+                            found: Some(typ.clone()),
                             expected: ExpectedType::optional(
                                 BuiltinType::$marker),
                             rust_type: stringify!($ty),
@@ -128,7 +128,7 @@ macro_rules! impl_decimal {
                     Literal::Decimal(ref v) => v.try_into()
                         .map_err(|err| DecodeError::conversion(
                                  &ctx.span(&scalar), err)),
-                    _ => Err(DecodeError::scalar_kind(&ctx.span(&scalar), "string",
+                    _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "string",
                              &scalar.literal))
                 }
             }
@@ -145,15 +145,15 @@ impl<S: ErrorSpan> DecodeScalar<S> for String {
     {
         if let Some(typ) = scalar.type_name.as_ref() {
             return Err(DecodeError::TypeName {
-                span: typ.span().clone(),
-                found: Some(typ.value.clone()),
+                span: ctx.span(&typ),
+                found: Some(typ.clone()),
                 expected: ExpectedType::no_type(),
                 rust_type: "String",
             });
         }
         match &scalar.literal {
             Literal::String(ref s) => Ok(s.clone().into()),
-            _ => Err(DecodeError::scalar_kind(&ctx.span(&scalar), "string",
+            _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "string",
                                               &scalar.literal))
         }
     }
@@ -167,8 +167,8 @@ macro_rules! impl_from_str {
             {
                 if let Some(typ) = scalar.type_name.as_ref() {
                     return Err(DecodeError::TypeName {
-                        span: typ.span().clone(),
-                        found: Some(typ.value.clone()),
+                        span: ctx.span(&typ),
+                        found: Some(typ.clone()),
                         expected: ExpectedType::no_type(),
                         rust_type: $display,
                     });
@@ -177,7 +177,7 @@ macro_rules! impl_from_str {
                     Literal::String(ref s) => <$ty>::from_str(&s)
                         .map_err(|err| DecodeError::conversion(
                                  &ctx.span(&scalar), err)),
-                    _ => Err(DecodeError::scalar_kind(&ctx.span(&scalar), "string",
+                    _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "string",
                              &scalar.literal))
                 }
             }
@@ -196,15 +196,15 @@ impl<S: ErrorSpan> DecodeScalar<S> for bool {
     {
         if let Some(typ) = scalar.type_name.as_ref() {
             return Err(DecodeError::TypeName {
-                span: typ.span().clone(),
-                found: Some(typ.value.clone()),
+                span: ctx.span(&type),
+                found: Some(typ.clone()),
                 expected: ExpectedType::no_type(),
                 rust_type: "bool",
             });
         }
         match &scalar.literal {
             Literal::Bool(v) => Ok(*v),
-            _ => Err(DecodeError::scalar_kind(&ctx.span(&scalar), "boolean", &scalar.literal))
+            _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "boolean", &scalar.literal))
         }
     }
 }

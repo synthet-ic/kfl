@@ -4,6 +4,7 @@
 use std::{
     any::{Any, TypeId},
     collections::HashMap,
+    fmt::Pointer
 };
 
 use crate::{
@@ -35,7 +36,7 @@ impl<S: ErrorSpan> Context<S> {
         self.spans.insert(format!("{:p}", pointer).as_str(), span);
     }
     ///
-    pub fn span(&self, pointer: &P) -> S {
+    pub fn span<P: Pointer>(&self, pointer: &P) -> S {
         self[format!("{:p}", pointer).as_str()]
     }
     /// Add error

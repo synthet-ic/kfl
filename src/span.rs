@@ -293,16 +293,6 @@ impl<T, S> Spanned<T, S> {
             value: self.value,
         }
     }
-    pub(crate) fn clone_as<U>(&self, ctx: &mut Context<S>) -> Spanned<T, U>
-        where U: traits::DecodeSpan<S>,
-              T: Clone,
-              S: traits::ErrorSpan,
-    {
-        Spanned {
-            span: traits::DecodeSpan::decode_span(&self.span, ctx),
-            value: self.value.clone(),
-        }
-    }
 }
 
 impl<U: ?Sized, T: AsRef<U>, S> AsRef<U> for Spanned<T, S> {

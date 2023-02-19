@@ -6,7 +6,6 @@ use crate::{
     ast::{Literal, TypeName, Node, Scalar, Integer, Decimal, Radix},
     ast::SpannedName,
     decode::Context,
-    span::Spanned,
     traits::Span,
     errors::{ParseError as Error, TokenFormat}
 };

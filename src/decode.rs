@@ -37,7 +37,7 @@ impl<S: ErrorSpan> Context<S> {
     }
     ///
     pub fn span<P: Pointer>(&self, pointer: &P) -> S {
-        self[format!("{:p}", pointer).as_str()]
+        self.spans[format!("{:p}", pointer).as_str()]
     }
     /// Add error
     ///

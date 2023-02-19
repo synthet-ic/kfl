@@ -555,7 +555,7 @@ fn nodes<S: Span>(ctx: &mut Context<S>) -> impl Parser<char, Vec<Node>, Error = 
 }
 
 pub(crate) fn document<S: Span>(ctx: &mut Context<S>)
-    -> impl Parser<char, Vec<SpannedNode<S>>, Error = Error<S>>
+    -> impl Parser<char, Vec<Node>, Error = Error<S>>
 {
     nodes(ctx).then_ignore(end())
 }

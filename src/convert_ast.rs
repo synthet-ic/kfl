@@ -10,8 +10,8 @@ impl<S: Span> Decode<S> for Node {
         -> Result<Self, DecodeError<S>>
     {
         Ok(Node {
-            type_name: node.type_name.as_ref().map(|n| n.clone_as(ctx)),
-            node_name: node.node_name.clone_as(ctx),
+            type_name: node.type_name.as_ref().map(|n| n.clone()),
+            node_name: node.node_name.clone(),
             arguments: node.arguments.iter()
                 .map(|v| DecodeScalar::decode(v, ctx))
                 .collect::<Result<_, _>>()?,

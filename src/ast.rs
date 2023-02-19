@@ -50,15 +50,6 @@ pub struct Node<S> {
     pub children: Option<SpannedChildren<S>>,
 }
 
-/// KDL document root
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
-pub struct Document<S> {
-    /// Nodes of the document
-    #[cfg_attr(feature = "minicbor", n(0))]
-    pub nodes: Vec<SpannedNode<S>>,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
 #[cfg_attr(feature = "minicbor", cbor(index_only))]

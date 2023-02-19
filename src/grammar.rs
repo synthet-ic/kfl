@@ -4,7 +4,7 @@ use chumsky::prelude::*;
 
 use crate::{
     ast::{Literal, TypeName, Node, Value, Integer, Decimal, Radix},
-    ast::{SpannedName, SpannedNode, Document},
+    ast::{SpannedName, SpannedNode},
     span::Spanned,
     traits::Span,
     errors::{ParseError as Error, TokenFormat}
@@ -559,9 +559,9 @@ fn nodes<S: Span>() -> impl Parser<char, Vec<SpannedNode<S>>, Error = Error<S>> 
 }
 
 pub(crate) fn document<S: Span>()
-    -> impl Parser<char, Document<S>, Error = Error<S>>
+    -> impl Parser<char, Vec<SpannedNode<S>>, Error = Error<S>>
 {
-    nodes().then_ignore(end()).map(|nodes| Document { nodes })
+    nodes().then_ignore(end())
 }
 
 #[cfg(test)]
@@ -576,7 +576,7 @@ mod test {
     use super::{nodes, number};
 
     macro_rules! err_eq {
-        ($left: expr, $right: expr) => {
+        ($left:expr, $right:expr) => {
             let left = $left.unwrap_err();
             let left: serde_json::Value = serde_json::from_str(&left).unwrap();
             let right: serde_json::Value =

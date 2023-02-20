@@ -111,7 +111,7 @@ pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
     Ok(quote! {
         impl<S: ::kfl::traits::ErrorSpan> ::kfl::DecodeScalar<S>
                 for #e_name {
-            fn decode(scalar: &::kfl::ast::Scalar<S>,
+            fn decode(scalar: &::kfl::ast::Scalar,
                       ctx: &mut ::kfl::decode::Context<S>)
                 -> Result<Self, ::kfl::errors::DecodeError<S>>
             {
@@ -123,7 +123,7 @@ pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
                         rust_type: stringify!(#e_name),
                     });
                 }
-                match &*scalar.literal {
+                match &scalar.literal {
                     ::kfl::ast::Literal::String(ref s) => {
                         match &s[..] {
                             #(#match_branches,)*

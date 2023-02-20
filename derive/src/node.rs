@@ -48,7 +48,7 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
     let decode_args = decode_args(&common, &node)?;
     let decode_props = decode_props(&common, &node)?;
     let decode_children_normal = decode_children(
-        &common, &children, Some(quote!(#node.span())))?;
+        &common, &children, Some(quote!(#ctx.span(&#node))))?;
     let assign_extra = assign_extra(&common)?;
 
     let all_fields = s.all_fields();
@@ -88,8 +88,8 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
                         #decode_partial
                     }
                     // fn insert_property(&mut self,
-                    //     #name: &::kfl::span::Spanned<Box<str>, #span_ty>,
-                    //     #scalar: &::kfl::ast::Scalar<#span_ty>,
+                    //     #name: &Box<str>,
+                    //     #scalar: &::kfl::ast::Scalar,
                     //     #ctx: &mut ::kfl::decode::Context<#span_ty>)
                     //     -> Result<bool, ::kfl::errors::DecodeError<#span_ty>>
                     // {
@@ -178,7 +178,7 @@ pub(crate) fn decode_variant(s: &Common,
     let decode_args = decode_args(s, node)?;
     let decode_props = decode_props(s, node)?;
     let decode_children = decode_children(s, &children,
-                                          Some(quote!(#node.span())))?;
+                                          Some(quote!(ctx.span(&#node))))?;
     let assign_extra = assign_extra(s)?;
     let all_fields = s.object.all_fields();
     let struct_val = if named {
@@ -451,7 +451,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
 //     let decode_args = decode_args(&common, &node)?;
 //     let decode_props = decode_props(&common, &node)?;
 //     let decode_children = decode_children(&common, &children,
-//                                           Some(quote!(#node.span())))?;
+//                                           Some(quote!(#ctx.span(&#node))))?;
 //     Ok(quote! {
 //         let mut #func = |#node: &::kfl::ast::Node,
 //                          #ctx: &mut ::kfl::decode::Context<#span_ty>|

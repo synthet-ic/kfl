@@ -13,26 +13,14 @@
 //! as a separate kind of span. See [`traits::DecodeSpan`].
 
 use std::{
-    borrow::Borrow,
     fmt::Display,
-    hash::Hash,
-    ops::{Deref, DerefMut, Range}
+    ops::Range
 };
 
 use crate::traits;
 
 /// Reexport of [miette::SourceSpan] trait that we use for parsing
 pub use miette::SourceSpan as ErrorSpan;
-
-/// Wraps the structure to keep source code span, but also dereference to T
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
-pub struct Spanned<T, S> {
-    #[cfg_attr(feature = "minicbor", n(0))]
-    pub(crate) span: S,
-    #[cfg_attr(feature = "minicbor", n(1))]
-    pub(crate) value: T,
-}
 
 /// Normal byte offset span
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -274,97 +262,6 @@ impl traits::sealed::Sealed for LineSpan {
 
 #[cfg(feature = "line-numbers")]
 impl traits::Span for LineSpan {}
-
-impl<T, S> Spanned<T, S> {
-    /// Converts value but keeps the same span attached
-    pub fn map<R>(self, f: impl FnOnce(T) -> R) -> Spanned<R, S> {
-        Spanned {
-            span: self.span,
-            value: f(self.value),
-        }
-    }
-    /// Converts span but keeps the same value attached
-    pub fn map_span<U>(self, f: impl FnOnce(S) -> U) -> Spanned<T, U> {
-        Spanned {
-            span: f(self.span),
-            value: self.value,
-        }
-    }
-}
-
-impl<U: ?Sized, T: AsRef<U>, S> AsRef<U> for Spanned<T, S> {
-    fn as_ref(&self) -> &U {
-        self.value.as_ref()
-    }
-}
-
-impl<U: ?Sized, T: AsMut<U>, S> AsMut<U> for Spanned<T, S> {
-    fn as_mut(&mut self) -> &mut U {
-        self.value.as_mut()
-    }
-}
-
-impl<T, S> Deref for Spanned<T, S> {
-    type Target = T;
-    fn deref(&self) -> &T {
-        &self.value
-    }
-}
-
-impl<T, S> DerefMut for Spanned<T, S> {
-    fn deref_mut(&mut self) -> &mut T {
-        &mut self.value
-    }
-}
-
-impl<T, S> Borrow<T> for Spanned<T, S> {
-    fn borrow(&self) -> &T {
-        self.value.borrow()
-    }
-}
-
-impl<T: ?Sized, S> Borrow<T> for Spanned<Box<T>, S> {
-    fn borrow(&self) -> &T {
-        self.value.borrow()
-    }
-}
-
-impl<T, S> Spanned<T, S> {
-    /// Returns the span of the value
-    pub fn span(&self) -> &S {
-        &self.span
-    }
-}
-
-impl<S, T: PartialEq<T>> PartialEq for Spanned<T, S> {
-    fn eq(&self, other: &Spanned<T, S>) -> bool {
-        self.value == other.value
-    }
-}
-
-impl<S, T: PartialOrd<T>> PartialOrd for Spanned<T, S> {
-    fn partial_cmp(&self, other: &Spanned<T, S>)
-        -> Option<std::cmp::Ordering>
-    {
-        self.value.partial_cmp(&other.value)
-    }
-}
-
-impl<S, T: Ord> Ord for Spanned<T, S> {
-    fn cmp(&self, other: &Spanned<T, S>) -> std::cmp::Ordering {
-        self.value.cmp(&other.value)
-    }
-}
-
-impl<S, T: Eq> Eq for Spanned<T, S> {}
-
-impl<S, T: Hash> Hash for Spanned<T, S> {
-    fn hash<H>(&self, state: &mut H)
-        where H: std::hash::Hasher,
-    {
-        self.value.hash(state)
-    }
-}
 
 impl Display for Span {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

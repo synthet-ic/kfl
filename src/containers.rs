@@ -34,7 +34,7 @@ impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Box<T> {
         (**self).decode_partial(node, ctx)
     }
     // fn insert_property(&mut self,
-    //                    name: &Spanned<Box<str>, S>, scalar: &Scalar,
+    //                    name: &Box<str>, scalar: &Scalar,
     //                    ctx: &mut Context<S>)
     //     -> Result<bool, DecodeError<S>>
     // {
@@ -74,7 +74,7 @@ impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Arc<T> {
             .decode_partial(node, ctx)
     }
     // fn insert_property(&mut self,
-    //                    name: &Spanned<Box<str>, S>, scalar: &Scalar,
+    //                    name: &Box<str>, scalar: &Scalar,
     //                    ctx: &mut Context<S>)
     //     -> Result<bool, DecodeError<S>>
     // {
@@ -115,7 +115,7 @@ impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Rc<T> {
             .decode_partial(node, ctx)
     }
     // fn insert_property(&mut self,
-    //                    name: &Spanned<Box<str>, S>, scalar: &Scalar,
+    //                    name: &Box<str>, scalar: &Scalar,
     //                    ctx: &mut Context<S>)
     //     -> Result<bool, DecodeError<S>>
     // {

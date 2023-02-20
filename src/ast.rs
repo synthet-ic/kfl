@@ -15,19 +15,10 @@
 use std::{
     collections::BTreeMap,
     convert::Infallible,
-    fmt::{Debug, Display},
+    fmt::{Debug, Display, Pointer},
     ops::Deref,
     str::FromStr
 };
-
-use crate::span::Spanned;
-
-/// A shortcut for nodes children that includes span of enclosing braces `{..}`
-pub type SpannedChildren<S> = Spanned<Vec<SpannedNode<S>>, S>;
-/// KDL names with span information are represented using this type
-pub type SpannedName<S> = Spanned<Box<str>, S>;
-/// A KDL node with span of the whole node (including children)
-pub type SpannedNode<S> = Spanned<Node, S>;
 
 /// Single node of the KDL document
 #[derive(Debug, Clone)]
@@ -179,6 +170,22 @@ impl Node {
         self.children.as_ref().map(|c| c.iter()).unwrap_or_else(|| [].iter())
     }
 }
+
+macro_rules! impl_pointer {
+    ($ty:ty) => {
+        impl Pointer for $ty {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                let ptr = self as *const Self;
+                Pointer::fmt(&ptr, f)
+            }
+        }
+    };
+}
+
+impl_pointer!(Node);
+impl_pointer!(Scalar);
+impl_pointer!(Literal);
+impl_pointer!(TypeName);
 
 impl BuiltinType {
     /// Returns string representation of the builtin type as defined by KDL

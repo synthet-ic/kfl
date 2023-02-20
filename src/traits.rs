@@ -47,7 +47,7 @@ pub trait DecodePartial<S: ErrorSpan>: Sized + Default {
     // /// Returns `Ok(true)` if the property is "consumed" (i.e. stored in this
     // /// structure).
     // fn insert_property(&mut self,
-    //                    name: &Spanned<Box<str>, S>, scalar: &Scalar,
+    //                    name: &Box<str>, scalar: &Scalar,
     //                    ctx: &mut Context<S>)
     //     -> Result<bool, DecodeError<S>>;
 }
@@ -61,13 +61,13 @@ pub trait DecodeScalar<S: ErrorSpan>: Sized {
     // /// is processed but non fatal when encountered. So even if there is a type
     // /// in type name we can proceed and try parsing actual value.
     // #[allow(unused)]
-    // fn type_check(type_name: &Option<Spanned<TypeName, S>>,
+    // fn type_check(type_name: &Option<TypeName>,
     //               ctx: &mut Context<S>) {}
     // /// Decode value without typecheck
     // ///
     // /// This can be used by wrappers to parse some known value but use a
     // /// different typename (kinda emulated subclassing)
-    // fn raw_decode(value: &Spanned<Literal, S>, ctx: &mut Context<S>)
+    // fn raw_decode(value: &Literal, ctx: &mut Context<S>)
     //     -> Result<Self, DecodeError<S>>;
     /// Decode the value and typecheck
     ///

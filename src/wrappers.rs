@@ -45,7 +45,7 @@ pub fn decode<T>(file_name: &str, text: &str) -> Result<T, Error>
 }
 
 // /// Parse single KDL node from AST
-// pub fn decode_node<T, S>(ast: &SpannedNode<S>) -> Result<T, Vec<DecodeError<S>>>
+// pub fn decode_node<T, S>(ast: &Node) -> Result<T, Vec<DecodeError<S>>>
 //     where T: Decode<S>,
 //           S: ErrorSpan,
 // {

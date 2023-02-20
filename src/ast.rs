@@ -15,7 +15,7 @@
 use std::{
     collections::BTreeMap,
     convert::Infallible,
-    fmt::{Debug, Display, Pointer},
+    fmt::{Debug, Display},
     ops::Deref,
     str::FromStr
 };

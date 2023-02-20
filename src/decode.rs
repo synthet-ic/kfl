@@ -19,7 +19,7 @@ use crate::{
 /// 2. To store and retrieve data in decoders of nodes, scalars and spans
 #[derive(Debug)]
 pub struct Context<S: ErrorSpan> {
-    spans: HashMap<&str, S>,
+    spans: HashMap<&'static str, S>,
     errors: Vec<DecodeError<S>>,
     extensions: HashMap<TypeId, Box<dyn Any>>,
 }
@@ -33,11 +33,11 @@ impl<S: ErrorSpan> Context<S> {
         }
     }
     ///
-    pub(crate) fn set_span<P: Pointer>(&mut self, pointer: &P, span: S) {
+    pub(crate) fn set_span<P: Pointer>(&mut self, pointer: P, span: S) {
         self.spans.insert(format!("{:p}", pointer).as_str(), span);
     }
     ///
-    pub fn span<P: Pointer>(&self, pointer: &P) -> S {
+    pub fn span<P: Pointer>(&self, pointer: P) -> S {
         self.spans[format!("{:p}", pointer).as_str()]
     }
     /// Add error

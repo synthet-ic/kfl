@@ -179,7 +179,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
                 _ => {
                     return Err(DecodeError::TypeName {
                         span: ctx.span(&ty).clone(),
-                        found: Some(ty.value.clone()),
+                        found: Some(ty.clone()),
                         expected: ExpectedType::optional(BuiltinType::Base64),
                         rust_type: "bytes",
                     });
@@ -239,7 +239,8 @@ impl<S: ErrorSpan, T: Decode<S>> DecodePartial<S> for Option<T> {
             },
             (_, _) => {
                 let dup_err = format!("duplicate node `{}`, single node expected", node.node_name.as_ref());
-                Err(DecodeError::unexpected(ctx.span(&node.node_name), "node", dup_err))
+                Err(DecodeError::unexpected(ctx.span(&node.node_name), "node",
+                    dup_err))
             }
         }
     }

@@ -457,8 +457,8 @@ impl<S: ErrorSpan> DecodeError<S> {
         }
     }
     /// Construct [`DecodeError::Unexpected`] error
-    pub fn unexpected<T>(span: S, kind: &'static str,
-                         message: impl Into<String>)
+    pub fn unexpected(span: S, kind: &'static str,
+                      message: impl Into<String>)
         -> Self
     {
         DecodeError::Unexpected {

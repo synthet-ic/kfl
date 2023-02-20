@@ -196,7 +196,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for bool {
     {
         if let Some(typ) = scalar.type_name.as_ref() {
             return Err(DecodeError::TypeName {
-                span: ctx.span(&type),
+                span: ctx.span(&typ),
                 found: Some(typ.clone()),
                 expected: ExpectedType::no_type(),
                 rust_type: "bool",

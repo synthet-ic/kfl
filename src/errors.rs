@@ -433,11 +433,11 @@ impl<S: Span> chumsky::Error<char> for ParseError<S> {
 
 impl<S: ErrorSpan> DecodeError<S> {
     /// Construct [`DecodeError::Conversion`] error
-    pub fn conversion<T, E>(span: S, err: E) -> Self
+    pub fn conversion<E>(span: &S, err: E) -> Self
         where E: Into<Box<dyn std::error::Error + Send + Sync + 'static>>,
     {
         DecodeError::Conversion {
-            span,
+            span: span.clone(),
             source: err.into(),
         }
     }

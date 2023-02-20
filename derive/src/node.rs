@@ -215,17 +215,18 @@ fn decode_scalar(val: &syn::Ident, ctx: &syn::Ident) -> syn::Result<TokenStream>
 }
 
 fn check_type(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
+    let ctx = s.ctx;
     let name = heck::ToKebabCase::to_kebab_case(
         &s.object.ident.unraw().to_string()[..]);
     Ok(quote! {
         if let Some(type_name) = &#node.type_name {
             return Err(::kfl::errors::DecodeError::unexpected(
-                       type_name, "type name",
+                       #ctx.span(&#node), "type name",
                        "no type name expected for this node"));
         }
         if #node.node_name.as_ref() != #name {
             return Err(::kfl::errors::DecodeError::unexpected(
-                #node, "node", format!("unexpected node `{}`",
+                #ctx.span(&#node), "node", format!("unexpected node `{}`",
                 #node.node_name.as_ref())));
         }
     })
@@ -255,7 +256,7 @@ fn decode_specials(s: &Common, node: &syn::Ident)
     //                 })?
     //         } else {
     //             return Err(::kfl::errors::DecodeError::missing(
-    //                 #node, "type name required"));
+    //                 #ctx.span(&#node), "type name required"));
     //         };
     //     }
     // });
@@ -286,7 +287,7 @@ fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                     let #val =
                         #iter_args.next().ok_or_else(|| {
                             ::kfl::errors::DecodeError::missing(
-                                #node, #error)
+                                #ctx.span(&#node), #error)
                         })?;
                     let #fld = #decode_scalar?;
                 });
@@ -320,7 +321,7 @@ fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
         decoder.push(quote! {
             if let Some(val) = #iter_args.next() {
                 return Err(::kfl::errors::DecodeError::unexpected(
-                        &val.literal, "argument",
+                        #ctx.span(&val.literal), "argument",
                         "unexpected argument"));
             }
         });
@@ -378,7 +379,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
                 postprocess.push(quote! {
                     let #fld = #fld.ok_or_else(|| {
                         ::kfl::errors::DecodeError::missing(
-                            #node, #req_msg)
+                            #ctx.span(&#node), #req_msg)
                     })?;
                 });
             }
@@ -394,7 +395,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
             #name_str => {
                 let converted_name = #name_str.parse()
                     .map_err(|e| {
-                        ::kfl::errors::DecodeError::conversion(#name, e)
+                        ::kfl::errors::DecodeError::conversion(#ctx.span(&#name), e)
                     })?;
                 #fld.push((
                     converted_name,
@@ -409,7 +410,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
         match_branches.push(quote! {
             #name_str => {
                 return Err(::kfl::errors::DecodeError::unexpected(
-                    #name, "property",
+                    #ctx.span(&#name), "property",
                     format!("unexpected property `{}`",
                             #name_str.escape_default())));
             }
@@ -418,7 +419,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
     Ok(quote! {
         #(#declare_empty)*
         for (#name, #val) in #node.properties.iter() {
-            match &***#name {
+            match &*#name {
                 #(#match_branches)*
             }
         }
@@ -524,7 +525,7 @@ fn decode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
 //         }
 //     }
 //     Ok(quote! {
-//         match &***#name {
+//         match &*#name {
 //             #(#match_branches)*
 //             _ => Ok(false),
 //         }
@@ -641,7 +642,7 @@ fn decode_children(s: &Common, children: &syn::Ident,
     branches.push(quote! {
         else {
             #ctx.emit_error(::kfl::errors::DecodeError::unexpected(
-                #child, "node",
+                #ctx.span(&#child), "node",
                 format!("unexpected node `{}`",
                         #child.node_name.as_ref())));
             None

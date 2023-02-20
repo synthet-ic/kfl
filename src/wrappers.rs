@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use chumsky::Parser;
 use miette::NamedSource;
 
@@ -11,14 +13,14 @@ use crate::{
 };
 
 /// Parse KDL text and return AST
-pub fn parse<S: traits::Span>(ctx: &mut Context<S>, text: &str)
+pub fn parse<S: traits::Span>(ctx: Rc<RefCell<Context<S>>>, text: &str)
     -> Result<Vec<Node>, Error>
 {
-    grammar::document(ctx)
+    grammar::document(ctx.clone())
     .parse(S::stream(text))
     .map_err(|errors| {
         Error {
-            source_code: NamedSource::new(ctx.get::<&str>().unwrap(), text.to_string()),
+            source_code: NamedSource::new(ctx.borrow().get::<&str>().unwrap(), text.to_string()),
             errors: errors.into_iter().map(Into::into).collect(),
         }
     })
@@ -28,9 +30,12 @@ pub fn parse<S: traits::Span>(ctx: &mut Context<S>, text: &str)
 pub fn decode<T>(file_name: &str, text: &str) -> Result<T, Error>
     where T: Decode<Span>,
 {
+    let ctx = Rc::new(RefCell::new(Context::new()));
+    let nodes = parse::<Span>(ctx.clone(), text)?;
+    let spans = ctx.borrow().spans.clone();
     let mut ctx = Context::new();
-    ctx.set::<&str>(file_name);
-    let nodes = parse::<Span>(& mut ctx, text)?;
+    ctx.spans = spans;
+    ctx.set::<String>(file_name.to_string());
     Decode::decode(&nodes[0], &mut ctx).map_err(|error| {
         Error {
             source_code: NamedSource::new(file_name, text.to_string()),
@@ -72,8 +77,11 @@ pub fn decode_with_context<T, S, F>(file_name: &str, text: &str, set_ctx: F)
           T: DecodeChildren<S>,
           S: traits::Span,
 {
+    let ctx = Rc::new(RefCell::new(Context::new()));
+    let nodes = parse::<S>(ctx.clone(), text)?;
+    let spans = ctx.borrow().spans.clone();
     let mut ctx = Context::new();
-    let nodes = parse::<S>(&mut ctx, text)?;
+    ctx.spans = spans;
     set_ctx(&mut ctx);
     let errors = match <T as DecodeChildren<S>>
         ::decode_children(&nodes, &mut ctx)
@@ -125,7 +133,8 @@ pub fn encode<T>(file_name: &str, t: &T) -> Result<String, Error>
 
 #[test]
 fn normal() {
-    let nodes = parse::<Span>("embedded.kdl", r#"node "hello""#).unwrap();
+    let ctx = Rc::new(RefCell::new(Context::new()));
+    let nodes = parse::<Span>(ctx.clone(), r#"node "hello""#).unwrap();
     assert_eq!(nodes.len(), 1);
-    assert_eq!(&**nodes[0].node_name, "node");
+    assert_eq!(&*nodes[0].node_name, "node");
 }

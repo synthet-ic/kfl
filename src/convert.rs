@@ -113,7 +113,7 @@ macro_rules! impl_decimal {
                 if let Some(typ) = scalar.type_name.as_ref() {
                     if typ.as_builtin() != Some(&BuiltinType::$marker) {
                         return Err(DecodeError::TypeName {
-                            span: ctx.span(&typ).clone(),
+                            span: ctx.span(&typ),
                             found: Some(typ.clone()),
                             expected: ExpectedType::optional(
                                 BuiltinType::$marker),

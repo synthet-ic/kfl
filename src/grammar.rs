@@ -1,10 +1,13 @@
-use std::collections::{BTreeSet, BTreeMap};
+use std::{
+    cell::RefCell,
+    collections::{BTreeSet, BTreeMap},
+    rc::Rc
+};
 
 use chumsky::prelude::*;
 
 use crate::{
     ast::{Literal, TypeName, Node, Scalar, Integer, Decimal, Radix},
-    ast::SpannedName,
     decode::Context,
     traits::Span,
     errors::{ParseError as Error, TokenFormat}
@@ -354,11 +357,14 @@ fn type_name<S: Span>() -> impl Parser<char, TypeName, Error = Error<S>> {
     ident().delimited_by(just('('), just(')')).map(TypeName::from_string)
 }
 
-fn spanned<T, S, P>(p: P, ctx: &Context<S>) -> impl Parser<char, T, Error = Error<S>>
+fn spanned<T, S, P>(p: P, ctx: Rc<RefCell<Context<S>>>) -> impl Parser<char, T, Error = Error<S>>
     where P: Parser<char, T, Error = Error<S>>,
           S: Span,
 {
-    p.map_with_span(|value, span| { ctx.add_span(&value, span); value })
+    p.map_with_span(move |value, span| {
+        ctx.borrow_mut().set_span(&value as *const T, span.clone());
+        value
+    })
 }
 
 fn esc_line<S: Span>() -> impl Parser<char, (), Error = Error<S>> {
@@ -375,33 +381,34 @@ fn node_terminator<S: Span>() -> impl Parser<char, (), Error = Error<S>> {
     choice((newline(), comment(), just(';').ignored(), end()))
 }
 
-enum PropOrArg<S> {
-    Prop(SpannedName<S>, Scalar),
+enum PropOrArg {
+    Prop(Box<str>, Scalar),
     Arg(Scalar),
     Ignore,
 }
 
-fn type_name_value<S: Span>() -> impl Parser<char, Scalar, Error = Error<S>> {
-    spanned(type_name()).then(spanned(literal()))
+fn type_name_value<S: Span>(ctx: Rc<RefCell<Context<S>>>) -> impl Parser<char, Scalar, Error = Error<S>> {
+    spanned(type_name(), ctx.clone()).then(spanned(literal(), ctx.clone()))
     .map(|(type_name, literal)| Scalar { type_name: Some(type_name), literal })
 }
 
-fn value<S: Span>() -> impl Parser<char, Scalar, Error = Error<S>> {
-    type_name_value()
-    .or(spanned(literal()).map(|literal| Scalar { type_name: None, literal }))
+fn value<S: Span>(ctx: Rc<RefCell<Context<S>>>) -> impl Parser<char, Scalar, Error = Error<S>> {
+    type_name_value(ctx.clone())
+    .or(spanned(literal(), ctx.clone()).map(|literal| Scalar { type_name: None, literal }))
 }
 
-fn prop_or_arg_inner<S: Span>(ctx: &mut Context<S>)
-    -> impl Parser<char, PropOrArg<S>, Error = Error<S>>
+fn prop_or_arg_inner<S: Span>(ctx: Rc<RefCell<Context<S>>>)
+    -> impl Parser<char, PropOrArg, Error = Error<S>>
 {
+    let cloned = ctx.clone();
     use PropOrArg::*;
     choice((
-        spanned(literal()).then(just('=').ignore_then(value()).or_not())
-            .try_map(|(name, value), _| {
-                let name_span = name.span;
-                match (name.value, value) {
+        spanned(literal(), ctx.clone()).then(just('=').ignore_then(value(ctx.clone())).or_not())
+            .try_map(move |(name, value), _| {
+                let name_span = cloned.borrow_mut().span(&name as *const Literal);
+                match (name, value) {
                     (Literal::String(s), Some(value)) => {
-                        ctx.set_span(&s, name_span);
+                        cloned.borrow_mut().set_span(&s, name_span);
                         Ok(Prop(s, value))
                     }
                     (Literal::Bool(_) | Literal::Null, Some(_)) => {
@@ -425,7 +432,7 @@ fn prop_or_arg_inner<S: Span>(ctx: &mut Context<S>)
                         })
                     }
                     (value, None) => {
-                        ctx.set_span(&value, name_span);
+                        cloned.borrow_mut().set_span(&value, name_span);
                         Ok(Arg(Scalar {
                             type_name: None,
                             literal: value,
@@ -433,7 +440,7 @@ fn prop_or_arg_inner<S: Span>(ctx: &mut Context<S>)
                     },
                 }
             }),
-        spanned(bare_ident()).then(just('=').ignore_then(value()).or_not())
+        spanned(bare_ident(), ctx.clone()).then(just('=').ignore_then(value(ctx.clone())).or_not())
             .validate(|(name, value), span, emit| {
                 if value.is_none() {
                     emit(Error::MessageWithHelp {
@@ -454,27 +461,27 @@ fn prop_or_arg_inner<S: Span>(ctx: &mut Context<S>)
                     // in validate() above, so doing a sane fallback
                     Arg(Scalar {
                         type_name: None,
-                        literal: name.map(Literal::String),
+                        literal: Literal::String(name),
                     })
                 }
             }),
-        type_name_value().map(Arg),
+        type_name_value(ctx).map(Arg),
     ))
 }
 
-fn prop_or_arg<S: Span>() -> impl Parser<char, PropOrArg<S>, Error = Error<S>> {
+fn prop_or_arg<S: Span>(ctx: Rc<RefCell<Context<S>>>) -> impl Parser<char, PropOrArg, Error = Error<S>> {
     begin_comment('-')
         .ignore_then(node_space().repeated())
-        .ignore_then(prop_or_arg_inner())
+        .ignore_then(prop_or_arg_inner(ctx.clone()))
         .map(|_| PropOrArg::Ignore)
-    .or(prop_or_arg_inner())
+    .or(prop_or_arg_inner(ctx.clone()))
 }
 
 fn line_space<S: Span>() -> impl Parser<char, (), Error = Error<S>> {
     newline().or(ws()).or(comment())
 }
 
-fn nodes<S: Span>(ctx: &mut Context<S>) -> impl Parser<char, Vec<Node>, Error = Error<S>> {
+fn nodes<S: Span>(ctx: Rc<RefCell<Context<S>>>) -> impl Parser<char, Vec<Node>, Error = Error<S>> {
     use PropOrArg::*;
     recursive(|nodes: chumsky::recursive::Recursive<char, _, Error<S>>| {
         let braced_nodes =
@@ -499,19 +506,19 @@ fn nodes<S: Span>(ctx: &mut Context<S>) -> impl Parser<char, Vec<Node>, Error = 
                     }
                 }));
 
-        let node = spanned(ident().delimited_by(just('('), just(')'))).or_not()
-            .then(spanned(ident()))
+        let node = spanned(ident().delimited_by(just('('), just(')')), ctx.clone()).or_not()
+            .then(spanned(ident(), ctx.clone()))
             .then(
                 node_space()
                 .repeated().at_least(1)
-                .ignore_then(prop_or_arg())
+                .ignore_then(prop_or_arg(ctx.clone()))
                 .repeated()
             )
             .then(node_space().repeated()
                   .ignore_then(begin_comment('-')
                                .then_ignore(node_space().repeated())
                                .or_not())
-                  .then(spanned(braced_nodes))
+                  .then(spanned(braced_nodes, ctx.clone()))
                   .or_not())
             .then_ignore(node_space().repeated().then(node_terminator()))
             .map(|(((type_name, node_name), line_items), opt_children)| {
@@ -541,7 +548,7 @@ fn nodes<S: Span>(ctx: &mut Context<S>) -> impl Parser<char, Vec<Node>, Error = 
             });
 
         begin_comment('-').then_ignore(node_space().repeated()).or_not()
-        .then(spanned(node))
+        .then(spanned(node, ctx))
             .separated_by(line_space().repeated())
             .allow_leading().allow_trailing()
             .map(|vec| vec.into_iter().filter_map(|(comment, node)| {
@@ -554,7 +561,7 @@ fn nodes<S: Span>(ctx: &mut Context<S>) -> impl Parser<char, Vec<Node>, Error = 
     })
 }
 
-pub(crate) fn document<S: Span>(ctx: &mut Context<S>)
+pub(crate) fn document<S: Span>(ctx: Rc<RefCell<Context<S>>>)
     -> impl Parser<char, Vec<Node>, Error = Error<S>>
 {
     nodes(ctx).then_ignore(end())
@@ -564,6 +571,7 @@ pub(crate) fn document<S: Span>(ctx: &mut Context<S>)
 mod test {
     use chumsky::prelude::*;
     use miette::NamedSource;
+    use crate::decode::Context;
     use crate::errors::{ParseError, Error};
     use crate::span::Span;
     use crate::ast::{Literal, TypeName, Radix, Decimal, Integer};
@@ -959,9 +967,10 @@ mod test {
 
     #[test]
     fn exclude_keywords() {
-        parse(nodes(), "item true").unwrap();
+        let mut ctx = Context::new();
+        parse(nodes(&mut ctx), "item true").unwrap();
 
-        err_eq!(parse(nodes(), "true \"item\""), r#"{
+        err_eq!(parse(nodes(&mut ctx), "true \"item\""), r#"{
             "message": "error parsing KDL",
             "severity": "error",
             "labels": [],
@@ -978,7 +987,7 @@ mod test {
             }]
         }"#);
 
-        err_eq!(parse(nodes(), "item false=true"), r#"{
+        err_eq!(parse(nodes(&mut ctx), "item false=true"), r#"{
             "message": "error parsing KDL",
             "severity": "error",
             "labels": [],
@@ -995,7 +1004,7 @@ mod test {
             }]
         }"#);
 
-        err_eq!(parse(nodes(), "item 2=2"), r#"{
+        err_eq!(parse(nodes(&mut ctx), "item 2=2"), r#"{
             "message": "error parsing KDL",
             "severity": "error",
             "labels": [],
@@ -1067,24 +1076,25 @@ mod test {
 
     #[test]
     fn parse_node() {
-        let nval = single(parse(nodes(), "hello"));
+        let mut ctx = Context::new();
+        let nval = single(parse(nodes(&mut ctx), "hello"));
         assert_eq!(nval.node_name.as_ref(), "hello");
         assert_eq!(nval.type_name.as_ref(), None);
 
-        let nval = single(parse(nodes(), "\"123\""));
+        let nval = single(parse(nodes(&mut ctx), "\"123\""));
         assert_eq!(nval.node_name.as_ref(), "123");
         assert_eq!(nval.type_name.as_ref(), None);
 
-        let nval = single(parse(nodes(), "(typ)other"));
+        let nval = single(parse(nodes(&mut ctx), "(typ)other"));
         assert_eq!(nval.node_name.as_ref(), "other");
-        assert_eq!(nval.type_name.as_ref().map(|x| &***x), Some("typ"));
+        assert_eq!(nval.type_name.as_ref().map(|x| &*x), Some("typ"));
 
-        let nval = single(parse(nodes(), "(\"std::duration\")\"timeout\""));
+        let nval = single(parse(nodes(&mut ctx), "(\"std::duration\")\"timeout\""));
         assert_eq!(nval.node_name.as_ref(), "timeout");
-        assert_eq!(nval.type_name.as_ref().map(|x| &***x),
+        assert_eq!(nval.type_name.as_ref().map(|x| &*x),
                    Some("std::duration"));
 
-        let nval = single(parse(nodes(), "hello \"arg1\""));
+        let nval = single(parse(nodes(&mut ctx), "hello \"arg1\""));
         assert_eq!(nval.node_name.as_ref(), "hello");
         assert_eq!(nval.type_name.as_ref(), None);
         assert_eq!(nval.arguments.len(), 1);
@@ -1092,7 +1102,7 @@ mod test {
         assert_eq!(&*nval.arguments[0].literal,
                    &Literal::String("arg1".into()));
 
-        let nval = single(parse(nodes(), "node \"true\""));
+        let nval = single(parse(nodes(&mut ctx), "node \"true\""));
         assert_eq!(nval.node_name.as_ref(), "node");
         assert_eq!(nval.type_name.as_ref(), None);
         assert_eq!(nval.arguments.len(), 1);
@@ -1100,28 +1110,28 @@ mod test {
         assert_eq!(&*nval.arguments[0].literal,
                    &Literal::String("true".into()));
 
-        let nval = single(parse(nodes(), "hello (string)\"arg1\""));
+        let nval = single(parse(nodes(&mut ctx), "hello (string)\"arg1\""));
         assert_eq!(nval.node_name.as_ref(), "hello");
         assert_eq!(nval.type_name.as_ref(), None);
         assert_eq!(nval.arguments.len(), 1);
         assert_eq!(nval.properties.len(), 0);
-        assert_eq!(&***nval.arguments[0].type_name.as_ref().unwrap(),
+        assert_eq!(&*nval.arguments[0].type_name.as_ref().unwrap(),
                    "string");
         assert_eq!(&*nval.arguments[0].literal,
                    &Literal::String("arg1".into()));
 
-        let nval = single(parse(nodes(), "hello key=(string)\"arg1\""));
+        let nval = single(parse(nodes(&mut ctx), "hello key=(string)\"arg1\""));
         assert_eq!(nval.node_name.as_ref(), "hello");
         assert_eq!(nval.type_name.as_ref(), None);
         assert_eq!(nval.arguments.len(), 0);
         assert_eq!(nval.properties.len(), 1);
-        assert_eq!(&***nval.properties.get("key").unwrap()
+        assert_eq!(&*nval.properties.get("key").unwrap()
                    .type_name.as_ref().unwrap(),
                    "string");
         assert_eq!(&*nval.properties.get("key").unwrap().literal,
                    &Literal::String("arg1".into()));
 
-        let nval = single(parse(nodes(), "hello key=\"arg1\""));
+        let nval = single(parse(nodes(&mut ctx), "hello key=\"arg1\""));
         assert_eq!(nval.node_name.as_ref(), "hello");
         assert_eq!(nval.type_name.as_ref(), None);
         assert_eq!(nval.arguments.len(), 0);
@@ -1129,13 +1139,13 @@ mod test {
         assert_eq!(&*nval.properties.get("key").unwrap().literal,
                    &Literal::String("arg1".into()));
 
-        let nval = single(parse(nodes(), "parent {\nchild\n}"));
+        let nval = single(parse(nodes(&mut ctx), "parent {\nchild\n}"));
         assert_eq!(nval.node_name.as_ref(), "parent");
         assert_eq!(nval.children().len(), 1);
         assert_eq!(nval.children.as_ref().unwrap()[0].node_name.as_ref(),
                    "child");
 
-        let nval = single(parse(nodes(), "parent {\nchild1\nchild2\n}"));
+        let nval = single(parse(nodes(&mut ctx), "parent {\nchild1\nchild2\n}"));
         assert_eq!(nval.node_name.as_ref(), "parent");
         assert_eq!(nval.children().len(), 2);
         assert_eq!(nval.children.as_ref().unwrap()[0].node_name.as_ref(),
@@ -1143,34 +1153,34 @@ mod test {
         assert_eq!(nval.children.as_ref().unwrap()[1].node_name.as_ref(),
                    "child2");
 
-        let nval = single(parse(nodes(), "parent{\nchild3\n}"));
+        let nval = single(parse(nodes(&mut ctx), "parent{\nchild3\n}"));
         assert_eq!(nval.node_name.as_ref(), "parent");
         assert_eq!(nval.children().len(), 1);
         assert_eq!(nval.children.as_ref().unwrap()[0].node_name.as_ref(),
                    "child3");
 
-        let nval = single(parse(nodes(), "parent \"x\"=1 {\nchild4\n}"));
+        let nval = single(parse(nodes(&mut ctx), "parent \"x\"=1 {\nchild4\n}"));
         assert_eq!(nval.node_name.as_ref(), "parent");
         assert_eq!(nval.properties.len(), 1);
         assert_eq!(nval.children().len(), 1);
         assert_eq!(nval.children.as_ref().unwrap()[0].node_name.as_ref(),
                    "child4");
 
-        let nval = single(parse(nodes(), "parent \"x\" {\nchild4\n}"));
+        let nval = single(parse(nodes(&mut ctx), "parent \"x\" {\nchild4\n}"));
         assert_eq!(nval.node_name.as_ref(), "parent");
         assert_eq!(nval.arguments.len(), 1);
         assert_eq!(nval.children().len(), 1);
         assert_eq!(nval.children.as_ref().unwrap()[0].node_name.as_ref(),
                    "child4");
 
-        let nval = single(parse(nodes(), "parent \"x\"{\nchild5\n}"));
+        let nval = single(parse(nodes(&mut ctx), "parent \"x\"{\nchild5\n}"));
         assert_eq!(nval.node_name.as_ref(), "parent");
         assert_eq!(nval.arguments.len(), 1);
         assert_eq!(nval.children().len(), 1);
         assert_eq!(nval.children.as_ref().unwrap()[0].node_name.as_ref(),
                    "child5");
 
-        let nval = single(parse(nodes(), "hello /-\"skip_arg\" \"arg2\""));
+        let nval = single(parse(nodes(&mut ctx), "hello /-\"skip_arg\" \"arg2\""));
         assert_eq!(nval.node_name.as_ref(), "hello");
         assert_eq!(nval.type_name.as_ref(), None);
         assert_eq!(nval.arguments.len(), 1);
@@ -1178,7 +1188,7 @@ mod test {
         assert_eq!(&*nval.arguments[0].literal,
                    &Literal::String("arg2".into()));
 
-        let nval = single(parse(nodes(), "hello /- \"skip_arg\" \"arg2\""));
+        let nval = single(parse(nodes(&mut ctx), "hello /- \"skip_arg\" \"arg2\""));
         assert_eq!(nval.node_name.as_ref(), "hello");
         assert_eq!(nval.type_name.as_ref(), None);
         assert_eq!(nval.arguments.len(), 1);
@@ -1186,7 +1196,7 @@ mod test {
         assert_eq!(&*nval.arguments[0].literal,
                    &Literal::String("arg2".into()));
 
-        let nval = single(parse(nodes(), "hello prop1=\"1\" /-prop1=\"2\""));
+        let nval = single(parse(nodes(&mut ctx), "hello prop1=\"1\" /-prop1=\"2\""));
         assert_eq!(nval.node_name.as_ref(), "hello");
         assert_eq!(nval.type_name.as_ref(), None);
         assert_eq!(nval.arguments.len(), 0);
@@ -1194,33 +1204,35 @@ mod test {
         assert_eq!(&*nval.properties.get("prop1").unwrap().literal,
                    &Literal::String("1".into()));
 
-        let nval = single(parse(nodes(), "parent /-{\nchild\n}"));
+        let nval = single(parse(nodes(&mut ctx), "parent /-{\nchild\n}"));
         assert_eq!(nval.node_name.as_ref(), "parent");
         assert_eq!(nval.children().len(), 0);
     }
 
     #[test]
     fn parse_node_whitespace() {
-        let nval = single(parse(nodes(), "hello  {   }"));
+        let mut ctx = Context::new();
+        let nval = single(parse(nodes(&mut ctx), "hello  {   }"));
         assert_eq!(nval.node_name.as_ref(), "hello");
         assert_eq!(nval.type_name.as_ref(), None);
 
-        let nval = single(parse(nodes(), "hello  {   }  "));
+        let nval = single(parse(nodes(&mut ctx), "hello  {   }  "));
         assert_eq!(nval.node_name.as_ref(), "hello");
         assert_eq!(nval.type_name.as_ref(), None);
 
-        let nval = single(parse(nodes(), "hello "));
+        let nval = single(parse(nodes(&mut ctx), "hello "));
         assert_eq!(nval.node_name.as_ref(), "hello");
         assert_eq!(nval.type_name.as_ref(), None);
 
-        let nval = single(parse(nodes(), "hello   "));
+        let nval = single(parse(nodes(&mut ctx), "hello   "));
         assert_eq!(nval.node_name.as_ref(), "hello");
         assert_eq!(nval.type_name.as_ref(), None);
     }
 
     #[test]
     fn parse_node_err() {
-        err_eq!(parse(nodes(), "hello{"), r#"{
+        let ctx = Context::new();
+        err_eq!(parse(nodes(&mut ctx), "hello{"), r#"{
             "message": "error parsing KDL",
             "severity": "error",
             "labels": [],
@@ -1237,7 +1249,7 @@ mod test {
                 "related": []
             }]
         }"#);
-        err_eq!(parse(nodes(), "hello world"), r#"{
+        err_eq!(parse(nodes(&mut ctx), "hello world"), r#"{
             "message": "error parsing KDL",
             "severity": "error",
             "labels": [],
@@ -1254,7 +1266,7 @@ mod test {
             }]
         }"#);
 
-        err_eq!(parse(nodes(), "hello world {"), r#"{
+        err_eq!(parse(nodes(&mut ctx), "hello world {"), r#"{
             "message": "error parsing KDL",
             "severity": "error",
             "labels": [],
@@ -1282,7 +1294,7 @@ mod test {
             }]
         }"#);
 
-        err_eq!(parse(nodes(), "1 + 2"), r#"{
+        err_eq!(parse(nodes(&mut ctx), "1 + 2"), r#"{
             "message": "error parsing KDL",
             "severity": "error",
             "labels": [],
@@ -1298,7 +1310,7 @@ mod test {
             }]
         }"#);
 
-        err_eq!(parse(nodes(), "-1 +2"), r#"{
+        err_eq!(parse(nodes(&mut ctx), "-1 +2"), r#"{
             "message": "error parsing KDL",
             "severity": "error",
             "labels": [],
@@ -1318,12 +1330,13 @@ mod test {
 
     #[test]
     fn parse_nodes() {
-        let nval = parse(nodes(), "parent {\n/-  child\n}").unwrap();
+        let ctx = Context::new();
+        let nval = parse(nodes(&mut ctx), "parent {\n/-  child\n}").unwrap();
         assert_eq!(nval.len(), 1);
         assert_eq!(nval[0].node_name.as_ref(), "parent");
         assert_eq!(nval[0].children().len(), 0);
 
-        let nval = parse(nodes(), "/-parent {\n  child\n}\nsecond").unwrap();
+        let nval = parse(nodes(&mut ctx), "/-parent {\n  child\n}\nsecond").unwrap();
         assert_eq!(nval.len(), 1);
         assert_eq!(nval[0].node_name.as_ref(), "second");
         assert_eq!(nval[0].children().len(), 0);
@@ -1370,29 +1383,30 @@ mod test {
 
     #[test]
     fn parse_dashes() {
-        let nval = parse(nodes(), "-").unwrap();
+        let ctx = Context::new();
+        let nval = parse(nodes(&mut ctx), "-").unwrap();
         assert_eq!(nval.len(), 1);
         assert_eq!(nval[0].node_name.as_ref(), "-");
         assert_eq!(nval[0].children().len(), 0);
 
-        let nval = parse(nodes(), "--").unwrap();
+        let nval = parse(nodes(&mut ctx), "--").unwrap();
         assert_eq!(nval.len(), 1);
         assert_eq!(nval[0].node_name.as_ref(), "--");
         assert_eq!(nval[0].children().len(), 0);
 
-        let nval = parse(nodes(), "--1").unwrap();
+        let nval = parse(nodes(&mut ctx), "--1").unwrap();
         assert_eq!(nval.len(), 1);
         assert_eq!(nval[0].node_name.as_ref(), "--1");
         assert_eq!(nval[0].children().len(), 0);
 
-        let nval = parse(nodes(), "-\n-").unwrap();
+        let nval = parse(nodes(&mut ctx), "-\n-").unwrap();
         assert_eq!(nval.len(), 2);
         assert_eq!(nval[0].node_name.as_ref(), "-");
         assert_eq!(nval[0].children().len(), 0);
         assert_eq!(nval[1].node_name.as_ref(), "-");
         assert_eq!(nval[1].children().len(), 0);
 
-        let nval = parse(nodes(), "node -1 --x=2").unwrap();
+        let nval = parse(nodes(&mut ctx), "node -1 --x=2").unwrap();
         assert_eq!(nval.len(), 1);
         assert_eq!(nval[0].arguments.len(), 1);
         assert_eq!(nval[0].properties.len(), 1);

@@ -47,7 +47,7 @@ pub enum DecodeError<S: ErrorSpan> {
     #[diagnostic()]
     TypeName {
         /// Position of the type name
-        #[label="unexpected type name"]
+        #[label = "unexpected type name"]
         span: S,
         /// Type name contained in the source code
         found: Option<TypeName>,
@@ -135,7 +135,7 @@ pub enum DecodeError<S: ErrorSpan> {
     #[diagnostic()]
     Unsupported {
         /// Position of the value that is unsupported
-        #[label="unsupported value"]
+        #[label = "unsupported value"]
         span: S,
         /// Description of why the value is not supported
         message: Cow<'static, str>,

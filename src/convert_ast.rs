@@ -30,7 +30,7 @@ impl<S: Span> Decode<S> for Node {
 }
 
 impl<S: Span> DecodeScalar<S> for Scalar {
-    fn decode(scalar: &Scalar, ctx: &mut Context<S>)
+    fn decode(scalar: &Scalar, _: &mut Context<S>)
         -> Result<Self, DecodeError<S>>
     {
         Ok(Scalar {

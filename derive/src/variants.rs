@@ -59,6 +59,7 @@ pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
 }
 
 fn check_type(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
+    let ctx = s.ctx;
     let name = heck::ToKebabCase::to_kebab_case(
         &s.object.ident.unraw().to_string()[..]);
     Ok(quote! {
@@ -66,7 +67,7 @@ fn check_type(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
             let type_name = type_name.as_ref();
             if type_name != #name {
                 return Err(::kfl::errors::DecodeError::unexpected(
-                    #node, "node", format!("unexpected node `({}){}`",
+                    #ctx.span(&#node), "node", format!("unexpected node `({}){}`",
                     type_name,
                     #node.node_name.as_ref())
                 ))
@@ -89,13 +90,13 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                         for arg in &#node.arguments {
                             return Err(
                                 ::kfl::errors::DecodeError::unexpected(
-                                    &arg.literal, "argument",
+                                    #ctx.span(&arg.literal), "argument",
                                     "unexpected argument"));
                         }
                         for (name, _) in &#node.properties {
                             return Err(
                                 ::kfl::errors::DecodeError::unexpected(
-                                    name, "property",
+                                    #ctx.span(&name), "property",
                                     format!("unexpected property `{}`",
                                             name.escape_default())));
                         }
@@ -103,7 +104,7 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                             for child in children.iter() {
                                 return Err(
                                     ::kfl::errors::DecodeError::unexpected(
-                                        child, "node",
+                                        #ctx.span(&child), "node",
                                         format!("unexpected node `{}`",
                                             child.node_name.escape_default())
                                     ));
@@ -167,11 +168,11 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                 e.object.variants.len() - 2)
     };
     Ok(quote! {
-        match &**#node.node_name {
+        match &*#node.node_name {
             #(#branches)*
             name_str => {
                 Err(::kfl::errors::DecodeError::conversion(
-                        &#node.node_name, #err))
+                        #ctx.span(&#node.node_name), #err))
             }
         }
     })

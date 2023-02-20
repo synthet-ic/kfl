@@ -178,7 +178,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
                 Some(&BuiltinType::Base64) => true,
                 _ => {
                     return Err(DecodeError::TypeName {
-                        span: ctx.span(&ty).clone(),
+                        span: ctx.span(&ty),
                         found: Some(ty.clone()),
                         expected: ExpectedType::optional(BuiltinType::Base64),
                         rust_type: "bytes",
@@ -200,7 +200,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
                         }
                     }
                     #[cfg(not(feature = "base64"))] {
-                        Err(DecodeError::unsupported(&value,
+                        Err(DecodeError::unsupported(ctx.span(&value),
                             "base64 support is not compiled in"))
                     }
                 } else {

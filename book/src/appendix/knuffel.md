@@ -35,3 +35,5 @@
   - [ ] Make `DecodeChildren` sealed?
 - Removed `Spanned`, now `Context` has spans map, prepared at parsing
   - To avoid spreading `DUMMY_SP` kind everywhere when implement`Encode`
+- `Span` actually is literal-equivalent in object language
+  - Instead of `Spanned<Box<str>, S>`, just `Span` (with `Context` including the input text) suffices. Another beautiful fact.

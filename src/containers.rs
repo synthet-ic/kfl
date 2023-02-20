@@ -195,7 +195,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
                         match STANDARD.decode(s.as_bytes()) {
                             Ok(vec) => Ok(vec),
                             Err(e) => {
-                                Err(DecodeError::conversion(&ctx.span(&scalar), e))
+                                Err(DecodeError::conversion(ctx.span(&scalar), e))
                             }
                         }
                     }
@@ -207,7 +207,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
                     Ok(s.as_bytes().to_vec())
                 }
             }
-            _ => Err(DecodeError::scalar_kind(&ctx.span(&scalar), "string",
+            _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "string",
                                               &scalar.literal))
         }
     }
@@ -239,7 +239,7 @@ impl<S: ErrorSpan, T: Decode<S>> DecodePartial<S> for Option<T> {
             },
             (_, _) => {
                 let dup_err = format!("duplicate node `{}`, single node expected", node.node_name.as_ref());
-                Err(DecodeError::unexpected(&node.node_name, "node", dup_err))
+                Err(DecodeError::unexpected(ctx.span(&node.node_name), "node", dup_err))
             }
         }
     }

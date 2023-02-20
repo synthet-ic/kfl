@@ -178,7 +178,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
                 Some(&BuiltinType::Base64) => true,
                 _ => {
                     return Err(DecodeError::TypeName {
-                        span: ty.span().clone(),
+                        span: ctx.span(&ty).clone(),
                         found: Some(ty.value.clone()),
                         expected: ExpectedType::optional(BuiltinType::Base64),
                         rust_type: "bytes",
@@ -195,7 +195,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
                         match STANDARD.decode(s.as_bytes()) {
                             Ok(vec) => Ok(vec),
                             Err(e) => {
-                                Err(DecodeError::conversion(&ctx.span(), e))
+                                Err(DecodeError::conversion(&ctx.span(&scalar), e))
                             }
                         }
                     }
@@ -207,7 +207,7 @@ impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
                     Ok(s.as_bytes().to_vec())
                 }
             }
-            _ => Err(DecodeError::scalar_kind(&ctx.span(), "string",
+            _ => Err(DecodeError::scalar_kind(&ctx.span(&scalar), "string",
                                               &scalar.literal))
         }
     }

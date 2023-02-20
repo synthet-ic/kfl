@@ -451,29 +451,29 @@ impl<S: ErrorSpan> DecodeError<S> {
         }
     }
     /// Construct [`DecodeError::Missing`] error
-    pub fn missing(node: &SpannedNode<S>, message: impl Into<String>) -> Self {
+    pub fn missing(span: S, message: impl Into<String>) -> Self {
         DecodeError::Missing {
-            span: node.node_name.span().clone(),
+            span,
             message: message.into(),
         }
     }
     /// Construct [`DecodeError::Unexpected`] error
-    pub fn unexpected<T>(elem: &Spanned<T, S>, kind: &'static str,
+    pub fn unexpected<T>(span: S, kind: &'static str,
                          message: impl Into<String>)
         -> Self
     {
         DecodeError::Unexpected {
-            span: elem.span().clone(),
+            span,
             kind,
             message: message.into(),
         }
     }
     /// Construct [`DecodeError::Unsupported`] error
-    pub fn unsupported<T, M>(span: &Spanned<T, S>, message: M)-> Self
+    pub fn unsupported<T, M>(span: S, message: M)-> Self
         where M: Into<Cow<'static, str>>,
     {
         DecodeError::Unsupported {
-            span: span.span().clone(),
+            span,
             message: message.into(),
         }
     }

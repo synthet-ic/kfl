@@ -13,7 +13,6 @@ use miette::{Diagnostic, NamedSource};
 
 use crate::{
     ast::{TypeName, Literal, SpannedNode},
-    span::Spanned,
     traits::{ErrorSpan, Span}
 };
 

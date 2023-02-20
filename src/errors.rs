@@ -12,7 +12,7 @@ use thiserror::Error;
 use miette::{Diagnostic, NamedSource};
 
 use crate::{
-    ast::{TypeName, Literal, SpannedNode},
+    ast::{TypeName, Literal},
     traits::{ErrorSpan, Span}
 };
 

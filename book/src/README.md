@@ -7,7 +7,7 @@
 ## KDL
 
 - KDL as token tree (≠ AST, ≠ token stream)
-  - KDL is new literal, new string
+  - KDL is new string, new literal witch has more structure
 - KDL as algebraic data type with exponential
 
 ## TODO

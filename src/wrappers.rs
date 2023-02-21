@@ -14,7 +14,7 @@ pub fn parse(ctx: &mut Context, input: &'static str)
     -> Result<Vec<Node>, Error>
 {
     grammar::document()
-    .parse_with_state(&input, &mut ctx).into_result()
+    .parse_with_state(&input, ctx).into_result()
     .map_err(|errors| {
         Error {
             source_code: NamedSource::new(ctx.get::<&str>().unwrap(), input.to_string()),

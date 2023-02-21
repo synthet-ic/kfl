@@ -38,3 +38,5 @@
 - `Span` actually is literal-equivalent in object language
   - `Span` is to protect from being dereferenced `AsRef` to hold pointer identity
   - Instead of `Spanned<Box<str>, S>`, just `Span` (with `Context` including the input text) suffices. Another beautiful fact.
+  - chumsky now operates on its own Input trait that has an associated type `Span`, so we cannot be passive about `S` expecting only some specific set of traits consisting of third party's ones (`Into<miette::SourceSpan>`).
+    - In addition to that, each span type from different crates anyway resembles at all and conversion is direct as well. So let's be bold to carry around our own.

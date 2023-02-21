@@ -176,12 +176,7 @@ impl TraitProps {
             span_type: None,
         };
         for attr in mem::take(attrs) {
-            match attr.0 {
-                Attr::SpanType(ty) => {
-                    props.span_type = Some(ty);
-                }
-                _ => attrs.push(attr),
-            }
+            attrs.push(attr)
         }
         return props;
     }

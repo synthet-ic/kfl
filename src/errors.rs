@@ -37,7 +37,7 @@ pub struct Error {
 /// These are elements of the
 #[derive(Debug, Diagnostic, Error)]
 #[non_exhaustive]
-pub enum DecodeError<S: ErrorSpan> {
+pub enum DecodeError {
     /// Unexpected type name encountered
     ///
     /// Type names are identifiers and strings in parenthesis before node names
@@ -48,7 +48,7 @@ pub enum DecodeError<S: ErrorSpan> {
     TypeName {
         /// Position of the type name
         #[label = "unexpected type name"]
-        span: S,
+        span: Span,
         /// Type name contained in the source code
         found: Option<TypeName>,
         /// Expected type name or type names
@@ -65,7 +65,7 @@ pub enum DecodeError<S: ErrorSpan> {
     ScalarKind {
         /// Position of the unexpected scalar
         #[label("unexpected {}", found)]
-        span: S,
+        span: Span,
         /// Scalar kind (or multiple) expected at this position
         expected: &'static str,
         /// Kind of scalar that is found
@@ -80,7 +80,7 @@ pub enum DecodeError<S: ErrorSpan> {
     Missing {
         /// Position of the node name of which has missing element
         #[label("node starts here")]
-        span: S,
+        span: Span,
         /// Description of what's missing
         message: String,
     },
@@ -105,7 +105,7 @@ pub enum DecodeError<S: ErrorSpan> {
     Unexpected {
         /// Position of the unexpected element
         #[label("unexpected {}", kind)]
-        span: S,
+        span: Span,
         /// Kind of element that was found
         kind: &'static str,
         /// Description of the error
@@ -123,7 +123,7 @@ pub enum DecodeError<S: ErrorSpan> {
     Conversion {
         /// Position of the scalar that could not be converted
         #[label("invalid value")]
-        span: S,
+        span: Span,
         /// Original error
         source: Box<dyn std::error::Error + Send + Sync + 'static>,
     },
@@ -136,7 +136,7 @@ pub enum DecodeError<S: ErrorSpan> {
     Unsupported {
         /// Position of the value that is unsupported
         #[label = "unsupported value"]
-        span: S,
+        span: Span,
         /// Description of why the value is not supported
         message: Cow<'static, str>,
     },
@@ -153,14 +153,14 @@ pub enum DecodeError<S: ErrorSpan> {
 #[allow(dead_code)]
 #[derive(Debug, Diagnostic, Error)]
 #[non_exhaustive]
-pub enum EncodeError<S: ErrorSpan> {
+pub enum EncodeError {
     ///
     #[diagnostic()]
     #[error("{}", message)]
     Unexpected {
         /// Position of the unexpected element
         #[label("unexpected {}", kind)]
-        span: S,
+        span: Span,
         /// Kind of element that was found
         kind: &'static str,
         /// Description of the error
@@ -192,7 +192,7 @@ pub(crate) enum ParseError<S: ErrorSpan> {
     Unexpected {
         label: Option<&'static str>,
         #[label("{}", label.unwrap_or("unexpected token"))]
-        span: S,
+        span: Span,
         found: TokenFormat,
         expected: BTreeSet<TokenFormat>,
     },
@@ -201,10 +201,10 @@ pub(crate) enum ParseError<S: ErrorSpan> {
     Unclosed {
         label: &'static str,
         #[label="opened here"]
-        opened_at: S,
+        opened_at: Span,
         opened: TokenFormat,
         #[label("expected {}", expected)]
-        expected_at: S,
+        expected_at: Span,
         expected: TokenFormat,
         found: TokenFormat,
     },
@@ -213,7 +213,7 @@ pub(crate) enum ParseError<S: ErrorSpan> {
     Message {
         label: Option<&'static str>,
         #[label("{}", label.unwrap_or("unexpected token"))]
-        span: S,
+        span: Span,
         message: String,
     },
     #[error("{}", message)]
@@ -221,7 +221,7 @@ pub(crate) enum ParseError<S: ErrorSpan> {
     MessageWithHelp {
         label: Option<&'static str>,
         #[label("{}", label.unwrap_or("unexpected token"))]
-        span: S,
+        span: Span,
         message: String,
         help: &'static str,
     },
@@ -237,7 +237,7 @@ pub(crate) enum PrintError<S: ErrorSpan> {
     Unexpected {
         /// Position of the unexpected element
         #[label("unexpected {}", kind)]
-        span: S,
+        span: Span,
         /// Kind of element that was found
         kind: &'static str,
         /// Description of the error

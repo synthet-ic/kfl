@@ -7,7 +7,7 @@
 ## KDL
 
 - KDL as token tree (≠ AST, ≠ token stream)
-  - KDL is new string, new literal with more structure than old ones
+  - KDL is new string, new literal. Nodes are static just like string literals but have more structure than old literals
   - Those raw literals (nodes) can be exposed to your final structures
     - By that, it's not 'multi-staged'
 - KDL as algebraic data type with exponential

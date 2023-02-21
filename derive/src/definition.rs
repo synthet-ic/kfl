@@ -45,7 +45,6 @@ pub enum Attr {
     FieldMode(FieldMode),
     Unwrap(FieldAttrs),
     Default(Option<syn::Expr>),
-    SpanType(syn::Type),
 }
 
 #[derive(Debug, Clone)]

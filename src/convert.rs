@@ -8,7 +8,7 @@ use crate::{
     ast::{Scalar, Literal, Integer, Decimal, Radix, BuiltinType},
     context::Context,
     errors::{DecodeError, ExpectedType, EncodeError},
-    traits::{ErrorSpan, DecodeScalar, EncodeScalar}
+    traits::{DecodeScalar, EncodeScalar}
 };
 
 macro_rules! impl_integer {
@@ -26,9 +26,9 @@ macro_rules! impl_integer {
             }
         }
 
-        impl<S: ErrorSpan> DecodeScalar<S> for $ty {
-            fn decode(scalar: &Scalar, ctx: &mut Context<S>)
-                -> Result<Self, DecodeError<S>>
+        impl DecodeScalar for $ty {
+            fn decode(scalar: &Scalar, ctx: &mut Context)
+                -> Result<Self, DecodeError>
             {
                 if let Some(typ) = scalar.type_name.as_ref() {
                     if typ.as_builtin() != Some(&BuiltinType::$marker) {
@@ -62,9 +62,9 @@ macro_rules! impl_integer {
             }
         }
 
-        impl<S: ErrorSpan> EncodeScalar<S> for $ty {
-            fn encode(&self, _: &mut Context<S>)
-                -> Result<Scalar, EncodeError<S>>
+        impl EncodeScalar for $ty {
+            fn encode(&self, _: &mut Context)
+                -> Result<Scalar, EncodeError>
             {
                 let literal = Literal::Int(Integer::try_from(self).unwrap());
                 Ok(Scalar {
@@ -106,9 +106,9 @@ macro_rules! impl_decimal {
             }
         }
 
-        impl<S: ErrorSpan> DecodeScalar<S> for $ty {
-            fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context<S>)
-                -> Result<Self, DecodeError<S>>
+        impl DecodeScalar for $ty {
+            fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
+                -> Result<Self, DecodeError>
             {
                 if let Some(typ) = scalar.type_name.as_ref() {
                     if typ.as_builtin() != Some(&BuiltinType::$marker) {
@@ -139,9 +139,9 @@ macro_rules! impl_decimal {
 impl_decimal!(f32, F32);
 impl_decimal!(f64, F64);
 
-impl<S: ErrorSpan> DecodeScalar<S> for String {
-    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl DecodeScalar for String {
+    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
         if let Some(typ) = scalar.type_name.as_ref() {
             return Err(DecodeError::TypeName {
@@ -161,9 +161,9 @@ impl<S: ErrorSpan> DecodeScalar<S> for String {
 
 macro_rules! impl_from_str {
     ($ty:ty, $display:literal) => {
-        impl<S: ErrorSpan> DecodeScalar<S> for $ty {
-            fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context<S>)
-                -> Result<Self, DecodeError<S>>
+        impl DecodeScalar for $ty {
+            fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
+                -> Result<Self, DecodeError>
             {
                 if let Some(typ) = scalar.type_name.as_ref() {
                     return Err(DecodeError::TypeName {
@@ -190,9 +190,9 @@ impl_from_str!(SocketAddr, "SocketAddr");
 #[cfg(feature = "chrono")]
 impl_from_str!(chrono::NaiveDateTime, "NaiveDateTime");
 
-impl<S: ErrorSpan> DecodeScalar<S> for bool {
-    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl DecodeScalar for bool {
+    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
         if let Some(typ) = scalar.type_name.as_ref() {
             return Err(DecodeError::TypeName {

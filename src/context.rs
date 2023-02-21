@@ -10,7 +10,7 @@ use std::{
 use crate::{
     ast::Literal,
     errors::DecodeError,
-    traits::ErrorSpan
+    span::Span,
 };
 
 /// Context is passed through all the decode operations and can be used for:
@@ -18,15 +18,15 @@ use crate::{
 /// 1. To emit error and proceed (so multiple errors presented to user)
 /// 2. To store and retrieve data in decoders of nodes, scalars and spans
 #[derive(Debug, Default)]
-pub struct Context<S: ErrorSpan> {
+pub struct Context {
     ///
-    pub spans: HashMap<Box<str>, S>,
-    errors: Vec<DecodeError<S>>,
+    pub spans: HashMap<Box<str>, Span>,
+    errors: Vec<DecodeError>,
     extensions: HashMap<TypeId, Box<dyn Any>>,
 }
 
-impl<S: ErrorSpan> Context<S> {
-    pub(crate) fn new() -> Context<S> {
+impl Context {
+    pub(crate) fn new() -> Context {
         Context {
             spans: HashMap::new(),
             errors: Vec::new(),
@@ -34,14 +34,14 @@ impl<S: ErrorSpan> Context<S> {
         }
     }
     ///
-    pub(crate) fn set_span<P: Pointer + Debug>(&mut self, pointer: &P, span: S) {
+    pub(crate) fn set_span<P: Pointer + Debug>(&mut self, pointer: &P, span: Span) {
         println!("SET {0:?} {0:p}", pointer);
         self.spans.insert(format!("{:p}", pointer).into_boxed_str(), span);
         
         println!("{:#?}", &self.spans);
     }
     ///
-    pub fn span<P: Pointer + Debug>(&self, pointer: &P) -> S {
+    pub fn span<P: Pointer + Debug>(&self, pointer: &P) -> Span {
         println!("GET {0:?} {0:p}", pointer);
         self.spans[&format!("{:p}", pointer).into_boxed_str()].clone()
     }
@@ -50,14 +50,14 @@ impl<S: ErrorSpan> Context<S> {
     /// This fails decoding operation similarly to just returning error value.
     /// But unlike result allows returning some dummy value and allows decoder
     /// to proceed so multiple errors are presented to user at the same time.
-    pub fn emit_error(&mut self, err: impl Into<DecodeError<S>>) {
+    pub fn emit_error(&mut self, err: impl Into<DecodeError>) {
         self.errors.push(err.into());
     }
     /// Returns `true` if any errors was emitted into the context
     pub fn has_errors(&self) -> bool {
         !self.errors.is_empty()
     }
-    pub(crate) fn into_errors(self) -> Vec<DecodeError<S>> {
+    pub(crate) fn into_errors(self) -> Vec<DecodeError> {
         self.errors
     }
     /// Set context value

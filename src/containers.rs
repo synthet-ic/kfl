@@ -8,143 +8,142 @@ use crate::{
     context::Context,
     errors::{DecodeError, ExpectedType},
     traits::{Decode, DecodePartial, DecodeChildren, DecodeScalar},
-    traits::ErrorSpan
 };
 
-impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Box<T> {
-    fn decode(node: &Node, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl<T: Decode> Decode for Box<T> {
+    fn decode(node: &Node, ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
-        <T as Decode<S>>::decode(node, ctx).map(Box::new)
+        <T as Decode>::decode(node, ctx).map(Box::new)
     }
 }
 
-impl<S: ErrorSpan, T: DecodeChildren<S>> DecodeChildren<S> for Box<T> {
-    fn decode_children(nodes: &[Node], ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl<T: DecodeChildren> DecodeChildren for Box<T> {
+    fn decode_children(nodes: &[Node], ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
-        <T as DecodeChildren<S>>::decode_children(nodes, ctx).map(Box::new)
+        <T as DecodeChildren>::decode_children(nodes, ctx).map(Box::new)
     }
 }
 
-impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Box<T> {
-    fn decode_partial(&mut self, node: &Node, ctx: &mut Context<S>)
-        -> Result<bool, DecodeError<S>>
+impl<T: DecodePartial> DecodePartial for Box<T> {
+    fn decode_partial(&mut self, node: &Node, ctx: &mut Context)
+        -> Result<bool, DecodeError>
     {
         (**self).decode_partial(node, ctx)
     }
     // fn insert_property(&mut self,
     //                    name: &Box<str>, scalar: &Scalar,
-    //                    ctx: &mut Context<S>)
-    //     -> Result<bool, DecodeError<S>>
+    //                    ctx: &mut Context)
+    //     -> Result<bool, DecodeError>
     // {
     //     (**self).insert_property(name, value, ctx)
     // }
 }
 
-impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Box<T> {
-    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl<T: DecodeScalar> DecodeScalar for Box<T> {
+    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
-        <T as DecodeScalar<S>>::decode(scalar, ctx).map(Box::new)
+        <T as DecodeScalar>::decode(scalar, ctx).map(Box::new)
     }
 }
 
-impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Arc<T> {
-    fn decode(node: &Node, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl<T: Decode> Decode for Arc<T> {
+    fn decode(node: &Node, ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
-        <T as Decode<S>>::decode(node, ctx).map(Arc::new)
+        <T as Decode>::decode(node, ctx).map(Arc::new)
     }
 }
 
-impl<S: ErrorSpan, T: DecodeChildren<S>> DecodeChildren<S> for Arc<T> {
-    fn decode_children(nodes: &[Node], ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl<T: DecodeChildren> DecodeChildren for Arc<T> {
+    fn decode_children(nodes: &[Node], ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
-        <T as DecodeChildren<S>>::decode_children(nodes, ctx).map(Arc::new)
+        <T as DecodeChildren>::decode_children(nodes, ctx).map(Arc::new)
     }
 }
 
-impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Arc<T> {
-    fn decode_partial(&mut self, node: &Node, ctx: &mut Context<S>)
-        -> Result<bool, DecodeError<S>>
+impl<T: DecodePartial> DecodePartial for Arc<T> {
+    fn decode_partial(&mut self, node: &Node, ctx: &mut Context)
+        -> Result<bool, DecodeError>
     {
         Arc::get_mut(self).expect("no Arc clone yet")
             .decode_partial(node, ctx)
     }
     // fn insert_property(&mut self,
     //                    name: &Box<str>, scalar: &Scalar,
-    //                    ctx: &mut Context<S>)
-    //     -> Result<bool, DecodeError<S>>
+    //                    ctx: &mut Context)
+    //     -> Result<bool, DecodeError>
     // {
     //     Arc::get_mut(self).expect("no Arc clone yet")
     //         .insert_property(name, value, ctx)
     // }
 }
 
-impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Arc<T> {
-    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl<T: DecodeScalar> DecodeScalar for Arc<T> {
+    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
-        <T as DecodeScalar<S>>::decode(scalar, ctx).map(Arc::new)
+        <T as DecodeScalar>::decode(scalar, ctx).map(Arc::new)
     }
 }
 
-impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Rc<T> {
-    fn decode(node: &Node, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl<T: Decode> Decode for Rc<T> {
+    fn decode(node: &Node, ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
-        <T as Decode<S>>::decode(node, ctx).map(Rc::new)
+        <T as Decode>::decode(node, ctx).map(Rc::new)
     }
 }
 
-impl<S: ErrorSpan, T: DecodeChildren<S>> DecodeChildren<S> for Rc<T> {
-    fn decode_children(nodes: &[Node], ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl<T: DecodeChildren> DecodeChildren for Rc<T> {
+    fn decode_children(nodes: &[Node], ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
-        <T as DecodeChildren<S>>::decode_children(nodes, ctx).map(Rc::new)
+        <T as DecodeChildren>::decode_children(nodes, ctx).map(Rc::new)
     }
 }
 
-impl<S: ErrorSpan, T: DecodePartial<S>> DecodePartial<S> for Rc<T> {
-    fn decode_partial(&mut self, node: &Node, ctx: &mut Context<S>)
-        -> Result<bool, DecodeError<S>>
+impl<T: DecodePartial> DecodePartial for Rc<T> {
+    fn decode_partial(&mut self, node: &Node, ctx: &mut Context)
+        -> Result<bool, DecodeError>
     {
         Rc::get_mut(self).expect("no Rc clone yet")
             .decode_partial(node, ctx)
     }
     // fn insert_property(&mut self,
     //                    name: &Box<str>, scalar: &Scalar,
-    //                    ctx: &mut Context<S>)
-    //     -> Result<bool, DecodeError<S>>
+    //                    ctx: &mut Context)
+    //     -> Result<bool, DecodeError>
     // {
     //     Rc::get_mut(self).expect("no Rc clone yet")
     //         .insert_property(name, value, ctx)
     // }
 }
 
-impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Rc<T> {
-    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl<T: DecodeScalar> DecodeScalar for Rc<T> {
+    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
-        <T as DecodeScalar<S>>::decode(scalar, ctx).map(Rc::new)
+        <T as DecodeScalar>::decode(scalar, ctx).map(Rc::new)
     }
 }
 
-impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Vec<T> {
-    fn decode(node: &Node, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl<T: Decode> Decode for Vec<T> {
+    fn decode(node: &Node, ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
-        <T as Decode<S>>::decode(node, ctx).map(|node| vec![node])
+        <T as Decode>::decode(node, ctx).map(|node| vec![node])
     }
 }
 
-impl<S: ErrorSpan, T: Decode<S>> DecodePartial<S> for Vec<T> {
-    fn decode_partial(&mut self, node: &Node, ctx: &mut Context<S>)
-        -> Result<bool, DecodeError<S>>
+impl<T: Decode> DecodePartial for Vec<T> {
+    fn decode_partial(&mut self, node: &Node, ctx: &mut Context)
+        -> Result<bool, DecodeError>
     {
-        match <T as Decode<S>>::decode(node, ctx) {
+        match <T as Decode>::decode(node, ctx) {
             Ok(value) => {
                 self.push(value);
                 Ok(true)
@@ -154,13 +153,13 @@ impl<S: ErrorSpan, T: Decode<S>> DecodePartial<S> for Vec<T> {
     }
 }
 
-impl<S: ErrorSpan, T: Decode<S>> DecodeChildren<S> for Vec<T> {
-    fn decode_children(nodes: &[Node], ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl<T: Decode> DecodeChildren for Vec<T> {
+    fn decode_children(nodes: &[Node], ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
         let mut result = Vec::with_capacity(nodes.len());
         for node in nodes {
-            match <T as Decode<S>>::decode(node, ctx) {
+            match <T as Decode>::decode(node, ctx) {
                 Ok(node) => result.push(node),
                 Err(e) => ctx.emit_error(e),
             }
@@ -169,9 +168,9 @@ impl<S: ErrorSpan, T: Decode<S>> DecodeChildren<S> for Vec<T> {
     }
 }
 
-impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
-    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl DecodeScalar for Vec<u8> {
+    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
         let is_base64 = if let Some(ty) = scalar.type_name.as_ref() {
             match ty.as_builtin() {
@@ -213,20 +212,20 @@ impl<S: ErrorSpan> DecodeScalar<S> for Vec<u8> {
     }
 }
 
-impl<S: ErrorSpan, T: Decode<S>> Decode<S> for Option<T> {
-    fn decode(node: &Node, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl<T: Decode> Decode for Option<T> {
+    fn decode(node: &Node, ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
-        <T as Decode<S>>::decode(node, ctx).map(|node| Some(node))
+        <T as Decode>::decode(node, ctx).map(|node| Some(node))
     }
 }
 
-impl<S: ErrorSpan, T: Decode<S>> DecodePartial<S> for Option<T> {
-    fn decode_partial(&mut self, node: &Node, ctx: &mut Context<S>)
-        -> Result<bool, DecodeError<S>>
+impl<T: Decode> DecodePartial for Option<T> {
+    fn decode_partial(&mut self, node: &Node, ctx: &mut Context)
+        -> Result<bool, DecodeError>
     {
         let slf = std::mem::take(self);  /* (1) */
-        let result = <Self as Decode<S>>::decode(node, ctx);
+        let result = <Self as Decode>::decode(node, ctx);
         match (slf, result) {
             (None, Ok(None)) => Ok(true),  /* no-op */
             (None, Ok(value)) => {
@@ -246,13 +245,13 @@ impl<S: ErrorSpan, T: Decode<S>> DecodePartial<S> for Option<T> {
     }
 }
 
-impl<S: ErrorSpan, T: DecodeScalar<S>> DecodeScalar<S> for Option<T> {
-    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl<T: DecodeScalar> DecodeScalar for Option<T> {
+    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
         match &scalar.literal {
             Literal::Null => Ok(None),
-            _ => <T as DecodeScalar<S>>::decode(scalar, ctx).map(Some),
+            _ => <T as DecodeScalar>::decode(scalar, ctx).map(Some),
         }
     }
 }

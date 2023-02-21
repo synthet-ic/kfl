@@ -109,11 +109,10 @@ pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
             quote!(#name => Ok(#e_name::#ident))
         });
     Ok(quote! {
-        impl<S: ::kfl::traits::ErrorSpan> ::kfl::DecodeScalar<S>
-                for #e_name {
+        impl ::kfl::DecodeScalar for #e_name {
             fn decode(scalar: &::kfl::ast::Scalar,
-                      ctx: &mut ::kfl::decode::Context<S>)
-                -> Result<Self, ::kfl::errors::DecodeError<S>>
+                      ctx: &mut ::kfl::decode::Context)
+                -> Result<Self, ::kfl::errors::DecodeError>
             {
                 if let Some(typ) = scalar.type_name.as_ref() {
                     return Err(::kfl::errors::DecodeError::TypeName {

@@ -10,7 +10,6 @@ use crate::{
 pub(crate) struct Common<'a> {
     pub object: &'a Enum,
     pub ctx: &'a syn::Ident,
-    pub span_type: &'a TokenStream,
 }
 
 pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
@@ -19,37 +18,22 @@ pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
     let ctx = syn::Ident::new("ctx", Span::mixed_site());
 
     let (_, type_gen, _) = e.generics.split_for_impl();
-    let mut common_generics = e.generics.clone();
-    let span_ty;
-    if let Some(ty) = e.trait_props.span_type.as_ref() {
-        span_ty = quote!(#ty);
-    } else {
-        if common_generics.params.is_empty() {
-            common_generics.lt_token = Some(Default::default());
-            common_generics.gt_token = Some(Default::default());
-        }
-        common_generics.params.push(syn::parse2(quote!(S)).unwrap());
-        span_ty = quote!(S);
-        common_generics.make_where_clause().predicates.push(
-            syn::parse2(quote!(S: ::kfl::traits::ErrorSpan)).unwrap());
-    };
-    let trait_gen = quote!(<#span_ty>);
+    let common_generics = e.generics.clone();
     let (impl_gen, _, bounds) = common_generics.split_for_impl();
 
     let common = Common {
         object: e,
         ctx: &ctx,
-        span_type: &span_ty,
     };
     let check_type = check_type(&common, &node)?;
     let decode = decode(&common, &node)?;
     Ok(quote! {
-        impl #impl_gen ::kfl::Decode #trait_gen for #name #type_gen
+        impl #impl_gen ::kfl::Decode for #name #type_gen
             #bounds
         {
             fn decode(#node: &::kfl::ast::Node,
-                           #ctx: &mut ::kfl::decode::Context<#span_ty>)
-                -> Result<Self, ::kfl::errors::DecodeError<#span_ty>>
+                      #ctx: &mut ::kfl::decode::Context)
+                -> Result<Self, ::kfl::errors::DecodeError>
             {
                 #check_type
                 #decode
@@ -116,7 +100,7 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
             }
             VariantKind::Nested { ty } => {
                 branches.push(quote! {
-                    #name => <#ty as ::kfl::Decode<_>>::decode(#node, #ctx)
+                    #name => <#ty as ::kfl::Decode>::decode(#node, #ctx)
                         .map(#enum_name::#variant_name),
                 });
             }
@@ -124,7 +108,6 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                 let common = node::Common {
                     object: s,
                     ctx,
-                    span_type: e.span_type,
                 };
                 let decode = node::decode_variant(
                     &common,
@@ -140,7 +123,6 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                 let common = node::Common {
                     object: s,
                     ctx,
-                    span_type: e.span_type,
                 };
                 let decode = node::decode_variant(
                     &common,

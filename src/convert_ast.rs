@@ -2,12 +2,12 @@ use crate::{
     ast::{Node, Literal, Scalar},
     context::Context,
     errors::DecodeError,
-    traits::{Decode, DecodeScalar, Span}
+    traits::{Decode, DecodeScalar}
 };
 
-impl<S: Span> Decode<S> for Node {
-    fn decode(node: &Node, ctx: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl Decode for Node {
+    fn decode(node: &Node, ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
         Ok(Node {
             type_name: node.type_name.as_ref().map(|n| n.clone()),
@@ -29,9 +29,9 @@ impl<S: Span> Decode<S> for Node {
     }
 }
 
-impl<S: Span> DecodeScalar<S> for Scalar {
-    fn decode(scalar: &Scalar, _: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl DecodeScalar for Scalar {
+    fn decode(scalar: &Scalar, _: &mut Context)
+        -> Result<Self, DecodeError>
     {
         Ok(Scalar {
             type_name: scalar.type_name.as_ref().map(|n| n.clone()),
@@ -40,9 +40,9 @@ impl<S: Span> DecodeScalar<S> for Scalar {
     }
 }
 
-impl<S: Span> DecodeScalar<S> for Literal {
-    fn decode(scalar: &Scalar, _: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl DecodeScalar for Literal {
+    fn decode(scalar: &Scalar, _: &mut Context)
+        -> Result<Self, DecodeError>
     {
         Ok(scalar.literal.clone())
     }

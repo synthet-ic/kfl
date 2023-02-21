@@ -223,7 +223,7 @@ fn escaped_string() -> impl Parser<'static, I, Box<str>, Extra> {
         .or(just('\\').ignore_then(esc_char()))
         .repeated().map_slice(|v| v)
     ).then_ignore(just('"'))
-        .map_slice(|val| val.chars().collect::<String>().into())
+    //    .map_slice(|val| val.chars().collect::<String>().into())
         .map_err_with_span(|e: Error, span| {
             let span = Span::from(span);
             if matches!(&e, Error::Unexpected { found: TokenFormat::Eoi, .. })

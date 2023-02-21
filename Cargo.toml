@@ -2,7 +2,7 @@
 members = [
     ".",
     "derive",
-#    "crates/plist"
+    "crates/plist"
 ]
 
 [package]

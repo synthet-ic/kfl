@@ -172,13 +172,13 @@ pub struct Enum {
 
 impl TraitProps {
     fn pick_from(attrs: &mut Vec<(Attr, Span)>) -> TraitProps {
-        let mut props = TraitProps {
+        let props = TraitProps {
             span_type: None,
         };
         for attr in mem::take(attrs) {
             attrs.push(attr)
         }
-        return props;
+        props
     }
 }
 

@@ -15,7 +15,7 @@ pub fn parse(ctx: &mut Context, input: &str)
 {
     let copy = input.to_string();
     let result = grammar::document()
-    .parse_with_state(input, ctx).into_result();
+    .parse_with_state(&input, ctx).into_result();
     result.map_err(|errors| {
         Error {
             source_code: NamedSource::new(ctx.get::<&str>().unwrap(), copy),

@@ -221,8 +221,8 @@ fn escaped_string() -> impl Parser<'static, I, Box<str>, Extra> {
     .ignore_then(
         any().filter(|&c| c != '"' && c != '\\')
         .or(just('\\').ignore_then(esc_char()))
-        .repeated()
-        .then_ignore(just('"'))
+        .repeated().map_slice(|v| v)
+    ).then_ignore(just('"'))
         .map_slice(|val| val.chars().collect::<String>().into())
         .map_err_with_span(|e: Error, span| {
             let span = Span::from(span);
@@ -240,7 +240,6 @@ fn escaped_string() -> impl Parser<'static, I, Box<str>, Extra> {
                 e
             }
         })
-    )
 }
 
 fn bare_ident() -> impl Parser<'static, I, Box<str>, Extra> {

@@ -80,7 +80,7 @@ impl Context {
     /// Returns a value previously set in context
     pub fn get<T>(&self) -> Option<T> {
         self.extensions.remove(&TypeId::of::<T>())
-            .and_then(|b| b.downcast().map(|box| *box).ok())
+            .and_then(|b| b.downcast().map(|a| *a).ok())
     }
 }
 

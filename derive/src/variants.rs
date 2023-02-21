@@ -32,7 +32,7 @@ pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
             #bounds
         {
             fn decode(#node: &::kfl::ast::Node,
-                      #ctx: &mut ::kfl::decode::Context)
+                      #ctx: &mut ::kfl::context::Context)
                 -> Result<Self, ::kfl::errors::DecodeError>
             {
                 #check_type

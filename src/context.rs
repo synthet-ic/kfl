@@ -35,15 +35,16 @@ impl Context {
     }
     ///
     pub(crate) fn set_span<P: Pointer + Debug>(&mut self, pointer: &P, span: Span) {
-        println!("SET {0:?} {0:p}", pointer);
+        // println!("SET {0:?} {0:p}", pointer);
         self.spans.insert(format!("{:p}", pointer).into_boxed_str(), span);
-        
-        println!("{:#?}", &self.spans);
+        // println!("{:#?}", &self.spans);
     }
     ///
+    #[allow(unused_variables)]
     pub fn span<P: Pointer + Debug>(&self, pointer: &P) -> Span {
-        println!("GET {0:?} {0:p}", pointer);
-        self.spans[&format!("{:p}", pointer).into_boxed_str()].clone()
+        // println!("GET {0:?} {0:p}", pointer);
+        Span(0, 0)
+        // self.spans[&format!("{:p}", pointer).into_boxed_str()].clone()
     }
     /// Add error
     ///

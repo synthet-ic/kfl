@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build
-      run: cargo build --verbose
+      run: cargo build
 #    - name: Nightly test
 #      run: cargo +nightly rustc -- -Z macro-backtrace
     - name: All feature tests

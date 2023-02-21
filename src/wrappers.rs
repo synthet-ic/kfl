@@ -24,7 +24,7 @@ pub fn parse(ctx: &mut Context, input: &str)
 }
 
 /// Parse KDL text and decode it into Rust object
-pub fn decode<T>(file_name: &str, text: &str) -> Result<T, Error>
+pub fn decode<T>(file_name: &'static str, text: &str) -> Result<T, Error>
     where T: Decode,
 {
     let mut ctx = Context::new();
@@ -57,7 +57,7 @@ pub fn decode<T>(file_name: &str, text: &str) -> Result<T, Error>
 // }
 
 /// Parse KDL text and decode Rust object
-pub fn decode_children<T>(file_name: &str, text: &str) -> Result<T, Error>
+pub fn decode_children<T>(file_name: &'static str, text: &str) -> Result<T, Error>
     where T: DecodeChildren,
 {
     decode_with_context(file_name, text, |_| {})
@@ -65,7 +65,7 @@ pub fn decode_children<T>(file_name: &str, text: &str) -> Result<T, Error>
 
 /// Parse KDL text and decode Rust object providing extra context for the
 /// decoder
-pub fn decode_with_context<T, F>(file_name: &str, text: &str, set_ctx: F)
+pub fn decode_with_context<T, F>(file_name: &'static str, text: &str, set_ctx: F)
     -> Result<T, Error>
     where F: FnOnce(&mut Context),
           T: DecodeChildren,

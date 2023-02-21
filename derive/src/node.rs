@@ -65,7 +65,7 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
                 {
                     fn decode_partial(&mut self,
                         #node: &::kfl::ast::Node,
-                        #ctx: &mut ::kfl::decode::Context)
+                        #ctx: &mut ::kfl::context::Context)
                         -> Result<bool, ::kfl::errors::DecodeError>
                     {
                         #decode_partial
@@ -73,7 +73,7 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
                     // fn insert_property(&mut self,
                     //     #name: &Box<str>,
                     //     #scalar: &::kfl::ast::Scalar,
-                    //     #ctx: &mut ::kfl::decode::Context)
+                    //     #ctx: &mut ::kfl::context::Context)
                     //     -> Result<bool, ::kfl::errors::DecodeError>
                     // {
                     //     #insert_property
@@ -93,7 +93,7 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
             {
                 fn decode_children(
                     #children: &[::kfl::ast::Node],
-                    #ctx: &mut ::kfl::decode::Context)
+                    #ctx: &mut ::kfl::context::Context)
                     -> Result<Self, ::kfl::errors::DecodeError>
                 {
                     #decode_children
@@ -109,7 +109,7 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
             #bounds
         {
             fn decode(#node: &::kfl::ast::Node,
-                      #ctx: &mut ::kfl::decode::Context)
+                      #ctx: &mut ::kfl::context::Context)
                 -> Result<Self, ::kfl::errors::DecodeError>
             {
                 #check_type
@@ -133,7 +133,7 @@ pub fn emit_new_type(s: &NewType) -> syn::Result<TokenStream> {
     Ok(quote! {
         impl ::kfl::traits::Decode for #s_name {
             fn decode(#node: &::kfl::ast::Node,
-                      #ctx: &mut ::kfl::decode::Context)
+                      #ctx: &mut ::kfl::context::Context)
                 -> Result<Self, ::kfl::errors::DecodeError>
             {
                 if #node.arguments.len() > 0 ||
@@ -434,7 +434,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
 //                                           Some(quote!(#ctx.span(&#node))))?;
 //     Ok(quote! {
 //         let mut #func = |#node: &::kfl::ast::Node,
-//                          #ctx: &mut ::kfl::decode::Context|
+//                          #ctx: &mut ::kfl::context::Context|
 //         {
 //             #decode_args
 //             #decode_props

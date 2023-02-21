@@ -10,11 +10,11 @@ use crate::{
 };
 
 /// Parse KDL text and return AST
-pub fn parse(ctx: &mut Context, input: &'static str)
+pub fn parse(ctx: &mut Context, input: &str)
     -> Result<Vec<Node>, Error>
 {
     grammar::document()
-    .parse_with_state(&input, ctx).into_result()
+    .parse_with_state(&input.to_string(), ctx).into_result()
     .map_err(|errors| {
         Error {
             source_code: NamedSource::new(ctx.get::<&str>().unwrap(), input.to_string()),
@@ -24,14 +24,11 @@ pub fn parse(ctx: &mut Context, input: &'static str)
 }
 
 /// Parse KDL text and decode it into Rust object
-pub fn decode<T>(file_name: &str, text: &'static str) -> Result<T, Error>
+pub fn decode<T>(file_name: &str, text: &str) -> Result<T, Error>
     where T: Decode,
 {
     let mut ctx = Context::new();
     let nodes = parse(&mut ctx, text)?;
-    // let spans = ctx.spans.clone();
-    // let mut ctx = Context::new();
-    // ctx.spans = spans;
     ctx.set::<String>(file_name.to_string());
     Decode::decode(&nodes[0], &mut ctx).map_err(|error| {
         Error {
@@ -60,7 +57,7 @@ pub fn decode<T>(file_name: &str, text: &'static str) -> Result<T, Error>
 // }
 
 /// Parse KDL text and decode Rust object
-pub fn decode_children<T>(file_name: &str, text: &'static str) -> Result<T, Error>
+pub fn decode_children<T>(file_name: &str, text: &str) -> Result<T, Error>
     where T: DecodeChildren,
 {
     decode_with_context(file_name, text, |_| {})
@@ -68,16 +65,13 @@ pub fn decode_children<T>(file_name: &str, text: &'static str) -> Result<T, Erro
 
 /// Parse KDL text and decode Rust object providing extra context for the
 /// decoder
-pub fn decode_with_context<T, F>(file_name: &str, text: &'static str, set_ctx: F)
+pub fn decode_with_context<T, F>(file_name: &str, text: &str, set_ctx: F)
     -> Result<T, Error>
     where F: FnOnce(&mut Context),
           T: DecodeChildren,
 {
     let mut ctx = Context::new();
     let nodes = parse(&mut ctx, text)?;
-    // let spans = ctx.borrow().spans.clone();
-    // let mut ctx = Context::new();
-    // ctx.spans = spans;
     set_ctx(&mut ctx);
     let errors = match <T as DecodeChildren>
         ::decode_children(&nodes, &mut ctx)

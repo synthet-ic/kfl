@@ -653,11 +653,6 @@ impl Attr {
         } else if lookahead.peek(kw::span) {
             let _kw: kw::span = input.parse()?;
             Ok(Attr::FieldMode(FieldMode::Span))
-        } else if lookahead.peek(kw::span_type) {
-            let _kw: kw::span_type = input.parse()?;
-            let _eq: syn::Token![=] = input.parse()?;
-            let ty: syn::Type = input.parse()?;
-            Ok(Attr::SpanType(ty))
         } else {
             Err(lookahead.error())
         }

@@ -14,9 +14,9 @@ pub fn parse(ctx: &mut Context, input: &str)
     -> Result<Vec<Node>, Error>
 {
     let copy = input.to_string();
-    grammar::document()
-    .parse_with_state(input, ctx).into_result()
-    .map_err(|errors| {
+    let result = grammar::document()
+    .parse_with_state(input, ctx).into_result();
+    result.map_err(|errors| {
         Error {
             source_code: NamedSource::new(ctx.get::<&str>().unwrap(), copy),
             errors: errors.into_iter().map(Into::into).collect(),

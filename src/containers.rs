@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     ast::{Node, Literal, BuiltinType},
-    decode::Context,
+    context::Context,
     errors::{DecodeError, ExpectedType},
     traits::{Decode, DecodePartial, DecodeChildren, DecodeScalar},
     traits::ErrorSpan

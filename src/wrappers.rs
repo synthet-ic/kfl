@@ -5,7 +5,7 @@ use miette::NamedSource;
 
 use crate::{
     ast::Node,
-    decode::Context,
+    context::Context,
     errors::Error,
     grammar,
     span::Span,

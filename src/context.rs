@@ -4,7 +4,7 @@
 use std::{
     any::{Any, TypeId},
     collections::HashMap,
-    fmt::Pointer
+    fmt::{Pointer, Debug}
 };
 
 use crate::{
@@ -17,7 +17,7 @@ use crate::{
 ///
 /// 1. To emit error and proceed (so multiple errors presented to user)
 /// 2. To store and retrieve data in decoders of nodes, scalars and spans
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Context<S: ErrorSpan> {
     ///
     pub spans: HashMap<Box<str>, S>,
@@ -34,11 +34,15 @@ impl<S: ErrorSpan> Context<S> {
         }
     }
     ///
-    pub(crate) fn set_span<P: Pointer>(&mut self, pointer: P, span: S) {
-        self.spans.insert(format!("{:p}", pointer).into(), span);
+    pub(crate) fn set_span<P: Pointer + Debug>(&mut self, pointer: &P, span: S) {
+        println!("SET {0:?} {0:p}", pointer);
+        self.spans.insert(format!("{:p}", pointer).into_boxed_str(), span);
+        
+        println!("{:#?}", &self.spans);
     }
     ///
-    pub fn span<P: Pointer>(&self, pointer: P) -> S {
+    pub fn span<P: Pointer + Debug>(&self, pointer: &P) -> S {
+        println!("GET {0:?} {0:p}", pointer);
         self.spans[&format!("{:p}", pointer).into_boxed_str()].clone()
     }
     /// Add error

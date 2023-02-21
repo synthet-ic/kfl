@@ -9,7 +9,7 @@ use std::fmt::Debug;
 use crate::{
     ast::{Node, Scalar},
     errors::{DecodeError, EncodeError},
-    decode::Context
+    context::Context
 };
 
 /// Trait to decode KDL node from the AST

@@ -1,6 +1,6 @@
 use crate::{
     ast::{Node, Literal, Scalar},
-    decode::Context,
+    context::Context,
     errors::DecodeError,
     traits::{Decode, DecodeScalar, Span}
 };

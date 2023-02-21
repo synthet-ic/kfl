@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     ast::{Scalar, Literal, Integer, Decimal, Radix, BuiltinType},
-    decode::Context,
+    context::Context,
     errors::{DecodeError, ExpectedType, EncodeError},
     traits::{ErrorSpan, DecodeScalar, EncodeScalar}
 };

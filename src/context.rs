@@ -72,15 +72,15 @@ impl Context {
     /// It's also discourated to use `set` in the decoder. It's expeced that
     /// context will be filled in using
     /// [`parse_with_context`](crate::parse_with_context) function.
-    pub fn set<T>(&mut self, value: T) {
+    pub fn set<T: 'static>(&mut self, value: T) {
         self.extensions.insert(TypeId::of::<T>(), Box::new(value));
     }
     /// Get context value
     ///
     /// Returns a value previously set in context
-    pub fn get<T>(&self) -> Option<T> {
-        self.extensions.remove(&TypeId::of::<T>())
-            .and_then(|b| b.downcast().map(|a| *a).ok())
+    pub fn get<T: 'static>(&self) -> Option<&T> {
+        self.extensions.get(&TypeId::of::<T>())
+            .and_then(|b| b.downcast_ref())
     }
 }
 

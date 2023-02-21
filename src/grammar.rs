@@ -221,7 +221,7 @@ fn escaped_string() -> impl Parser<'static, I, Box<str>, Extra> {
     .ignore_then(
         any().filter(|&c| c != '"' && c != '\\')
         .or(just('\\').ignore_then(esc_char()))
-        .repeated().map_slice(|v| v)
+        .repeated().map_slice(|v| v.to_string().into_boxed_str())
     ).then_ignore(just('"'))
     //    .map_slice(|val| val.chars().collect::<String>().into())
         .map_err_with_span(|e: Error, span| {

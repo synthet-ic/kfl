@@ -10,30 +10,29 @@ use crate::{
 };
 
 /// Parse KDL text and return AST
-pub fn parse(ctx: &mut Context, input: &str)
+pub fn parse(ctx: &mut Context, input: &'sratic str)
     -> Result<Vec<Node>, Error>
 {
-    let copy = input.to_string();
-    let result = grammar::document()
+    grammar::document()
     .parse_with_state(&input, ctx).into_result();
-    result.map_err(|errors| {
+    .map_err(|errors| {
         Error {
-            source_code: NamedSource::new(ctx.get::<&str>().unwrap(), copy),
+            source_code: NamedSource::new(ctx.get::<&str>().unwrap(), input.to_string()),
             errors: errors.into_iter().map(Into::into).collect(),
         }
     })
 }
 
 /// Parse KDL text and decode it into Rust object
-pub fn decode<T>(file_name: &'static str, text: &str) -> Result<T, Error>
+pub fn decode<T>(file_name: &'static str, input: &'static str) -> Result<T, Error>
     where T: Decode,
 {
     let mut ctx = Context::new();
-    let nodes = parse(&mut ctx, text)?;
+    let nodes = parse(&mut ctx, &input)?;
     ctx.set::<String>(file_name.to_string());
     Decode::decode(&nodes[0], &mut ctx).map_err(|error| {
         Error {
-            source_code: NamedSource::new(file_name, text.to_string()),
+            source_code: NamedSource::new(file_name, input.to_string()),
             errors: vec![error.into()],
         }
     })
@@ -58,21 +57,21 @@ pub fn decode<T>(file_name: &'static str, text: &str) -> Result<T, Error>
 // }
 
 /// Parse KDL text and decode Rust object
-pub fn decode_children<T>(file_name: &'static str, text: &str) -> Result<T, Error>
+pub fn decode_children<T>(file_name: &'static str, input: &'static str) -> Result<T, Error>
     where T: DecodeChildren,
 {
-    decode_with_context(file_name, text, |_| {})
+    decode_with_context(file_name, input, |_| {})
 }
 
 /// Parse KDL text and decode Rust object providing extra context for the
 /// decoder
-pub fn decode_with_context<T, F>(file_name: &'static str, text: &str, set_ctx: F)
+pub fn decode_with_context<T, F>(file_name: &'static str, input: &'static str, set_ctx: F)
     -> Result<T, Error>
     where F: FnOnce(&mut Context),
           T: DecodeChildren,
 {
     let mut ctx = Context::new();
-    let nodes = parse(&mut ctx, text)?;
+    let nodes = parse(&mut ctx, &input)?;
     set_ctx(&mut ctx);
     let errors = match <T as DecodeChildren>
         ::decode_children(&nodes, &mut ctx)
@@ -87,7 +86,7 @@ pub fn decode_with_context<T, F>(file_name: &'static str, text: &str, set_ctx: F
         Ok(v) => return Ok(v)
     };
     Err(Error {
-        source_code: NamedSource::new(file_name, text.to_string()),
+        source_code: NamedSource::new(file_name, input.to_string()),
         errors: errors.into_iter().map(Into::into).collect(),
     })
 }

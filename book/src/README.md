@@ -2,6 +2,7 @@
 
 - Nominal Typing
 - Trait-Based
+- Two-Level
 
 ## KDL
 

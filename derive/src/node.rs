@@ -400,7 +400,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
     Ok(quote! {
         #(#declare_empty)*
         for (#name, #val) in #node.properties.iter() {
-            match &*#name {
+            match #name.as_ref() {
                 #(#match_branches)*
             }
         }

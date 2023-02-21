@@ -10,7 +10,7 @@ use crate::{
 };
 
 /// Parse KDL text and return AST
-pub fn parse(ctx: &mut Context, input: &'sratic str)
+pub fn parse(ctx: &mut Context, input: &'static str)
     -> Result<Vec<Node>, Error>
 {
     grammar::document()

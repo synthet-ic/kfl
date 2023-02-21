@@ -19,15 +19,15 @@ use crate::{
 type I = str;
 type Extra = Full<Error, Context, ()>;
 
-fn begin_comment(which: char)
-    -> impl Parser<'static, I, (), Extra> + Clone
+fn begin_comment<'a>(which: char)
+    -> impl Parser<'a, I, (), Extra> + Clone
 {
     just('/')
     .map_err(|e: Error| e.with_no_expected())
     .ignore_then(just(which).ignored())
 }
 
-fn newline() -> impl Parser<'static, I, (), Extra> {
+fn newline<'a>() -> impl Parser<'a, I, (), Extra> {
     just('\r')
         .or_not()
         .ignore_then(just('\n'))
@@ -40,7 +40,7 @@ fn newline() -> impl Parser<'static, I, (), Extra> {
     .map_err(|e: Error| e.with_expected_kind("newline"))
 }
 
-fn ws_char() -> impl Parser<'static, I, (), Extra> {
+fn ws_char<'a>() -> impl Parser<'a, I, (), Extra> {
     any().filter(|c| matches!(c,
         '\t' | ' ' | '\u{00a0}' | '\u{1680}' |
         '\u{2000}'..='\u{200A}' |
@@ -50,7 +50,7 @@ fn ws_char() -> impl Parser<'static, I, (), Extra> {
     .ignored()
 }
 
-fn id_char() -> impl Parser<'static, I, char, Extra> {
+fn id_char<'a>() -> impl Parser<'a, I, char, Extra> {
     any().filter(|c| !matches!(c,
         '\u{0000}'..='\u{0021}' |
         '\\'|'/'|'('|')'|'{'|'}'|'<'|'>'|';'|'['|']'|'='|','|'"' |
@@ -64,7 +64,7 @@ fn id_char() -> impl Parser<'static, I, char, Extra> {
     .map_err(|e: Error| e.with_expected_kind("letter"))
 }
 
-fn id_sans_dig() -> impl Parser<'static, I, char, Extra> {
+fn id_sans_dig<'a>() -> impl Parser<'a, I, char, Extra> {
     any().filter(|c| !matches!(c,
         '0'..='9' |
         '\u{0000}'..='\u{0020}' |
@@ -79,7 +79,7 @@ fn id_sans_dig() -> impl Parser<'static, I, char, Extra> {
     .map_err(|e: Error| e.with_expected_kind("letter"))
 }
 
-fn id_sans_sign_dig() -> impl Parser<'static, I, char, Extra> {
+fn id_sans_sign_dig<'a>() -> impl Parser<'a, I, char, Extra> {
     any().filter(|c| !matches!(c,
         '-'| '+' | '0'..='9' |
         '\u{0000}'..='\u{0020}' |
@@ -94,17 +94,17 @@ fn id_sans_sign_dig() -> impl Parser<'static, I, char, Extra> {
     .map_err(|e: Error| e.with_expected_kind("letter"))
 }
 
-fn ws() -> impl Parser<'static, I, (), Extra> {
+fn ws<'a>() -> impl Parser<'a, I, (), Extra> {
     ws_char().repeated().at_least(1).ignored().or(ml_comment())
     .map_err(|e| e.with_expected_kind("whitespace"))
 }
 
-fn comment() -> impl Parser<'static, I, (), Extra> {
+fn comment<'a>() -> impl Parser<'a, I, (), Extra> {
     begin_comment('/')
     .then(take_until(newline().or(end()))).ignored()
 }
 
-fn ml_comment() -> impl Parser<'static, I, (), Extra> {
+fn ml_comment<'a>() -> impl Parser<'a, I, (), Extra> {
     recursive(|comment| {
         choice((
             comment,
@@ -133,7 +133,7 @@ fn ml_comment() -> impl Parser<'static, I, (), Extra> {
     })
 }
 
-fn raw_string() -> impl Parser<'static, I, Box<str>, Extra> {
+fn raw_string<'a>() -> impl Parser<'a, I, Box<str>, Extra> {
     just('r')
         .ignore_then(just('#').repeated().map_slice(str::len))
         .then_ignore(just('"'))
@@ -165,7 +165,7 @@ fn raw_string() -> impl Parser<'static, I, Box<str>, Extra> {
     })
 }
 
-fn string() -> impl Parser<'static, I, Box<str>, Extra> {
+fn string<'a>() -> impl Parser<'a, I, Box<str>, Extra> {
     raw_string().or(escaped_string())
 }
 
@@ -173,7 +173,7 @@ fn expected_kind(s: &'static str) -> BTreeSet<TokenFormat> {
     [TokenFormat::Kind(s)].into_iter().collect()
 }
 
-fn esc_char() -> impl Parser<'static, I, char, Extra> {
+fn esc_char<'a>() -> impl Parser<'a, I, char, Extra> {
     any().try_map(|c, span: <I as Input>::Span| match c {
         '"'|'\\'|'/' => Ok(c),
         'b' => Ok('\u{0008}'),
@@ -216,7 +216,7 @@ fn esc_char() -> impl Parser<'static, I, char, Extra> {
             .recover_with(skip_until(one_of(['}', '"', '\\']).map(|_| '\0')))))
 }
 
-fn escaped_string() -> impl Parser<'static, I, Box<str>, Extra> {
+fn escaped_string<'a>() -> impl Parser<'a, I, Box<str>, Extra> {
     just('"')
     .ignore_then(
         any().filter(|&c| c != '"' && c != '\\')
@@ -242,7 +242,7 @@ fn escaped_string() -> impl Parser<'static, I, Box<str>, Extra> {
         })
 }
 
-fn bare_ident() -> impl Parser<'static, I, Box<str>, Extra> {
+fn bare_ident<'a>() -> impl Parser<'a, I, Box<str>, Extra> {
     let sign = just('+').or(just('-'));
     choice((
         sign.then(id_sans_dig().then(id_char().repeated())).map_slice(|v| v),
@@ -277,7 +277,7 @@ fn bare_ident() -> impl Parser<'static, I, Box<str>, Extra> {
     })
 }
 
-fn ident() -> impl Parser<'static, I, Box<str>, Extra> {
+fn ident<'a>() -> impl Parser<'a, I, Box<str>, Extra> {
     choice((
         // match -123 so `-` will not be treated as an ident by backtracking
         number().map(Err),
@@ -294,7 +294,7 @@ fn ident() -> impl Parser<'static, I, Box<str>, Extra> {
     }))
 }
 
-fn keyword() -> impl Parser<'static, I, Literal, Extra> {
+fn keyword<'a>() -> impl Parser<'a, I, Literal, Extra> {
     choice((
         just("null")
             .map_err(|e: Error| e.with_expected_token("null"))
@@ -308,15 +308,15 @@ fn keyword() -> impl Parser<'static, I, Literal, Extra> {
     ))
 }
 
-fn digit(radix: u32) -> impl Parser<'static, I, char, Extra> {
+fn digit<'a>(radix: u32) -> impl Parser<'a, I, char, Extra> {
     any().filter(move |c: &char| c.is_digit(radix))
 }
 
-fn digits(radix: u32) -> impl Parser<'static, I, &'static str, Extra> {
+fn digits<'a>(radix: u32) -> impl Parser<'a, I, &'static str, Extra> {
     any().filter(move |c: &char| c == &'_' || c.is_digit(radix)).repeated().map_slice(|x| x)
 }
 
-fn decimal_number() -> impl Parser<'static, I, Literal, Extra> {
+fn decimal_number<'a>() -> impl Parser<'a, I, Literal, Extra> {
     just('-').or(just('+')).or_not()
     .then(digit(10)).then(digits(10))
     .then(just('.').then(digit(10)).then(digits(10)).or_not())
@@ -334,7 +334,7 @@ fn decimal_number() -> impl Parser<'static, I, Literal, Extra> {
     })
 }
 
-fn radix_number() -> impl Parser<'static, I, Literal, Extra> {
+fn radix_number<'a>() -> impl Parser<'a, I, Literal, Extra> {
     // sign
     just('-').or(just('+')).or_not()
     .then_ignore(just('0'))
@@ -354,11 +354,11 @@ fn radix_number() -> impl Parser<'static, I, Literal, Extra> {
     })
 }
 
-fn number() -> impl Parser<'static, I, Literal, Extra> {
+fn number<'a>() -> impl Parser<'a, I, Literal, Extra> {
     radix_number().or(decimal_number())
 }
 
-fn literal() -> impl Parser<'static, I, Literal, Extra> {
+fn literal<'a>() -> impl Parser<'a, I, Literal, Extra> {
     choice((
         string().map(Literal::String),
         keyword(),
@@ -366,11 +366,11 @@ fn literal() -> impl Parser<'static, I, Literal, Extra> {
     ))
 }
 
-fn type_name() -> impl Parser<'static, I, TypeName, Extra> {
+fn type_name<'a>() -> impl Parser<'a, I, TypeName, Extra> {
     ident().delimited_by(just('('), just(')')).map(TypeName::from_string)
 }
 
-fn spanned<T, P>(p: P) -> impl Parser<'static, I, T, Extra>
+fn spanned<'a, T, P>(p: P) -> impl Parser<'a, I, T, Extra>
     where T: Pointer + Debug,
           P: Parser<'static, I, T, Extra>,
 {
@@ -380,17 +380,17 @@ fn spanned<T, P>(p: P) -> impl Parser<'static, I, T, Extra>
     })
 }
 
-fn esc_line() -> impl Parser<'static, I, (), Extra> {
+fn esc_line<'a>() -> impl Parser<'a, I, (), Extra> {
     just('\\')
         .ignore_then(ws().repeated())
         .ignore_then(comment().or(newline()))
 }
 
-fn node_space() -> impl Parser<'static, I, (), Extra> {
+fn node_space<'a>() -> impl Parser<'a, I, (), Extra> {
     ws().or(esc_line())
 }
 
-fn node_terminator() -> impl Parser<'static, I, (), Extra> {
+fn node_terminator<'a>() -> impl Parser<'a, I, (), Extra> {
     choice((newline(), comment(), just(';').ignored(), end()))
 }
 
@@ -400,18 +400,18 @@ enum PropOrArg {
     Ignore,
 }
 
-fn type_name_value() -> impl Parser<'static, I, Scalar, Extra> {
+fn type_name_value<'a>() -> impl Parser<'a, I, Scalar, Extra> {
     spanned(type_name()).then(spanned(literal()))
     .map(|(type_name, literal)| Scalar { type_name: Some(type_name), literal })
 }
 
-fn value() -> impl Parser<'static, I, Scalar, Extra> {
+fn value<'a>() -> impl Parser<'a, I, Scalar, Extra> {
     type_name_value()
     .or(spanned(literal()).map(|literal| Scalar { type_name: None, literal }))
 }
 
-fn prop_or_arg_inner()
-    -> impl Parser<'static, I, PropOrArg, Extra>
+fn prop_or_arg_inner<'a>()
+    -> impl Parser<'a, I, PropOrArg, Extra>
 {
     use PropOrArg::*;
     choice((
@@ -480,7 +480,7 @@ fn prop_or_arg_inner()
     ))
 }
 
-fn prop_or_arg() -> impl Parser<'static, I, PropOrArg, Extra> {
+fn prop_or_arg<'a>() -> impl Parser<'a, I, PropOrArg, Extra> {
     begin_comment('-')
         .ignore_then(node_space().repeated())
         .ignore_then(prop_or_arg_inner())
@@ -488,11 +488,11 @@ fn prop_or_arg() -> impl Parser<'static, I, PropOrArg, Extra> {
     .or(prop_or_arg_inner())
 }
 
-fn line_space() -> impl Parser<'static, I, (), Extra> {
+fn line_space<'a>() -> impl Parser<'a, I, (), Extra> {
     newline().or(ws()).or(comment())
 }
 
-fn nodes() -> impl Parser<'static, I, Vec<Node>, Extra> {
+fn nodes<'a>() -> impl Parser<'a, I, Vec<Node>, Extra> {
     use PropOrArg::*;
     recursive(|nodes| {
         let braced_nodes =
@@ -582,8 +582,8 @@ fn nodes() -> impl Parser<'static, I, Vec<Node>, Extra> {
     })
 }
 
-pub(crate) fn document()
-    -> impl Parser<'static, I, Vec<Node>, Extra>
+pub(crate) fn document<'a>()
+    -> impl Parser<'a, I, Vec<Node>, Extra>
 {
     nodes().then_ignore(end())
 }

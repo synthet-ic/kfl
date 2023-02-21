@@ -10,14 +10,14 @@ use crate::{
 };
 
 /// Parse KDL text and return AST
-pub fn parse(ctx: &mut Context, text: &'static str)
+pub fn parse(ctx: &mut Context, input: &'static str)
     -> Result<Vec<Node>, Error>
 {
     grammar::document()
-    .parse(&text).into_result()
+    .parse_with_state(&input, &mut ctx).into_result()
     .map_err(|errors| {
         Error {
-            source_code: NamedSource::new(ctx.get::<&str>().unwrap(), text.to_string()),
+            source_code: NamedSource::new(ctx.get::<&str>().unwrap(), input.to_string()),
             errors: errors.into_iter().map(Into::into).collect(),
         }
     })

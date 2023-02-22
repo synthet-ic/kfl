@@ -27,5 +27,6 @@
 - [ ] Test organisation, provide utility macros
 - [ ] `Encode`
   - [ ] `EncodePartial` as an analogous to `skip_serializing_none`
+  - [ ] This should have means of recovering quatiented styling/formatting
 - [ ] Compare TokenStream with Scalar, TokenTree with Node
 - [ ] property enum or union

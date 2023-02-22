@@ -4,13 +4,13 @@
 
 mod containers;
 mod convert;
-mod convert_ast;
 mod grammar;
 mod wrappers;
 
 pub mod ast;
 pub mod context;
 pub mod errors;
+pub mod query;
 pub mod span;
 pub mod traits;
 

@@ -832,11 +832,10 @@ fn encode_props(s: &Common, node: &syn::Ident)
     // let declare_empty = quote!(let mut #props = Vec::new(););
 
     for property in &s.object.properties {
-        let field = &property.field.tmp_name;
-        let prop_name = &property.name;
-        let name = format!("{}", field.unraw()).into_boxed_str();
+        let field = &property.field.from_self();
+        let name = &property.name;
         let ty = &property.field.ty;
-        let seen_name = format_ident!("seen_{}", field, span = Span::mixed_site());
+        // let seen_name = format_ident!("seen_{}", field, span = Span::mixed_site());
         if false /* TODO property.flatten */ {
             // declare_empty.push(quote! {
             //     let mut #field = ::std::default::Default::default();
@@ -847,7 +846,8 @@ fn encode_props(s: &Common, node: &syn::Ident)
             //     => {}
             // });
         } else {
-            let encode_scalar = encode_scalar(&field, ctx)?;
+            let encode_scalar = quote!(::kfl::traits::EncodeScalar::encode(
+                                       &#field, #ctx));
             // let req_msg = format!("property `{}` is required", prop_name);
             if let Some(value) = &property.default {
                 let default = if let Some(expr) = value {
@@ -859,7 +859,7 @@ fn encode_props(s: &Common, node: &syn::Ident)
                     let default: #ty = #default;
                     if default != #field {
                         let #scalar = #encode_scalar?;
-                        #node.properties.insert(#name, #scalar);
+                        #node.properties.insert(#name.to_string().into_boxed_str(), #scalar);
                     }
                 });
             } else {
@@ -872,8 +872,8 @@ fn encode_props(s: &Common, node: &syn::Ident)
                 
                 branches.push(quote! {
                     let #scalar = #encode_scalar?;
-                    let mut #seen_name = false;
-                    #node.properties.insert(#name, #scalar);
+                    // let mut #seen_name = false;
+                    #node.properties.insert(#name.to_string().into_boxed_str(), #scalar);
                 });
             }
         }

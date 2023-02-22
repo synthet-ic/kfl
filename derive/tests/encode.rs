@@ -142,23 +142,23 @@ fn print_argument_default_option_value_named() {
                    r#"node null"#);
 }
 
-// #[test]
-// fn print_property_named() {
-//     #[derive(Decode, Encode, Debug, PartialEq, Default)]
-//     struct Node {
-//         #[kfl(property)]
-//         name: String,
-//     }
-//     assert_encode!(
-//         r#"node name="hello""#,
-//         Node { name: "hello".into() });
+#[test]
+fn print_property_named() {
+    #[derive(Decode, Encode, Debug, PartialEq, Default)]
+    struct Node {
+        #[kfl(property)]
+        name: String,
+    }
+    assert_encode!(
+        Node { name: "hello".into() },
+        r#"node name="hello""#);
 //     assert_encode_error!(Node,
 //         r#"node name="hello" y="world""#,
 //         "unexpected property `y`");
 //     assert_encode_error!(Node,
 //         r#"node"#,
 //         "property `name` is required");
-// }
+}
 
 // #[test]
 // fn print_property_unnamed() {

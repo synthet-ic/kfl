@@ -4,4 +4,4 @@ Design scketch
 
 | Decode | Encode |
 | - | - |
-| `check_type` ('of course'-, !-modality) | `default_node` ('why not'-, ?-modality) | 
+| `check_type` ('of course'-, !-modality) | `declare_node` ('why not'-, ?-modality) | 

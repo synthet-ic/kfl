@@ -20,7 +20,7 @@ use std::{
 // use crate::traits;
 
 /// Reexport of [miette::SourceSpan] trait that we use for parsing
-pub use miette::SourceSpan as ErrorSpan;
+pub use miette::SourceSpan;
 
 /// Normal byte offset span
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -77,8 +77,8 @@ impl Span {
     }
 }
 
-impl Into<ErrorSpan> for Span {
-    fn into(self) -> ErrorSpan {
+impl Into<SourceSpan> for Span {
+    fn into(self) -> SourceSpan {
         (self.0, self.1.saturating_sub(self.0)).into()
     }
 }
@@ -104,8 +104,8 @@ impl Display for Span {
     }
 }
 
-impl Into<ErrorSpan> for LineSpan {
-    fn into(self) -> ErrorSpan {
+impl Into<SourceSpan> for LineSpan {
+    fn into(self) -> SourceSpan {
         (self.0.offset, self.1.offset.saturating_sub(self.0.offset)).into()
     }
 }

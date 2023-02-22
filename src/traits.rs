@@ -4,7 +4,6 @@
 //! [`Decode`](derive@crate::Decode)` and
 //! [`DecodeScalar`](derive@crate::DecodeScalar) for a
 //! documentation of the derives to implement these traits.
-use std::fmt::Debug;
 
 use crate::{
     ast::{Node, Scalar},
@@ -77,21 +76,6 @@ pub trait DecodeScalar: Sized {
         -> Result<Self, DecodeError>;
 }
 
-/// Span must implement this trait to be used in the error messages
-///
-/// Custom span types can be used for this unlike for [`Span`]
-pub trait ErrorSpan: Into<miette::SourceSpan>
-                     + Clone + Debug + Send + Sync + 'static {}
-impl<T> ErrorSpan for T
-    where T: Into<miette::SourceSpan>,
-          T: Clone + Debug + Send + Sync + 'static,
-{}
-
-// /// Span trait used for parsing source code
-// ///
-// /// It's sealed because needs some tight interoperation with the parser.
-// pub trait Span: chumsky::zero_copy::span::Span + ErrorSpan {}
-
 /// Trait to encode the ast into KDL node
 pub trait Encode: Decode {
     /// Encodes the ast from the node
@@ -107,9 +91,9 @@ pub trait EncodePartial: DecodePartial {
 }
 
 ///
-pub trait EncodeChildren<S: ErrorSpan, T: DecodeChildren> {
+pub trait EncodeChildren: DecodeChildren {
     ///
-    fn encode_children(nodes: &[T], ctx: &mut Context)
+    fn encode_children(&self, ctx: &mut Context)
         -> Result<Vec<Node>, EncodeError>;
 }
 

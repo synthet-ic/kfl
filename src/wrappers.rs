@@ -39,9 +39,8 @@ pub fn decode<T>(file_name: &'static str, input: &str) -> Result<T, Error>
 }
 
 // /// Parse single KDL node from AST
-// pub fn decode_node<T, S>(ast: &Node) -> Result<T, Vec<DecodeError>>
+// pub fn decode_node<T>(ast: &Node) -> Result<T, Vec<DecodeError>>
 //     where T: Decode,
-//           S: ErrorSpan,
 // {
 //     let mut ctx = Context::new();
 //     match Decode::decode(ast, &mut ctx) {

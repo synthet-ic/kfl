@@ -354,23 +354,6 @@ impl ParseError {
         }
         self
     }
-    // #[allow(dead_code)]
-    // pub(crate) fn map_span<T>(self, f: impl Fn(Span) -> T) -> ParseError
-    //     where T: ErrorSpan,
-    // {
-    //     use ParseError::*;
-    //     match self {
-    //         Unexpected { label, span, found, expected }
-    //         => Unexpected { label, span: f(span), found, expected },
-    //         Unclosed { label, opened_at, opened, expected_at, expected, found }
-    //         => Unclosed { label, opened_at: f(opened_at), opened,
-    //                       expected_at: f(expected_at), expected, found },
-    //         Message { label, span, message }
-    //         => Message { label, span: f(span), message },
-    //         MessageWithHelp { label, span, message, help }
-    //         => MessageWithHelp { label, span: f(span), message, help },
-    //     }
-    // }
 }
 
 use chumsky::zero_copy::input::Input;
@@ -474,29 +457,6 @@ impl DecodeError {
             message: message.into(),
         }
     }
-    // #[allow(dead_code)]
-    // pub(crate) fn map_span<T>(self, mut f: impl FnMut(Span) -> T) -> Self
-    //     where T: ErrorSpan,
-    // {
-    //     use DecodeError::*;
-    //     match self {
-    //         TypeName { span, found, expected, rust_type }
-    //         => TypeName { span: f(span), found, expected, rust_type },
-    //         ScalarKind { span, expected, found }
-    //         => ScalarKind { span: f(span), expected, found },
-    //         Missing { span, message }
-    //         => Missing { span: f(span), message},
-    //         MissingNode { message }
-    //         => MissingNode { message },
-    //         Unexpected { span, kind, message }
-    //         => Unexpected { span: f(span), kind, message},
-    //         Conversion { span, source }
-    //         => Conversion { span: f(span), source },
-    //         Unsupported { span, message }
-    //         => Unsupported { span: f(span), message },
-    //         Custom(e) => Custom(e),
-    //     }
-    // }
 }
 
 /// Wrapper around expected type that is used in [`DecodeError::TypeName`].

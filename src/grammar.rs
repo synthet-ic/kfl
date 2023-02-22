@@ -221,25 +221,24 @@ fn escaped_string<'a>() -> impl Parser<'a, I, Box<str>, Extra> {
     .ignore_then(
         any().filter(|&c| c != '"' && c != '\\')
         .or(just('\\').ignore_then(esc_char()))
-        .repeated().map_slice(|v| v.to_string().into_boxed_str())
-    ).then_ignore(just('"'))
-    //    .map_slice(|val| val.chars().collect::<String>().into())
-        .map_err_with_span(|e: Error, span| {
-            let span = Span::from(span);
-            if matches!(&e, Error::Unexpected { found: TokenFormat::Eoi, .. })
-            {
-                e.merge(Error::Unclosed {
-                    label: "string",
-                    opened_at: span.before_start(1),
-                    opened: '"'.into(),
-                    expected_at: span.at_end(),
-                    expected: '"'.into(),
-                    found: None.into(),
-                })
-            } else {
-                e
-            }
-        })
+        .repeated().map_slice(|v| v.to_string().into_boxed_str()))
+    .then_ignore(just('"'))
+    .map_err_with_span(|err: Error, span| {
+        let span = Span::from(span);
+        if matches!(&err, Error::Unexpected { found: TokenFormat::Eoi, .. })
+        {
+            err.merge(Error::Unclosed {
+                label: "string",
+                opened_at: span.before_start(1),
+                opened: '"'.into(),
+                expected_at: span.at_end(),
+                expected: '"'.into(),
+                found: None.into(),
+            })
+        } else {
+            err
+        }
+    })
 }
 
 fn bare_ident<'a>() -> impl Parser<'a, I, Box<str>, Extra> {
@@ -312,7 +311,7 @@ fn digit<'a>(radix: u32) -> impl Parser<'a, I, char, Extra> {
     any().filter(move |c: &char| c.is_digit(radix))
 }
 
-fn digits<'a>(radix: u32) -> impl Parser<'a, I, &'static str, Extra> {
+fn digits<'a>(radix: u32) -> impl Parser<'a, I, &'a str, Extra> {
     any().filter(move |c: &char| c == &'_' || c.is_digit(radix)).repeated().map_slice(|x| x)
 }
 
@@ -372,7 +371,7 @@ fn type_name<'a>() -> impl Parser<'a, I, TypeName, Extra> {
 
 fn spanned<'a, T, P>(p: P) -> impl Parser<'a, I, T, Extra>
     where T: Pointer + Debug,
-          P: Parser<'static, I, T, Extra>,
+          P: Parser<'a, I, T, Extra>,
 {
     p.map_with_state(|value, span, ctx| {
         ctx.set_span(&value, span.into());
@@ -612,8 +611,8 @@ pub(crate) fn document<'a>()
 //         }
 //     }
 
-//     fn parse<'x, P, T>(p: P, text: &'x str) -> Result<T, String>
-//         where P: Parser<'static, I, T, Error = ParseError<Span>>
+//     fn parse<'a, P, T>(p: P, text: &'a str) -> Result<T, String>
+//         where P: Parser<'a, I, T, Error = ParseError<Span>>
 //     {
 //         p.then_ignore(end())
 //         .parse(Span::stream(text)).map_err(|errors| {

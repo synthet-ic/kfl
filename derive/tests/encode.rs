@@ -160,126 +160,126 @@ fn print_property_named() {
 //         "property `name` is required");
 }
 
-// #[test]
-// fn print_property_unnamed() {
-//     #[derive(Decode, Encode, Debug, PartialEq, Default)]
-//     struct Node(
-//         #[kfl(property(name = "name"))]
-//         String,
-//     );
-//     assert_encode!(
-//         r#"node name="hello""#,
-//         Node("hello".into()));
+#[test]
+fn print_property_unnamed() {
+    #[derive(Decode, Encode, Debug, PartialEq, Default)]
+    struct Node(
+        #[kfl(property(name = "name"))]
+        String,
+    );
+    assert_encode!(
+        Node("hello".into()),
+        r#"node name="hello""#);
 //     assert_encode_error!(Node,
 //         r#"node name="hello" y="world""#,
 //         "unexpected property `y`");
 //     assert_encode_error!(Node,
 //         r#"node"#,
 //         "property `name` is required");
-// }
+}
 
-// #[test]
-// fn print_property_raw_ident() {
-//     #[derive(Decode, Encode, Debug, PartialEq, Default)]
-//     struct Node {
-//         #[kfl(property)]
-//         r#type: String,
-//     }
-//     assert_encode!(r#"node type="hello""#,
-//                    Node { r#type: "hello".into() });
+#[test]
+fn print_property_raw_ident() {
+    #[derive(Decode, Encode, Debug, PartialEq, Default)]
+    struct Node {
+        #[kfl(property)]
+        r#type: String,
+    }
+    assert_encode!(Node { r#type: "hello".into() },
+                   r#"node type="hello""#);
 //     assert_encode_error!(Node,
 //         r#"node type="hello" y="world""#,
 //         "unexpected property `y`");
 //     assert_encode_error!(Node,
 //         r#"node"#,
 //         "property `type` is required");
-// }
+}
 
-// #[test]
-// fn print_property_default() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Node {
-//         #[kfl(property, default)]
-//         name: String,
-//     }
-//     assert_encode!(r#"node name="hello""#,
-//                    Node { name: "hello".into() });
-//     assert_encode!(r#"node"#,
-//                    Node { name: "".into() });
-// }
+#[test]
+fn print_property_default() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(property, default)]
+        name: String,
+    }
+    assert_encode!(Node { name: "hello".into() },
+                   r#"node name="hello""#);
+    assert_encode!(Node { name: "".into() },
+                   r#"node"#);
+}
 
-// #[test]
-// fn print_property_default_value() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Node {
-//         #[kfl(property, default="unknown".into())]
-//         label: String,
-//     }
-//     assert_encode!(r#"node label="hello""#,
-//                    Node { label: "hello".into() } );
-//     assert_encode!(r#"node"#,
-//                    Node { label: "unknown".into() });
-// }
+#[test]
+fn print_property_default_value() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(property, default="unknown".into())]
+        label: String,
+    }
+    assert_encode!(Node { label: "hello".into() },
+                   r#"node label="hello""#);
+    assert_encode!(Node { label: "unknown".into() },
+                   r#"node"#);
+}
 
-// #[test]
-// fn print_property_default_option_value() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Node {
-//         #[kfl(property, default = Some("unknown".into()))]
-//         label: Option<String>,
-//     }
-//     assert_encode!(r#"node label="hello""#,
-//                    Node { label: Some("hello".into()) } );
-//     assert_encode!(r#"node"#,
-//                    Node { label: Some("unknown".into()) });
-//     assert_encode!(r#"node label=null"#,
-//                    Node { label: None });
-// }
+#[test]
+fn print_property_default_option_value() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(property, default = Some("unknown".into()))]
+        label: Option<String>,
+    }
+    assert_encode!(Node { label: Some("hello".into()) },
+                   r#"node label="hello""#);
+    assert_encode!(Node { label: Some("unknown".into()) },
+                   r#"node"#);
+    assert_encode!(Node { label: None },
+                   r#"node label=null"#);
+}
 
-// #[test]
-// fn print_property_name() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Node {
-//         #[kfl(property(name = "x"))]
-//         name: String,
-//     }
-//     assert_encode!(r#"node x="hello""#,
-//                    Node { name: "hello".into() });
+#[test]
+fn print_property_name() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(property(name = "x"))]
+        name: String,
+    }
+    assert_encode!(Node { name: "hello".into() },
+                   r#"node x="hello""#);
 //     assert_encode_error!(Node,
 //         r#"node label="hello" y="world""#,
 //         "unexpected property `label`");
 //     assert_encode_error!(Node,
 //         r#"node"#,
 //         "property `x` is required");
-// }
+}
 
-// #[test]
-// fn print_option_property() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Node {
-//         #[kfl(property, default)]  /* TODO test without default */
-//         name: Option<String>,
-//     }
-//     assert_encode!(r#"node name="hello""#,
-//                    Node { name: Some("hello".into()) });
-//     assert_encode!(r#"node"#,
-//                    Node { name: None });
-//     assert_encode!(r#"node name=null"#,
-//                    Node { name: None });
-// }
+#[test]
+fn print_option_property() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(property, default)]  /* TODO test without default */
+        name: Option<String>,
+    }
+    assert_encode!(Node { name: Some("hello".into()) },
+                   r#"node name="hello""#);
+    assert_encode!(Node { name: None },
+                   r#"node"#);
+    // assert_encode!(Node { name: None },
+    //                r#"node name=null"#);
+}
 
-// #[test]
-// fn print_var_arguments() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Node {
-//         #[kfl(arguments)]
-//         params: Vec<u64>,
-//     }
-//     assert_encode!(r#"node 1 2 3"#,
-//                    Node { params: vec![1, 2, 3] });
-//     assert_encode!(r#"node"#,
-//                    Node { params: vec![] });
-// }
+#[test]
+fn print_var_arguments() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(arguments)]
+        params: Vec<u64>,
+    }
+    assert_encode!(Node { params: vec![1, 2, 3] },
+                   r#"node 1 2 3"#);
+    assert_encode!(Node { params: vec![] },
+                   r#"node"#);
+}
 
 // #[test]
 // fn print_var_properties() {

@@ -798,24 +798,26 @@ fn encode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
             }
         }
     }
-    // if let Some(var_args) = &s.object.var_args {
-    //     let field = &var_args.field.tmp_name;
-    //     let val = syn::Ident::new("val", Span::mixed_site());
-    //     let encode_scalar = encode_scalar(&val, ctx)?;
-    //     encoder.push(quote! {
-    //         let #field = #iter_args.map(|#val| {
-    //             #encode_scalar
-    //         }).collect::<Result<_, _>>()?;
-    //     });
-    // } else {
-    //     encoder.push(quote! {
-    //         if let Some(val) = #iter_args.next() {
-    //             return Err(::kfl::errors::EncodeError::unexpected(
-    //                     #ctx.span(&val.literal), "argument",
-    //                     "unexpected argument"));
-    //         }
-    //     });
-    // }
+    if let Some(var_args) = &s.object.var_args {
+        let field = &var_args.field.from_self();
+        let scalar = syn::Ident::new("scalar", Span::mixed_site());
+        let encode_scalar = quote!(::kfl::traits::EncodeScalar::encode(
+                                   #scalar, #ctx));
+        encoder.push(quote! {
+            let args = #field.iter().map(|#scalar|
+                #encode_scalar
+            ).collect::<Result<Vec<_>, _>>()?;
+            #node.arguments.extend(args);
+        });
+    } else {
+        // encoder.push(quote! {
+        //     if let Some(scalar) = #field.into_iter().next() {
+        //         return Err(::kfl::errors::EncodeError::unexpected(
+        //                 #ctx.span(&scalar.literal), "argument",
+        //                 "unexpected argument"));
+        //     }
+        // });
+    }
     Ok(quote!(#(#encoder)*))
 }
 

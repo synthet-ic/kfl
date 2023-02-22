@@ -2,7 +2,7 @@
 
 use std::fmt::Display;
 
-use crate::ast::{Node, Scalar, Literal};
+use crate::ast::{Node, Scalar, Literal, Integer, Decimal};
 
 impl Display for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -42,9 +42,27 @@ impl Display for Literal {
         match &self {
             Literal::Null => write!(f, "null"),
             Literal::Bool(value) => write!(f, "{}", value),
-            Literal::Int(value) => write!(f, "{}", 1),  // TODO
-            Literal::Decimal(value) => write!(f, "{}", 1),  // TODO
+            Literal::Int(value) => write!(f, "{}", value),
+            Literal::Decimal(value) => write!(f, "{}", value),  // TODO
             Literal::String(value) => write!(f, "\"{}\"", value)
         }
+    }
+}
+
+impl Display for Integer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.1)
+        // match self.0 {
+        //     Radix::Bin => write!(f, "{:b}", self.1.to_string().as_str()),
+        //     Radix::Oct => write!(f, "{:o}", self.1.to_string().as_ref()),
+        //     Radix::Dec => write!(f, "{}", self.1),
+        //     Radix::Hex => write!(f, "{:x}", self.1.to_string().as_ref()),
+        // }
+    }
+}
+
+impl Display for Decimal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }

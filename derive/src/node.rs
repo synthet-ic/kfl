@@ -658,8 +658,8 @@ pub fn emit_encode_struct(s: &Struct, named: bool, partial: bool)
     // let decode_specials = decode_specials(&common, &node)?;
     let encode_args = encode_args(&common, &node)?;
     let encode_props = encode_props(&common, &node)?;
-    // let encode_children_normal = encode_children(
-    //     &common, &children, Some(quote!(#ctx.span(&#node))))?;
+    let encode_children_normal = encode_children(
+        &common, &children, Some(quote!(#ctx.span(&#node))))?;
     let assign_extra = assign_extra(&common)?;
 
     let mut extra_traits = Vec::new();
@@ -729,7 +729,7 @@ pub fn emit_encode_struct(s: &Struct, named: bool, partial: bool)
                 #encode_props
                 // let #children = #node.children.as_ref()
                 //     .map(|lst| &lst[..]).unwrap_or(&[]);
-                // #encode_children_normal
+                #encode_children_normal
                 #assign_extra
                 Ok(#node)
             }
@@ -960,7 +960,7 @@ fn encode_children(s: &Common, children: &syn::Ident,
     let ctx = s.ctx;
     let child = syn::Ident::new("child", Span::mixed_site());
     for child_def in &s.object.children {
-        let fld = &child_def.field.tmp_name;
+        let fld = &child_def.field.from_self();
         let ty = &child_def.field.ty;
         match child_def.mode {
             ChildMode::Flatten => {
@@ -1018,7 +1018,7 @@ fn encode_children(s: &Common, children: &syn::Ident,
                 });
                 let req_msg = format!(
                     "child node for struct field `{}` is required",
-                    &fld.unraw().to_string());
+                    &fld.to_string());
                 if let Some(default_value) = &child_def.default {
                     let default = if let Some(expr) = default_value {
                         quote!(#expr)

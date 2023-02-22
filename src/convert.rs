@@ -46,7 +46,7 @@ impl DecodeScalar for Scalar {
 }
 
 impl EncodeScalar for Scalar {
-    fn encode(&self, ctx: &mut Context)
+    fn encode(&self, _: &mut Context)
         -> Result<Scalar, EncodeError>
     {
         Ok(self.clone())

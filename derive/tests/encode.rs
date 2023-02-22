@@ -31,16 +31,16 @@ fn print_argument_named() {
     // );
 }
 
-// #[test]
-// fn parse_argument_unnamed() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Node(
-//         #[kfl(argument)]
-//         String
-//     );
-//     assert_encode!(
-//         r#"node "hello""#,
-//         Node("hello".into()));
+#[test]
+fn print_argument_unnamed() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Node(
+        #[kfl(argument)]
+        String
+    );
+    assert_encode!(
+        Node("hello".into()),
+        r#"node "hello""#);
 //     assert_encode_error!(Node,
 //         r#"node "hello" "world""#,
 //         "unexpected argument");
@@ -50,17 +50,17 @@ fn print_argument_named() {
 //     assert_encode_error!(Node,
 //         r#"node"#,
 //         "additional argument is required");
-// }
+}
 
-// #[test]
-// fn parse_argument_raw_ident() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Node {
-//         #[kfl(argument)]
-//         r#type: String,
-//     }
-//     assert_encode!(r#"node "hello""#,
-//                    Node { r#type: "hello".into() });
+#[test]
+fn print_argument_raw_ident() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(argument)]
+        r#type: String,
+    }
+    assert_encode!(Node { r#type: "hello".into() },
+                   r#"node "hello""#);
 //     assert_encode_error!(Node,
 //         r#"node "hello" "world""#,
 //         "unexpected argument");
@@ -70,7 +70,7 @@ fn print_argument_named() {
 //     assert_encode_error!(Node,
 //         r#"node"#,
 //         "additional argument `type` is required");
-// }
+}
 
 // #[test]
 // fn parse_argument_default_named() {

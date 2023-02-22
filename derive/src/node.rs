@@ -658,11 +658,10 @@ pub fn emit_encode_struct(s: &Struct, named: bool, partial: bool)
     // let decode_specials = decode_specials(&common, &node)?;
     let encode_args = encode_args(&common, &node)?;
     let encode_props = encode_props(&common, &node)?;
-    let encode_children_normal = encode_children(
-        &common, &children, Some(quote!(#ctx.span(&#node))))?;
+    // let encode_children_normal = encode_children(
+    //     &common, &children, Some(quote!(#ctx.span(&#node))))?;
     let assign_extra = assign_extra(&common)?;
 
-    let all_fields = s.all_fields();
     let mut extra_traits = Vec::new();
     if partial {
         if is_partial_compatible(&s) {
@@ -741,11 +740,6 @@ pub fn emit_encode_struct(s: &Struct, named: bool, partial: bool)
 fn declare_node(node: &syn::Ident, name: &syn::Ident) -> TokenStream {
     let name = heck::ToKebabCase::to_kebab_case(name.to_string().as_str());
     quote! { let mut #node = ::kfl::ast::Node::new(#name); }
-}
-
-fn encode_scalar(field: &syn::Ident, ctx: &syn::Ident) -> syn::Result<TokenStream>
-{
-    Ok(quote!(::kfl::traits::EncodeScalar::encode(&#field, #ctx)))
 }
 
 fn encode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
@@ -880,29 +874,35 @@ fn encode_props(s: &Common, node: &syn::Ident)
             }
         }
     }
-    // if let Some(var_props) = &s.object.var_props {
-    //     let field = &var_props.field.tmp_name;
-    //     let encode_scalar = encode_scalar(&val, ctx)?;
-    //     declare_full.push(quote! {
-    //         let mut #field = Vec::new();
-    //     });
-    //     match_branches.push(quote! {
-    //         #name_str => {
-    //             let converted_name = #name_str.parse()
-    //                 .map_err(|e| {
-    //                     ::kfl::errors::EncodeError::conversion(
-    //                         #ctx.span(&#name), e)
-    //                 })?;
-    //             #field.push((
-    //                 converted_name,
-    //                 #encode_scalar?,
-    //             ));
-    //         }
-    //     });
-    //     postprocess.push(quote! {
-    //         let #field = #field.into_iter().collect();
-    //     });
-    // } else {
+    if let Some(var_props) = &s.object.var_props {
+        let field = &var_props.field.from_self();
+        let scalar = syn::Ident::new("scalar", Span::mixed_site());
+        let encode_scalar = quote!(::kfl::traits::EncodeScalar::encode(
+                                   #scalar, #ctx));
+        // declare_full.push(quote! {
+        //     let mut #field = Vec::new();
+        // });
+        branches.push(quote! {
+            // #name_str => {
+            //     let converted_name = #name_str.parse()
+            //         .map_err(|e| {
+            //             ::kfl::errors::EncodeError::conversion(
+            //                 #ctx.span(&#name), e)
+            //         })?;
+            //     #field.push((
+            //         converted_name,
+            //         #encode_scalar?,
+            //     ));
+            // }
+            for (name, #scalar) in #field.iter() {
+                #node.properties.insert(name.clone().into_boxed_str(),
+                                        #encode_scalar?);
+            }
+        });
+        // postprocess.push(quote! {
+        //     let #field = #field.into_iter().collect();
+        // });
+    } else {
     //     match_branches.push(quote! {
     //         #name_str => {
     //             return Err(::kfl::errors::EncodeError::unexpected(
@@ -911,7 +911,7 @@ fn encode_props(s: &Common, node: &syn::Ident)
     //                         #name_str.escape_default())));
     //         }
     //     });
-    // };
+    }
     Ok(quote! {
         // #(#preprocess)*
         #(#branches)*

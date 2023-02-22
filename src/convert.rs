@@ -6,8 +6,8 @@ mod scalars;
 use crate::{
     ast::{Node, Scalar},
     context::Context,
-    errors::DecodeError,
-    traits::{Decode, DecodeScalar}
+    errors::{DecodeError, EncodeError},
+    traits::{Decode, DecodeScalar, Encode, EncodeScalar}
 };
 
 impl Decode for Node {
@@ -42,6 +42,14 @@ impl DecodeScalar for Scalar {
             type_name: scalar.type_name.as_ref().map(|n| n.clone()),
             literal: scalar.literal.clone(),
         })
+    }
+}
+
+impl EncodeScalar for Scalar {
+    fn encode(&self, ctx: &mut Context)
+        -> Result<Scalar, EncodeError>
+    {
+        Ok(self.clone())
     }
 }
 

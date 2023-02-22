@@ -2,7 +2,6 @@
 #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
 
-mod containers;
 mod convert;
 mod grammar;
 mod wrappers;
@@ -10,6 +9,7 @@ mod wrappers;
 pub mod ast;
 pub mod context;
 pub mod errors;
+pub mod print;
 pub mod query;
 pub mod span;
 pub mod traits;

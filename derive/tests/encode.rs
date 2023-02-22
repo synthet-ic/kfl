@@ -297,28 +297,28 @@ fn print_var_properties() {
                    r#"node"#);
 }
 
-// #[test]
-// fn print_children() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Parent {
-//         #[kfl(children)]
-//         children: Vec<Child>,
-//     }
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Child {
-//         #[kfl(argument)]
-//         name: String,
-//     }
-//     assert_encode!(
-//         r#"parent { child "val1"; child "val2"; }"#,
-//         Parent { children: vec![
-//             Child { name: "val1".into() },
-//             Child { name: "val2".into() },
-//         ]}
-//     );
-//     assert_encode!(
-//         r#"parent"#,
-//         Parent { children: vec![]});
+#[test]
+fn print_children() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Parent {
+        #[kfl(children)]
+        children: Vec<Child>,
+    }
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Child {
+        #[kfl(argument)]
+        name: String,
+    }
+    assert_encode!(
+        Parent { children: vec![
+            Child { name: "val1".into() },
+            Child { name: "val2".into() },
+        ]},
+        r#"parent { child "val1"; child "val2"; }"#
+    );
+    assert_encode!(
+        Parent { children: vec![]},
+        r#"parent"#);
 
 //     // assert_eq!(parse_doc::<Parent>(r#"- "val1"; - "val2""#),
 //     //            Parent { children: vec! [
@@ -327,7 +327,7 @@ fn print_var_properties() {
 //     //            ]} );
 //     // assert_eq!(parse_doc::<Parent>(r#""#),
 //     //            Parent { children: Vec::new() } );
-// }
+}
 
 // #[test]
 // fn print_filtered_children() {

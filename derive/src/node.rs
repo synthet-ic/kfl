@@ -312,11 +312,11 @@ fn decode_props(s: &Common, node: &syn::Ident)
     let name = syn::Ident::new("name", Span::mixed_site());
     let name_str = syn::Ident::new("name_str", Span::mixed_site());
 
-    for prop in &s.object.properties {
-        let fld = &prop.field.tmp_name;
-        let prop_name = &prop.name;
+    for property in &s.object.properties {
+        let fld = &property.field.tmp_name;
+        let prop_name = &property.name;
         let seen_name = format_ident!("seen_{}", fld, span = Span::mixed_site());
-        if false /* TODO prop.flatten */ {
+        if false /* TODO property.flatten */ {
             declare_empty.push(quote! {
                 let mut #fld = ::std::default::Default::default();
             });
@@ -337,7 +337,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
                 }
             });
             let req_msg = format!("property `{}` is required", prop_name);
-            if let Some(value) = &prop.default {
+            if let Some(value) = &property.default {
                 let default = if let Some(expr) = value {
                     quote!(#expr)
                 } else {
@@ -472,17 +472,17 @@ fn decode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
 // {
 //     let ctx = s.ctx;
 //     let mut match_branches = Vec::with_capacity(s.object.children.len());
-//     for prop in &s.object.properties {
-//         let dest = &prop.field.from_self();
-//         let prop_name = &prop.name;
-//         if false /* TODO prop.flatten */ {
+//     for property in &s.object.properties {
+//         let dest = &property.field.from_self();
+//         let prop_name = &property.name;
+//         if false /* TODO property.flatten */ {
 //             match_branches.push(quote! {
 //                 _ if ::kfl::traits::DecodePartial
 //                     ::insert_property(&mut #dest, #name, #value, #ctx)?
 //                 => Ok(true),
 //             });
 //         } else {
-//             let decode_scalar = decode_scalar(&value, ctx, &prop.decode)?;
+//             let decode_scalar = decode_scalar(&value, ctx, &property.decode)?;
 //             match_branches.push(quote! {
 //                 #prop_name => {
 //                     #dest = Some(#decode_scalar?);
@@ -654,7 +654,7 @@ pub fn emit_encode_struct(s: &Struct, named: bool, partial: bool)
         ctx: &ctx,
     };
 
-    let check_type = check_type(&common, &node)?;
+    let declare_node = declare_node(&node, &s_name);
     // let decode_specials = decode_specials(&common, &node)?;
     let encode_args = encode_args(&common, &node)?;
     let encode_props = encode_props(&common, &node)?;
@@ -663,21 +663,6 @@ pub fn emit_encode_struct(s: &Struct, named: bool, partial: bool)
     let assign_extra = assign_extra(&common)?;
 
     let all_fields = s.all_fields();
-    let struct_val = if named {
-        let assignments = all_fields.iter()
-            .map(|f| f.as_assign_pair().unwrap());
-        quote!(#s_name { #(#assignments,)* })
-    } else {
-        let mut fields = all_fields.iter()
-            .map(|f| (f.as_index().unwrap(), &f.tmp_name))
-            .collect::<Vec<_>>();
-        fields.sort_by_key(|(idx, _)| *idx);
-        assert_eq!(fields.iter().map(|(idx, _)| *idx).collect::<Vec<_>>(),
-                   (0..fields.len()).collect::<Vec<_>>(),
-                   "all tuple structure fields should be filled in");
-        let assignments = fields.iter().map(|(_, v)| v);
-        quote!(#s_name(#(#assignments),*))
-    };
     let mut extra_traits = Vec::new();
     if partial {
         if is_partial_compatible(&s) {
@@ -702,7 +687,7 @@ pub fn emit_encode_struct(s: &Struct, named: bool, partial: bool)
                     //     #name: &Box<str>,
                     //     #scalar: &::kfl::ast::Scalar,
                     //     #ctx: &mut ::kfl::context::Context)
-                    //     -> Result<bool, ::kfl::errors::DecodeError>
+                    //     -> Result<bool, ::kfl::errors::EncodeError>
                     // {
                     //     #insert_property
                     // }
@@ -726,7 +711,7 @@ pub fn emit_encode_struct(s: &Struct, named: bool, partial: bool)
                 {
                     #encode_children
                     #assign_extra
-                    Ok(#struct_val)
+                    Ok(#node)
                 }
             }
         });
@@ -740,186 +725,193 @@ pub fn emit_encode_struct(s: &Struct, named: bool, partial: bool)
                       #ctx: &mut ::kfl::context::Context)
                 -> Result<::kfl::ast::Node, ::kfl::errors::EncodeError>
             {
-                #check_type
-                // #decode_specials
+                #declare_node
                 #encode_args
                 #encode_props
-                let #children = #node.children.as_ref()
-                    .map(|lst| &lst[..]).unwrap_or(&[]);
-                #encode_children_normal
+                // let #children = #node.children.as_ref()
+                //     .map(|lst| &lst[..]).unwrap_or(&[]);
+                // #encode_children_normal
                 #assign_extra
-                Ok(#struct_val)
+                Ok(#node)
             }
         }
     })
 }
 
+fn declare_node(node: &syn::Ident, name: &syn::Ident) -> TokenStream {
+    let name = heck::ToKebabCase::to_kebab_case(name.to_string().as_str());
+    quote! { let mut #node = ::kfl::ast::Node::new(#name); }
+}
 
-fn encode_scalar(val: &syn::Ident, ctx: &syn::Ident) -> syn::Result<TokenStream>
+fn encode_scalar(field: &syn::Ident, ctx: &syn::Ident) -> syn::Result<TokenStream>
 {
-    Ok(quote!(::kfl::traits::EncodeScalar::encode(#val, #ctx)))
+    Ok(quote!(::kfl::traits::EncodeScalar::encode(&#field, #ctx)))
 }
 
 fn encode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     let ctx = s.ctx;
     let mut encoder = Vec::new();
-    let iter_args = syn::Ident::new("iter_args", Span::mixed_site());
-    encoder.push(quote! {
-        let mut #iter_args = #node.arguments.iter();
-    });
+    let scalar = syn::Ident::new("scalar", Span::mixed_site());
+    // encoder.push(quote! {
+    //     let mut #iter_args = #node.arguments.iter();
+    // });
     for arg in &s.object.arguments {
-        let fld = &arg.field.tmp_name;
-        let val = syn::Ident::new("val", Span::mixed_site());
-        let encode_scalar = encode_scalar(&val, ctx)?;
+        let field = &arg.field.from_self();
+        let ty = &arg.field.ty;
+        let encode_scalar = quote!(::kfl::traits::EncodeScalar::encode(
+                                   &#field, #ctx));
         match &arg.default {
             None => {
-                let error = if arg.field.is_indexed() {
-                    "additional argument is required".into()
-                } else {
-                    format!("additional argument `{}` is required", fld.unraw())
-                };
+                // let error = if arg.field.is_indexed() {
+                //     "additional argument is required".into()
+                // } else {
+                //     format!("additional argument `{}` is required", field.unraw())
+                // };
                 encoder.push(quote! {
-                    let #val =
-                        #iter_args.next().ok_or_else(|| {
-                            ::kfl::errors::EncodeError::missing(
-                                #ctx.span(&#node), #error)
-                        })?;
-                    let #fld = #encode_scalar?;
+                    #node.arguments.push(#encode_scalar?);
+                    // let #val =
+                    //     #iter_args.next().ok_or_else(|| {
+                    //         ::kfl::errors::EncodeError::missing(
+                    //             #ctx.span(&#node), #error)
+                    //     })?;
+                    // let #field = #encode_scalar?;
                 });
             }
             Some(default_value) => {
                 let default = if let Some(expr) = default_value {
                     quote!(#expr)
                 } else {
-                    quote!(::std::default::Default::default())
+                    quote!(<#ty as ::std::default::Default>::default()>)
                 };
                 encoder.push(quote! {
-                    let #fld = #iter_args.next().map(|#val| {
-                        #encode_scalar
-                    }).transpose()?.unwrap_or_else(|| {
-                        #default
-                    });
+                    if #default != #field {
+                        let #scalar = #encode_scalar?;
+                        #node.arguments.push(#scalar);
+                    }
+                    // let #field = #iter_args.next().map(|#val| {
+                    //     #encode_scalar
+                    // }).transpose()?.unwrap_or_else(|| {
+                    //     #default
+                    // });
                 });
             }
         }
     }
-    if let Some(var_args) = &s.object.var_args {
-        let fld = &var_args.field.tmp_name;
-        let val = syn::Ident::new("val", Span::mixed_site());
-        let encode_scalar = encode_scalar(&val, ctx)?;
-        encoder.push(quote! {
-            let #fld = #iter_args.map(|#val| {
-                #encode_scalar
-            }).collect::<Result<_, _>>()?;
-        });
-    } else {
-        encoder.push(quote! {
-            if let Some(val) = #iter_args.next() {
-                return Err(::kfl::errors::EncodeError::unexpected(
-                        #ctx.span(&val.literal), "argument",
-                        "unexpected argument"));
-            }
-        });
-    }
+    // if let Some(var_args) = &s.object.var_args {
+    //     let field = &var_args.field.tmp_name;
+    //     let val = syn::Ident::new("val", Span::mixed_site());
+    //     let encode_scalar = encode_scalar(&val, ctx)?;
+    //     encoder.push(quote! {
+    //         let #field = #iter_args.map(|#val| {
+    //             #encode_scalar
+    //         }).collect::<Result<_, _>>()?;
+    //     });
+    // } else {
+    //     encoder.push(quote! {
+    //         if let Some(val) = #iter_args.next() {
+    //             return Err(::kfl::errors::EncodeError::unexpected(
+    //                     #ctx.span(&val.literal), "argument",
+    //                     "unexpected argument"));
+    //         }
+    //     });
+    // }
     Ok(quote!(#(#encoder)*))
 }
 
+// TODO(rnarkk) named and unnamed
 fn encode_props(s: &Common, node: &syn::Ident)
     -> syn::Result<TokenStream>
 {
-    let mut declare_empty = Vec::new();
-    let mut match_branches = Vec::new();
-    let mut postprocess = Vec::new();
+    // let mut preprocess = Vec::new();
+    let mut branches = Vec::new();
 
     let ctx = s.ctx;
-    let val = syn::Ident::new("val", Span::mixed_site());
-    let name = syn::Ident::new("name", Span::mixed_site());
-    let name_str = syn::Ident::new("name_str", Span::mixed_site());
+    let scalar = syn::Ident::new("scalar", Span::mixed_site());
+    // let props = syn::Ident::new("props", Span::mixed_site());
+    // let declare_empty = quote!(let mut #props = Vec::new(););
 
-    for prop in &s.object.properties {
-        let fld = &prop.field.tmp_name;
-        let prop_name = &prop.name;
-        let seen_name = format_ident!("seen_{}", fld, span = Span::mixed_site());
-        if false /* TODO prop.flatten */ {
-            declare_empty.push(quote! {
-                let mut #fld = ::std::default::Default::default();
-            });
-            match_branches.push(quote! {
-                _ if ::kfl::traits::EncodePartial::
-                    insert_property(&mut #fld, #name, #val, #ctx)?
-                => {}
-            });
+    for property in &s.object.properties {
+        let field = &property.field.tmp_name;
+        let prop_name = &property.name;
+        let name = format!("{}", field.unraw()).into_boxed_str();
+        let ty = &property.field.ty;
+        let seen_name = format_ident!("seen_{}", field, span = Span::mixed_site());
+        if false /* TODO property.flatten */ {
+            // declare_empty.push(quote! {
+            //     let mut #field = ::std::default::Default::default();
+            // });
+            // match_branches.push(quote! {
+            //     _ if ::kfl::traits::EncodePartial::
+            //         insert_property(&mut #field, #name, #val, #ctx)?
+            //     => {}
+            // });
         } else {
-            let encode_scalar = encode_scalar(&val, ctx)?;
-            declare_empty.push(quote! {
-                let mut #fld = None;
-                let mut #seen_name = false;
-            });
-            match_branches.push(quote! {
-                #prop_name => {
-                    #fld = Some(#encode_scalar?);
-                }
-            });
-            let req_msg = format!("property `{}` is required", prop_name);
-            if let Some(value) = &prop.default {
+            let encode_scalar = encode_scalar(&field, ctx)?;
+            // let req_msg = format!("property `{}` is required", prop_name);
+            if let Some(value) = &property.default {
                 let default = if let Some(expr) = value {
                     quote!(#expr)
                 } else {
-                    quote!(::std::default::Default::default())
+                    quote!(<#ty as ::std::default::Default>::default()>)
                 };
-                postprocess.push(quote! {
-                    let #fld = #fld.unwrap_or_else(|| #default);
+                branches.push(quote! {
+                    if #default != #field {
+                        let #scalar = #encode_scalar?;
+                        #node.properties.insert(#name, #scalar);
+                    }
                 });
             } else {
-                postprocess.push(quote! {
-                    let #fld = #fld.ok_or_else(|| {
-                        ::kfl::errors::EncodeError::missing(
-                            #ctx.span(&#node), #req_msg)
-                    })?;
+                // postprocess.push(quote! {
+                //     let #field = #field.ok_or_else(|| {
+                //         ::kfl::errors::EncodeError::missing(
+                //             #ctx.span(&#node), #req_msg)
+                //     })?;
+                // });
+                
+                branches.push(quote! {
+                    let #scalar = #encode_scalar?;
+                    let mut #seen_name = false;
+                    #node.properties.insert(#name, #scalar);
                 });
             }
         }
     }
-    if let Some(var_props) = &s.object.var_props {
-        let fld = &var_props.field.tmp_name;
-        let encode_scalar = encode_scalar(&val, ctx)?;
-        declare_empty.push(quote! {
-            let mut #fld = Vec::new();
-        });
-        match_branches.push(quote! {
-            #name_str => {
-                let converted_name = #name_str.parse()
-                    .map_err(|e| {
-                        ::kfl::errors::EncodeError::conversion(
-                            #ctx.span(&#name), e)
-                    })?;
-                #fld.push((
-                    converted_name,
-                    #encode_scalar?,
-                ));
-            }
-        });
-        postprocess.push(quote! {
-            let #fld = #fld.into_iter().collect();
-        });
-    } else {
-        match_branches.push(quote! {
-            #name_str => {
-                return Err(::kfl::errors::EncodeError::unexpected(
-                    #ctx.span(&#name), "property",
-                    format!("unexpected property `{}`",
-                            #name_str.escape_default())));
-            }
-        });
-    };
+    // if let Some(var_props) = &s.object.var_props {
+    //     let field = &var_props.field.tmp_name;
+    //     let encode_scalar = encode_scalar(&val, ctx)?;
+    //     declare_full.push(quote! {
+    //         let mut #field = Vec::new();
+    //     });
+    //     match_branches.push(quote! {
+    //         #name_str => {
+    //             let converted_name = #name_str.parse()
+    //                 .map_err(|e| {
+    //                     ::kfl::errors::EncodeError::conversion(
+    //                         #ctx.span(&#name), e)
+    //                 })?;
+    //             #field.push((
+    //                 converted_name,
+    //                 #encode_scalar?,
+    //             ));
+    //         }
+    //     });
+    //     postprocess.push(quote! {
+    //         let #field = #field.into_iter().collect();
+    //     });
+    // } else {
+    //     match_branches.push(quote! {
+    //         #name_str => {
+    //             return Err(::kfl::errors::EncodeError::unexpected(
+    //                 #ctx.span(&#name), "property",
+    //                 format!("unexpected property `{}`",
+    //                         #name_str.escape_default())));
+    //         }
+    //     });
+    // };
     Ok(quote! {
-        #(#declare_empty)*
-        for (#name, #val) in #node.properties.iter() {
-            match #name.as_ref() {
-                #(#match_branches)*
-            }
-        }
-        #(#postprocess)*
+        // #(#preprocess)*
+        #(#branches)*
+        // #(#postprocess)*
     })
 }
 
@@ -1056,15 +1048,15 @@ fn encode_children(s: &Common, children: &syn::Ident,
         }
     }
     // TODO(rnarkk) return Err?
-    branches.push(quote! {
-        else {
-            #ctx.emit_error(::kfl::errors::EncodeError::unexpected(
-                #ctx.span(&#child), "node",
-                format!("unexpected node `{}`",
-                        #child.node_name.as_ref())));
-            None
-        }
-    });
+    // branches.push(quote! {
+    //     else {
+    //         #ctx.emit_error(::kfl::errors::EncodeError::unexpected(
+    //             #ctx.span(&#child), "node",
+    //             format!("unexpected node `{}`",
+    //                     #child.node_name.as_ref())));
+    //         None
+    //     }
+    // });
     Ok(quote! {
         #(#declare_empty)*
         #children.iter().flat_map(|#child| {

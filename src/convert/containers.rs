@@ -1,3 +1,5 @@
+//! Convert container types.
+
 use std::{
     sync::Arc,
     rc::Rc,

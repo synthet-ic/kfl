@@ -1,5 +1,6 @@
 //! Literal conversion. Makes Node and Scalar transparent objects.
 
+mod containers;
 mod scalars;
 
 use crate::{

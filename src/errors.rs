@@ -373,10 +373,7 @@ impl ParseError {
     // }
 }
 
-use chumsky::zero_copy::{
-    input::Input,
-    // span::SimpleSpan
-};
+use chumsky::zero_copy::input::Input;
 
 impl chumsky::zero_copy::error::Error<str> for ParseError {
     fn expected_found<E>(expected: E, found: Option<char>, span: <str as Input>::Span)
@@ -442,7 +439,6 @@ impl DecodeError {
             source: err.into(),
         }
     }
-    // TODO(rnarkk) improve `&'static str`
     /// Construct [`DecodeError::ScalarKind`] error
     pub fn scalar_kind(span: Span, expected: &'static str, found: &Literal) -> Self {
         DecodeError::ScalarKind {

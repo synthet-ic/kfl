@@ -89,6 +89,21 @@ impl From<chumsky::zero_copy::span::SimpleSpan<usize>> for Span {
     }
 }
 
+impl From<Range<usize>> for Span {
+    fn from(r: Range<usize>) -> Span {
+        Span(r.start, r.end)
+    }
+}
+
+impl Display for Span {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        self.0.fmt(f)?;
+        "..".fmt(f)?;
+        self.1.fmt(f)?;
+        Ok(())
+    }
+}
+
 impl Into<ErrorSpan> for LineSpan {
     fn into(self) -> ErrorSpan {
         (self.0.offset, self.1.offset.saturating_sub(self.0.offset)).into()
@@ -160,9 +175,6 @@ impl chumsky::zero_copy::span::Span for LineSpan {
     // fn new(_context: (), range: std::ops::Range<LinePos>) -> Self {
     //     LineSpan(range.start, range.end)
     // }
-    // fn context(&self) -> () { () }
-    // fn start(&self) -> LinePos { self.0 }
-    // fn end(&self) -> LinePos { self.1 }
 }
 
 // #[cfg(feature = "line-numbers")]
@@ -268,18 +280,3 @@ impl chumsky::zero_copy::span::Span for LineSpan {
 //     //     )
 //     // }
 // }
-
-impl Display for Span {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        self.0.fmt(f)?;
-        "..".fmt(f)?;
-        self.1.fmt(f)?;
-        Ok(())
-    }
-}
-
-impl From<Range<usize>> for Span {
-    fn from(r: Range<usize>) -> Span {
-        Span(r.start, r.end)
-    }
-}

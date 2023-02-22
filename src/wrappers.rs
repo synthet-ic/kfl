@@ -119,10 +119,10 @@ pub fn encode<T>(file_name: &str, t: &T) -> Result<String, Error>
     print(file_name, node)
 }
 
-// #[test]
-// fn normal() {
-//     let mut ctx = Context::new();
-//     let nodes = parse(&mut ctx, r#"node "hello""#).unwrap();
-//     assert_eq!(nodes.len(), 1);
-//     assert_eq!(&*nodes[0].node_name, "node");
-// }
+#[test]
+fn normal() {
+    let mut ctx = Context::new();
+    let nodes = parse(&mut ctx, r#"node "hello""#).unwrap();
+    assert_eq!(nodes.len(), 1);
+    assert_eq!(&*nodes[0].node_name, "node");
+}

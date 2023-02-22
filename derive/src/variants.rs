@@ -17,6 +17,7 @@ pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
     let node = syn::Ident::new("node", Span::mixed_site());
     let ctx = syn::Ident::new("ctx", Span::mixed_site());
 
+    // TODO(rnarkk) merge
     let (_, type_gen, _) = e.generics.split_for_impl();
     let common_generics = e.generics.clone();
     let (impl_gen, _, bounds) = common_generics.split_for_impl();

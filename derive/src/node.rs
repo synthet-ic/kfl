@@ -17,6 +17,7 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
     let ctx = syn::Ident::new("ctx", Span::mixed_site());
     let children = syn::Ident::new("children", Span::mixed_site());
 
+    // TODO(rnarkk) merge
     let (_, type_gen, _) = s.generics.split_for_impl();
     let common_generics = s.generics.clone();
     let (impl_gen, _, bounds) = common_generics.split_for_impl();
@@ -48,7 +49,7 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
                    (0..fields.len()).collect::<Vec<_>>(),
                    "all tuple structure fields should be filled in");
         let assignments = fields.iter().map(|(_, v)| v);
-        quote! { #s_name(#(#assignments),*) }
+        quote!(#s_name(#(#assignments),*))
     };
     let mut extra_traits = Vec::new();
     if partial {
@@ -175,7 +176,7 @@ pub(crate) fn decode_variant(s: &Common,
                    (0..fields.len()).collect::<Vec<_>>(),
                    "all tuple structure fields should be filled in");
         let assignments = fields.iter().map(|(_, v)| v);
-        quote! { #s_name(#(#assignments),*) }
+        quote!(#s_name(#(#assignments),*))
     };
     Ok(quote! {
         #decode_args
@@ -241,9 +242,7 @@ fn decode_specials(s: &Common, node: &syn::Ident)
     //         };
     //     }
     // });
-    Ok(quote! {
-        #(#spans)*
-    })
+    Ok(quote!(#(#spans)*))
 }
 
 fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
@@ -307,7 +306,7 @@ fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
             }
         });
     }
-    Ok(quote! { #(#decoder)* })
+    Ok(quote!(#(#decoder)*))
 }
 
 fn decode_props(s: &Common, node: &syn::Ident)
@@ -423,7 +422,6 @@ fn decode_props(s: &Common, node: &syn::Ident)
 //     let common = Common {
 //         object: &object,
 //         ctx: parent.ctx,
-//         span_type: parent.span_type,
 //     };
 
 //     let node = syn::Ident::new("node", Span::mixed_site());

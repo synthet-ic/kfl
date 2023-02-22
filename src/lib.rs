@@ -1,8 +1,6 @@
 #![doc = include_str!("../README.md")]
 #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
-// #![feature(try_trait_v2)]
-// #![feature(never_type)]
 
 mod containers;
 mod convert;
@@ -11,7 +9,7 @@ mod grammar;
 mod wrappers;
 
 pub mod ast;
-pub mod decode;
+pub mod context;
 pub mod errors;
 pub mod span;
 pub mod traits;

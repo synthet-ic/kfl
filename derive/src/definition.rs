@@ -45,7 +45,6 @@ pub enum Attr {
     FieldMode(FieldMode),
     Unwrap(FieldAttrs),
     Default(Option<syn::Expr>),
-    SpanType(syn::Type),
 }
 
 #[derive(Debug, Clone)]
@@ -173,18 +172,13 @@ pub struct Enum {
 
 impl TraitProps {
     fn pick_from(attrs: &mut Vec<(Attr, Span)>) -> TraitProps {
-        let mut props = TraitProps {
+        let props = TraitProps {
             span_type: None,
         };
         for attr in mem::take(attrs) {
-            match attr.0 {
-                Attr::SpanType(ty) => {
-                    props.span_type = Some(ty);
-                }
-                _ => attrs.push(attr),
-            }
+            attrs.push(attr)
         }
-        return props;
+        props
     }
 }
 
@@ -653,11 +647,6 @@ impl Attr {
         } else if lookahead.peek(kw::span) {
             let _kw: kw::span = input.parse()?;
             Ok(Attr::FieldMode(FieldMode::Span))
-        } else if lookahead.peek(kw::span_type) {
-            let _kw: kw::span_type = input.parse()?;
-            let _eq: syn::Token![=] = input.parse()?;
-            let ty: syn::Type = input.parse()?;
-            Ok(Attr::SpanType(ty))
         } else {
             Err(lookahead.error())
         }

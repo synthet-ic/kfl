@@ -15,39 +15,30 @@
 use std::{
     collections::BTreeMap,
     convert::Infallible,
-    fmt::{Debug, Display},
+    fmt::{Debug, Display, Pointer},
     ops::Deref,
     str::FromStr
 };
 
-use crate::span::Spanned;
-
-/// A shortcut for nodes children that includes span of enclosing braces `{..}`
-pub type SpannedChildren<S> = Spanned<Vec<SpannedNode<S>>, S>;
-/// KDL names with span information are represented using this type
-pub type SpannedName<S> = Spanned<Box<str>, S>;
-/// A KDL node with span of the whole node (including children)
-pub type SpannedNode<S> = Spanned<Node<S>, S>;
-
 /// Single node of the KDL document
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
-pub struct Node<S> {
+pub struct Node {
     /// A type name if specified in parenthesis
     #[cfg_attr(feature = "minicbor", n(0))]
-    pub type_name: Option<SpannedName<S>>,
+    pub type_name: Option<Box<str>>,
     /// A node name
     #[cfg_attr(feature = "minicbor", n(1))]
-    pub node_name: SpannedName<S>,
+    pub node_name: Box<str>,
     /// Positional arguments
     #[cfg_attr(feature = "minicbor", n(2))]
-    pub arguments: Vec<Scalar<S>>,
+    pub arguments: Vec<Scalar>,
     /// Named properties
     #[cfg_attr(feature = "minicbor", n(3))]
-    pub properties: BTreeMap<SpannedName<S>, Scalar<S>>,
+    pub properties: BTreeMap<Box<str>, Scalar>,
     /// Node's children. This field is not none if there are braces `{..}`
     #[cfg_attr(feature = "minicbor", n(4))]
-    pub children: Option<SpannedChildren<S>>,
+    pub children: Option<Vec<Node>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -86,13 +77,13 @@ pub struct Decimal(
 /// Possibly typed KDL scalar value
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
-pub struct Scalar<S> {
+pub struct Scalar {
     /// A type name if specified in parenthesis
     #[cfg_attr(feature = "minicbor", n(0))]
-    pub type_name: Option<Spanned<TypeName, S>>,
+    pub type_name: Option<TypeName>,
     /// The actual value literal
     #[cfg_attr(feature = "minicbor", n(1))]
-    pub literal: Spanned<Literal, S>,
+    pub literal: Literal,
 }
 
 /// Type identifier
@@ -141,28 +132,34 @@ pub enum BuiltinType {
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
 pub enum Literal {
-    /// Null value
+    /// Null value (usually corresponds to `None` in Rust)
     #[cfg_attr(feature = "minicbor", n(0))]
     Null,
-    /// Boolean value
+    /// Boolean value of `true` or `false`
     #[cfg_attr(feature = "minicbor", n(1))]
     Bool(
         #[cfg_attr(feature = "minicbor", n(0))]
         bool
     ),
     /// Integer value
+    /// An unquoted integer value, signed or unsigned. Having no decimal point.
+    /// Can be of virtually unlimited length. Can be expressed in binary, octal,
+    /// decimal, or hexadecimal notation.
     #[cfg_attr(feature = "minicbor", n(2))]
     Int(
         #[cfg_attr(feature = "minicbor", n(0))]
         Integer
     ),
     /// Decimal (or floating point) value
+    /// A number that has either decimal point or exponential part. Can be only
+    /// in decimal notation. Can represent either decimal or floating value
+    /// value. No quotes.
     #[cfg_attr(feature = "minicbor", n(3))]
     Decimal(
         #[cfg_attr(feature = "minicbor", n(0))]
         Decimal
     ),
-    /// String value
+    /// String in `"double quotes"` or `r##"raw quotes"##`
     #[cfg_attr(feature = "minicbor", n(4))]
     String(
         #[cfg_attr(feature = "minicbor", n(0))]
@@ -170,15 +167,31 @@ pub enum Literal {
     ),
 }
 
-impl<S> Node<S> {
+impl Node {
     /// Returns node children
     pub fn children(&self)
-        -> impl Iterator<Item = &Spanned<Node<S>, S>> +
+        -> impl Iterator<Item = &Node> +
                 ExactSizeIterator
     {
         self.children.as_ref().map(|c| c.iter()).unwrap_or_else(|| [].iter())
     }
 }
+
+macro_rules! impl_pointer {
+    ($ty:ty) => {
+        impl Pointer for $ty {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                let ptr = self as *const Self;
+                Pointer::fmt(&ptr, f)
+            }
+        }
+    };
+}
+
+impl_pointer!(Node);
+impl_pointer!(Scalar);
+impl_pointer!(Literal);
+impl_pointer!(TypeName);
 
 impl BuiltinType {
     /// Returns string representation of the builtin type as defined by KDL

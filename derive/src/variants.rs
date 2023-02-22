@@ -10,7 +10,6 @@ use crate::{
 pub(crate) struct Common<'a> {
     pub object: &'a Enum,
     pub ctx: &'a syn::Ident,
-    pub span_type: &'a TokenStream,
 }
 
 pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
@@ -18,38 +17,24 @@ pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
     let node = syn::Ident::new("node", Span::mixed_site());
     let ctx = syn::Ident::new("ctx", Span::mixed_site());
 
+    // TODO(rnarkk) merge
     let (_, type_gen, _) = e.generics.split_for_impl();
-    let mut common_generics = e.generics.clone();
-    let span_ty;
-    if let Some(ty) = e.trait_props.span_type.as_ref() {
-        span_ty = quote!(#ty);
-    } else {
-        if common_generics.params.is_empty() {
-            common_generics.lt_token = Some(Default::default());
-            common_generics.gt_token = Some(Default::default());
-        }
-        common_generics.params.push(syn::parse2(quote!(S)).unwrap());
-        span_ty = quote!(S);
-        common_generics.make_where_clause().predicates.push(
-            syn::parse2(quote!(S: ::kfl::traits::ErrorSpan)).unwrap());
-    };
-    let trait_gen = quote!(<#span_ty>);
+    let common_generics = e.generics.clone();
     let (impl_gen, _, bounds) = common_generics.split_for_impl();
 
     let common = Common {
         object: e,
         ctx: &ctx,
-        span_type: &span_ty,
     };
     let check_type = check_type(&common, &node)?;
     let decode = decode(&common, &node)?;
     Ok(quote! {
-        impl #impl_gen ::kfl::Decode #trait_gen for #name #type_gen
+        impl #impl_gen ::kfl::Decode for #name #type_gen
             #bounds
         {
-            fn decode(#node: &::kfl::ast::SpannedNode<#span_ty>,
-                           #ctx: &mut ::kfl::decode::Context<#span_ty>)
-                -> Result<Self, ::kfl::errors::DecodeError<#span_ty>>
+            fn decode(#node: &::kfl::ast::Node,
+                      #ctx: &mut ::kfl::context::Context)
+                -> Result<Self, ::kfl::errors::DecodeError>
             {
                 #check_type
                 #decode
@@ -59,6 +44,7 @@ pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
 }
 
 fn check_type(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
+    let ctx = s.ctx;
     let name = heck::ToKebabCase::to_kebab_case(
         &s.object.ident.unraw().to_string()[..]);
     Ok(quote! {
@@ -66,7 +52,7 @@ fn check_type(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
             let type_name = type_name.as_ref();
             if type_name != #name {
                 return Err(::kfl::errors::DecodeError::unexpected(
-                    #node, "node", format!("unexpected node `({}){}`",
+                    #ctx.span(&#node), "node", format!("unexpected node `({}){}`",
                     type_name,
                     #node.node_name.as_ref())
                 ))
@@ -89,13 +75,13 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                         for arg in &#node.arguments {
                             return Err(
                                 ::kfl::errors::DecodeError::unexpected(
-                                    &arg.literal, "argument",
+                                    #ctx.span(&arg.literal), "argument",
                                     "unexpected argument"));
                         }
                         for (name, _) in &#node.properties {
                             return Err(
                                 ::kfl::errors::DecodeError::unexpected(
-                                    name, "property",
+                                    #ctx.span(&name), "property",
                                     format!("unexpected property `{}`",
                                             name.escape_default())));
                         }
@@ -103,7 +89,7 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                             for child in children.iter() {
                                 return Err(
                                     ::kfl::errors::DecodeError::unexpected(
-                                        child, "node",
+                                        #ctx.span(&child), "node",
                                         format!("unexpected node `{}`",
                                             child.node_name.escape_default())
                                     ));
@@ -115,7 +101,7 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
             }
             VariantKind::Nested { ty } => {
                 branches.push(quote! {
-                    #name => <#ty as ::kfl::Decode<_>>::decode(#node, #ctx)
+                    #name => <#ty as ::kfl::Decode>::decode(#node, #ctx)
                         .map(#enum_name::#variant_name),
                 });
             }
@@ -123,7 +109,6 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                 let common = node::Common {
                     object: s,
                     ctx,
-                    span_type: e.span_type,
                 };
                 let decode = node::decode_variant(
                     &common,
@@ -139,7 +124,6 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                 let common = node::Common {
                     object: s,
                     ctx,
-                    span_type: e.span_type,
                 };
                 let decode = node::decode_variant(
                     &common,
@@ -167,11 +151,11 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                 e.object.variants.len() - 2)
     };
     Ok(quote! {
-        match &**#node.node_name {
+        match &*#node.node_name {
             #(#branches)*
             name_str => {
                 Err(::kfl::errors::DecodeError::conversion(
-                        &#node.node_name, #err))
+                        #ctx.span(&#node.node_name), #err))
             }
         }
     })

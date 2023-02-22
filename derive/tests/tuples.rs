@@ -1,8 +1,6 @@
 mod common;
 
-use std::fmt::Debug;
 use kfl::Decode;
-// use miette::Diagnostic;
 
 #[test]
 fn parse_unit() {

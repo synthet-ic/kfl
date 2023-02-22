@@ -7,8 +7,6 @@ use crate::definition::{Struct, NewType, ExtraKind, ChildMode};
 pub(crate) struct Common<'a> {
     pub object: &'a Struct,
     pub ctx: &'a syn::Ident,
-    #[allow(unused)]
-    pub span_type: &'a TokenStream,
 }
 
 pub fn emit_struct(s: &Struct, named: bool, partial: bool)
@@ -19,28 +17,14 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
     let ctx = syn::Ident::new("ctx", Span::mixed_site());
     let children = syn::Ident::new("children", Span::mixed_site());
 
+    // TODO(rnarkk) merge
     let (_, type_gen, _) = s.generics.split_for_impl();
-    let mut common_generics = s.generics.clone();
-    let span_ty;
-    if let Some(ty) = s.trait_props.span_type.as_ref() {
-        span_ty = quote!(#ty);
-    } else {
-        if common_generics.params.is_empty() {
-            common_generics.lt_token = Some(Default::default());
-            common_generics.gt_token = Some(Default::default());
-        }
-        common_generics.params.push(syn::parse2(quote!(S)).unwrap());
-        span_ty = quote!(S);
-        common_generics.make_where_clause().predicates.push(
-            syn::parse2(quote!(S: ::kfl::traits::ErrorSpan)).unwrap());
-    };
-    let trait_gen = quote!(<#span_ty>);
+    let common_generics = s.generics.clone();
     let (impl_gen, _, bounds) = common_generics.split_for_impl();
 
     let common = Common {
         object: s,
         ctx: &ctx,
-        span_type: &span_ty,
     };
 
     let check_type = check_type(&common, &node)?;
@@ -48,7 +32,7 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
     let decode_args = decode_args(&common, &node)?;
     let decode_props = decode_props(&common, &node)?;
     let decode_children_normal = decode_children(
-        &common, &children, Some(quote!(#node.span())))?;
+        &common, &children, Some(quote!(#ctx.span(&#node))))?;
     let assign_extra = assign_extra(&common)?;
 
     let all_fields = s.all_fields();
@@ -65,7 +49,7 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
                    (0..fields.len()).collect::<Vec<_>>(),
                    "all tuple structure fields should be filled in");
         let assignments = fields.iter().map(|(_, v)| v);
-        quote! { #s_name(#(#assignments),*) }
+        quote!(#s_name(#(#assignments),*))
     };
     let mut extra_traits = Vec::new();
     if partial {
@@ -76,22 +60,22 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
             let decode_partial = decode_partial(&common, &node)?;
             // let insert_property = insert_property(&common, &name, &scalar)?;
             extra_traits.push(quote! {
-                impl #impl_gen ::kfl::traits::DecodePartial #trait_gen
+                impl #impl_gen ::kfl::traits::DecodePartial
                     for #s_name #type_gen
                     #bounds
                 {
                     fn decode_partial(&mut self,
-                        #node: &::kfl::ast::SpannedNode<#span_ty>,
-                        #ctx: &mut ::kfl::decode::Context<#span_ty>)
-                        -> Result<bool, ::kfl::errors::DecodeError<#span_ty>>
+                        #node: &::kfl::ast::Node,
+                        #ctx: &mut ::kfl::context::Context)
+                        -> Result<bool, ::kfl::errors::DecodeError>
                     {
                         #decode_partial
                     }
                     // fn insert_property(&mut self,
-                    //     #name: &::kfl::span::Spanned<Box<str>, #span_ty>,
-                    //     #scalar: &::kfl::ast::Scalar<#span_ty>,
-                    //     #ctx: &mut ::kfl::decode::Context<#span_ty>)
-                    //     -> Result<bool, ::kfl::errors::DecodeError<#span_ty>>
+                    //     #name: &Box<str>,
+                    //     #scalar: &::kfl::ast::Scalar,
+                    //     #ctx: &mut ::kfl::context::Context)
+                    //     -> Result<bool, ::kfl::errors::DecodeError>
                     // {
                     //     #insert_property
                     // }
@@ -104,14 +88,14 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
     if !s.has_arguments && !s.has_properties && s.spans.is_empty() {
         let decode_children = decode_children(&common, &children, None)?;
         extra_traits.push(quote! {
-            impl #impl_gen ::kfl::traits::DecodeChildren #trait_gen
+            impl #impl_gen ::kfl::traits::DecodeChildren
                 for #s_name #type_gen
                 #bounds
             {
                 fn decode_children(
-                    #children: &[::kfl::ast::SpannedNode<#span_ty>],
-                    #ctx: &mut ::kfl::decode::Context<#span_ty>)
-                    -> Result<Self, ::kfl::errors::DecodeError<#span_ty>>
+                    #children: &[::kfl::ast::Node],
+                    #ctx: &mut ::kfl::context::Context)
+                    -> Result<Self, ::kfl::errors::DecodeError>
                 {
                     #decode_children
                     #assign_extra
@@ -122,12 +106,12 @@ pub fn emit_struct(s: &Struct, named: bool, partial: bool)
     }
     Ok(quote! {
         #(#extra_traits)*
-        impl #impl_gen ::kfl::traits::Decode #trait_gen for #s_name #type_gen
+        impl #impl_gen ::kfl::traits::Decode for #s_name #type_gen
             #bounds
         {
-            fn decode(#node: &::kfl::ast::SpannedNode<#span_ty>,
-                           #ctx: &mut ::kfl::decode::Context<#span_ty>)
-                -> Result<Self, ::kfl::errors::DecodeError<#span_ty>>
+            fn decode(#node: &::kfl::ast::Node,
+                      #ctx: &mut ::kfl::context::Context)
+                -> Result<Self, ::kfl::errors::DecodeError>
             {
                 #check_type
                 #decode_specials
@@ -148,12 +132,10 @@ pub fn emit_new_type(s: &NewType) -> syn::Result<TokenStream> {
     let node = syn::Ident::new("node", Span::mixed_site());
     let ctx = syn::Ident::new("ctx", Span::mixed_site());
     Ok(quote! {
-        impl<S: ::kfl::traits::ErrorSpan>
-            ::kfl::traits::Decode<S> for #s_name
-        {
-            fn decode(#node: &::kfl::ast::SpannedNode<S>,
-                      #ctx: &mut ::kfl::decode::Context<S>)
-                -> Result<Self, ::kfl::errors::DecodeError<S>>
+        impl ::kfl::traits::Decode for #s_name {
+            fn decode(#node: &::kfl::ast::Node,
+                      #ctx: &mut ::kfl::context::Context)
+                -> Result<Self, ::kfl::errors::DecodeError>
             {
                 if #node.arguments.len() > 0 ||
                     #node.properties.len() > 0 ||
@@ -178,7 +160,7 @@ pub(crate) fn decode_variant(s: &Common,
     let decode_args = decode_args(s, node)?;
     let decode_props = decode_props(s, node)?;
     let decode_children = decode_children(s, &children,
-                                          Some(quote!(#node.span())))?;
+                                          Some(quote!(ctx.span(&#node))))?;
     let assign_extra = assign_extra(s)?;
     let all_fields = s.object.all_fields();
     let struct_val = if named {
@@ -194,7 +176,7 @@ pub(crate) fn decode_variant(s: &Common,
                    (0..fields.len()).collect::<Vec<_>>(),
                    "all tuple structure fields should be filled in");
         let assignments = fields.iter().map(|(_, v)| v);
-        quote! { #s_name(#(#assignments),*) }
+        quote!(#s_name(#(#assignments),*))
     };
     Ok(quote! {
         #decode_args
@@ -215,17 +197,18 @@ fn decode_scalar(val: &syn::Ident, ctx: &syn::Ident) -> syn::Result<TokenStream>
 }
 
 fn check_type(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
+    let ctx = s.ctx;
     let name = heck::ToKebabCase::to_kebab_case(
         &s.object.ident.unraw().to_string()[..]);
     Ok(quote! {
         if let Some(type_name) = &#node.type_name {
             return Err(::kfl::errors::DecodeError::unexpected(
-                       type_name, "type name",
+                       #ctx.span(&#node), "type name",
                        "no type name expected for this node"));
         }
         if #node.node_name.as_ref() != #name {
             return Err(::kfl::errors::DecodeError::unexpected(
-                #node, "node", format!("unexpected node `{}`",
+                #ctx.span(&#node), "node", format!("unexpected node `{}`",
                 #node.node_name.as_ref())));
         }
     })
@@ -255,13 +238,11 @@ fn decode_specials(s: &Common, node: &syn::Ident)
     //                 })?
     //         } else {
     //             return Err(::kfl::errors::DecodeError::missing(
-    //                 #node, "type name required"));
+    //                 #ctx.span(&#node), "type name required"));
     //         };
     //     }
     // });
-    Ok(quote! {
-        #(#spans)*
-    })
+    Ok(quote!(#(#spans)*))
 }
 
 fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
@@ -286,7 +267,7 @@ fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                     let #val =
                         #iter_args.next().ok_or_else(|| {
                             ::kfl::errors::DecodeError::missing(
-                                #node, #error)
+                                #ctx.span(&#node), #error)
                         })?;
                     let #fld = #decode_scalar?;
                 });
@@ -320,12 +301,12 @@ fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
         decoder.push(quote! {
             if let Some(val) = #iter_args.next() {
                 return Err(::kfl::errors::DecodeError::unexpected(
-                        &val.literal, "argument",
+                        #ctx.span(&val.literal), "argument",
                         "unexpected argument"));
             }
         });
     }
-    Ok(quote! { #(#decoder)* })
+    Ok(quote!(#(#decoder)*))
 }
 
 fn decode_props(s: &Common, node: &syn::Ident)
@@ -378,7 +359,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
                 postprocess.push(quote! {
                     let #fld = #fld.ok_or_else(|| {
                         ::kfl::errors::DecodeError::missing(
-                            #node, #req_msg)
+                            #ctx.span(&#node), #req_msg)
                     })?;
                 });
             }
@@ -394,7 +375,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
             #name_str => {
                 let converted_name = #name_str.parse()
                     .map_err(|e| {
-                        ::kfl::errors::DecodeError::conversion(#name, e)
+                        ::kfl::errors::DecodeError::conversion(#ctx.span(&#name), e)
                     })?;
                 #fld.push((
                     converted_name,
@@ -409,7 +390,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
         match_branches.push(quote! {
             #name_str => {
                 return Err(::kfl::errors::DecodeError::unexpected(
-                    #name, "property",
+                    #ctx.span(&#name), "property",
                     format!("unexpected property `{}`",
                             #name_str.escape_default())));
             }
@@ -418,7 +399,7 @@ fn decode_props(s: &Common, node: &syn::Ident)
     Ok(quote! {
         #(#declare_empty)*
         for (#name, #val) in #node.properties.iter() {
-            match &***#name {
+            match #name.as_ref() {
                 #(#match_branches)*
             }
         }
@@ -431,7 +412,6 @@ fn decode_props(s: &Common, node: &syn::Ident)
 //     -> syn::Result<TokenStream>
 // {
 //     let ctx = parent.ctx;
-//     let span_ty = parent.span_type;
 //     let mut bld = StructBuilder::new(
 //         format_ident!("Wrap_{}", name, span = Span::mixed_site()),
 //         parent.object.trait_props.clone(),
@@ -442,7 +422,6 @@ fn decode_props(s: &Common, node: &syn::Ident)
 //     let common = Common {
 //         object: &object,
 //         ctx: parent.ctx,
-//         span_type: parent.span_type,
 //     };
 
 //     let node = syn::Ident::new("node", Span::mixed_site());
@@ -450,10 +429,10 @@ fn decode_props(s: &Common, node: &syn::Ident)
 //     let decode_args = decode_args(&common, &node)?;
 //     let decode_props = decode_props(&common, &node)?;
 //     let decode_children = decode_children(&common, &children,
-//                                           Some(quote!(#node.span())))?;
+//                                           Some(quote!(#ctx.span(&#node))))?;
 //     Ok(quote! {
-//         let mut #func = |#node: &::kfl::ast::SpannedNode<#span_ty>,
-//                          #ctx: &mut ::kfl::decode::Context<#span_ty>|
+//         let mut #func = |#node: &::kfl::ast::Node,
+//                          #ctx: &mut ::kfl::context::Context|
 //         {
 //             #decode_args
 //             #decode_props
@@ -484,7 +463,7 @@ fn decode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
         let dest = &child_def.field.from_self();
         let ty = &child_def.field.ty;
         branches.push(quote! {
-            else if let Ok(true) = <#ty as ::kfl::traits::DecodePartial<_>>
+            else if let Ok(true) = <#ty as ::kfl::traits::DecodePartial>
                 ::decode_partial(&mut #dest, #node, #ctx)
             {
                 Ok(true)
@@ -524,7 +503,7 @@ fn decode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
 //         }
 //     }
 //     Ok(quote! {
-//         match &***#name {
+//         match &*#name {
 //             #(#match_branches)*
 //             _ => Ok(false),
 //         }
@@ -554,7 +533,7 @@ fn decode_children(s: &Common, children: &syn::Ident,
                     let mut #fld = ::std::default::Default::default();
                 });
                 branches.push(quote! {
-                    else if let Ok(true) = <#ty as ::kfl::traits::DecodePartial<_>>
+                    else if let Ok(true) = <#ty as ::kfl::traits::DecodePartial>
                         ::decode_partial(&mut #fld, #child, #ctx) {
                         None
                     }
@@ -566,7 +545,7 @@ fn decode_children(s: &Common, children: &syn::Ident,
                 });
                 let ctx = &s.ctx;
                 branches.push(quote! {
-                    else if let Ok(true) = <Vec<<#ty as IntoIterator>::Item> as ::kfl::traits::DecodePartial<_>>
+                    else if let Ok(true) = <Vec<<#ty as IntoIterator>::Item> as ::kfl::traits::DecodePartial>
                         ::decode_partial(&mut #fld, #child, #ctx)
                     {
                         None
@@ -596,7 +575,7 @@ fn decode_children(s: &Common, children: &syn::Ident,
                     let mut #fld = None;
                 });
                 branches.push(quote! {
-                    else if let Ok(true) = <Option<#ty> as ::kfl::traits::DecodePartial<_>>
+                    else if let Ok(true) = <Option<#ty> as ::kfl::traits::DecodePartial>
                         ::decode_partial(&mut #fld, #child, #ctx)
                     {
                         None
@@ -641,7 +620,7 @@ fn decode_children(s: &Common, children: &syn::Ident,
     branches.push(quote! {
         else {
             #ctx.emit_error(::kfl::errors::DecodeError::unexpected(
-                #child, "node",
+                #ctx.span(&#child), "node",
                 format!("unexpected node `{}`",
                         #child.node_name.as_ref())));
             None
@@ -651,7 +630,7 @@ fn decode_children(s: &Common, children: &syn::Ident,
         #(#declare_empty)*
         #children.iter().flat_map(|#child| {
             #(#branches)*
-        }).collect::<Result<(), ::kfl::errors::DecodeError<_>>>()?;
+        }).collect::<Result<(), ::kfl::errors::DecodeError>>()?;
         #(#postprocess)*
     })
 }

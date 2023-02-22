@@ -1,47 +1,46 @@
-use chumsky::Parser;
+use chumsky::zero_copy::Parser;
 use miette::NamedSource;
 
 use crate::{
-    ast::SpannedNode,
-    decode::Context,
+    ast::Node,
+    context::Context,
     errors::Error,
     grammar,
-    span::Span,
-    traits::{self, Decode, DecodeChildren, Encode},
+    traits::{Decode, DecodeChildren, Encode},
 };
 
 /// Parse KDL text and return AST
-pub fn parse<S: traits::Span>(file_name: &str, text: &str)
-    -> Result<Vec<SpannedNode<S>>, Error>
+pub fn parse(ctx: &mut Context, input: &str)
+    -> Result<Vec<Node>, Error>
 {
     grammar::document()
-    .parse(S::stream(text))
+    .parse_with_state(&input, ctx).into_result()
     .map_err(|errors| {
         Error {
-            source_code: NamedSource::new(file_name, text.to_string()),
+            source_code: NamedSource::new(ctx.get::<&str>().unwrap(), input.to_string()),
             errors: errors.into_iter().map(Into::into).collect(),
         }
     })
 }
 
 /// Parse KDL text and decode it into Rust object
-pub fn decode<T>(file_name: &str, text: &str) -> Result<T, Error>
-    where T: Decode<Span>,
+pub fn decode<T>(file_name: &'static str, input: &str) -> Result<T, Error>
+    where T: Decode,
 {
-    let nodes = parse(file_name, text)?;
     let mut ctx = Context::new();
+    let nodes = parse(&mut ctx, &input)?;
+    ctx.set::<String>(file_name.to_string());
     Decode::decode(&nodes[0], &mut ctx).map_err(|error| {
         Error {
-            source_code: NamedSource::new(file_name, text.to_string()),
+            source_code: NamedSource::new(file_name, input.to_string()),
             errors: vec![error.into()],
         }
     })
 }
 
 // /// Parse single KDL node from AST
-// pub fn decode_node<T, S>(ast: &SpannedNode<S>) -> Result<T, Vec<DecodeError<S>>>
-//     where T: Decode<S>,
-//           S: ErrorSpan,
+// pub fn decode_node<T>(ast: &Node) -> Result<T, Vec<DecodeError>>
+//     where T: Decode,
 // {
 //     let mut ctx = Context::new();
 //     match Decode::decode(ast, &mut ctx) {
@@ -57,24 +56,23 @@ pub fn decode<T>(file_name: &str, text: &str) -> Result<T, Error>
 // }
 
 /// Parse KDL text and decode Rust object
-pub fn decode_children<T>(file_name: &str, text: &str) -> Result<T, Error>
-    where T: DecodeChildren<Span>,
+pub fn decode_children<T>(file_name: &'static str, input: &str) -> Result<T, Error>
+    where T: DecodeChildren,
 {
-    decode_with_context(file_name, text, |_| {})
+    decode_with_context(file_name, input, |_| {})
 }
 
 /// Parse KDL text and decode Rust object providing extra context for the
 /// decoder
-pub fn decode_with_context<T, S, F>(file_name: &str, text: &str, set_ctx: F)
+pub fn decode_with_context<T, F>(file_name: &'static str, input: &str, set_ctx: F)
     -> Result<T, Error>
-    where F: FnOnce(&mut Context<S>),
-          T: DecodeChildren<S>,
-          S: traits::Span,
+    where F: FnOnce(&mut Context),
+          T: DecodeChildren,
 {
-    let nodes = parse(file_name, text)?;
     let mut ctx = Context::new();
+    let nodes = parse(&mut ctx, &input)?;
     set_ctx(&mut ctx);
-    let errors = match <T as DecodeChildren<S>>
+    let errors = match <T as DecodeChildren>
         ::decode_children(&nodes, &mut ctx)
     {
         Ok(_) if ctx.has_errors() => {
@@ -87,16 +85,14 @@ pub fn decode_with_context<T, S, F>(file_name: &str, text: &str, set_ctx: F)
         Ok(v) => return Ok(v)
     };
     Err(Error {
-        source_code: NamedSource::new(file_name, text.to_string()),
+        source_code: NamedSource::new(file_name, input.to_string()),
         errors: errors.into_iter().map(Into::into).collect(),
     })
 }
 
 /// Print ast and return KDL text
 #[allow(unused)]
-pub fn print<S: traits::Span>(file_name: &str, node: SpannedNode<S>)
-    -> Result<String, Error>
-{
+pub fn print(file_name: &str, node: Node) -> Result<String, Error> {
     Ok("".into())
     // grammar::document()
     // .parse(S::stream(text))
@@ -110,7 +106,7 @@ pub fn print<S: traits::Span>(file_name: &str, node: SpannedNode<S>)
 
 /// Encode Rust object and print it into KDL text
 pub fn encode<T>(file_name: &str, t: &T) -> Result<String, Error>
-    where T: Encode<Span> + std::fmt::Debug,
+    where T: Encode + std::fmt::Debug,
 {
     let mut ctx = Context::new();
     let node = t.encode(&mut ctx).map_err(|error| {
@@ -124,7 +120,8 @@ pub fn encode<T>(file_name: &str, t: &T) -> Result<String, Error>
 
 #[test]
 fn normal() {
-    let nodes = parse::<Span>("embedded.kdl", r#"node "hello""#).unwrap();
+    let mut ctx = Context::new();
+    let nodes = parse(&mut ctx, r#"node "hello""#).unwrap();
     assert_eq!(nodes.len(), 1);
-    assert_eq!(&**nodes[0].node_name, "node");
+    assert_eq!(&*nodes[0].node_name, "node");
 }

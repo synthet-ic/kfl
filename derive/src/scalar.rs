@@ -109,32 +109,32 @@ pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
             quote!(#name => Ok(#e_name::#ident))
         });
     Ok(quote! {
-        impl<S: ::kfl::traits::ErrorSpan> ::kfl::DecodeScalar<S>
-                for #e_name {
-            fn decode(scalar: &::kfl::ast::Scalar<S>,
-                      ctx: &mut ::kfl::decode::Context<S>)
-                -> Result<Self, ::kfl::errors::DecodeError<S>>
+        impl ::kfl::DecodeScalar for #e_name {
+            fn decode(scalar: &::kfl::ast::Scalar,
+                      ctx: &mut ::kfl::context::Context)
+                -> Result<Self, ::kfl::errors::DecodeError>
             {
                 if let Some(typ) = scalar.type_name.as_ref() {
                     return Err(::kfl::errors::DecodeError::TypeName {
-                        span: typ.span().clone(),
-                        found: Some((**typ).clone()),
+                        span: ctx.span(&typ),
+                        found: Some((*typ).clone()),
                         expected: ::kfl::errors::ExpectedType::no_type(),
                         rust_type: stringify!(#e_name),
                     });
                 }
-                match &*scalar.literal {
+                match &scalar.literal {
                     ::kfl::ast::Literal::String(ref s) => {
                         match &s[..] {
                             #(#match_branches,)*
                             _ => {
                                 Err(::kfl::errors::DecodeError::conversion(
-                                    &scalar.literal, #value_err))
+                                    ctx.span(&scalar.literal), #value_err))
                             }
                         }
                     }
                     _ => {
                         Err(::kfl::errors::DecodeError::scalar_kind(
+                            ctx.span(&scalar),
                             "string",
                             &scalar.literal,
                         ))

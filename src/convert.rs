@@ -5,49 +5,73 @@ use std::{
 };
 
 use crate::{
-    ast::{Literal, Integer, Decimal, Radix, BuiltinType},
-    decode::Context,
-    errors::{DecodeError, ExpectedType},
-    traits::{ErrorSpan, DecodeScalar}
+    ast::{Scalar, Literal, Integer, Decimal, Radix, BuiltinType},
+    context::Context,
+    errors::{DecodeError, ExpectedType, EncodeError},
+    traits::{DecodeScalar, EncodeScalar}
 };
 
 macro_rules! impl_integer {
-    ($typ:ident, $marker:ident) => {
-        impl TryFrom<&Integer> for $typ {
-            type Error = <$typ as FromStr>::Err;
-            fn try_from(val: &Integer) -> Result<$typ, <$typ as FromStr>::Err>
+    ($ty:ident, $marker:ident) => {
+        impl TryFrom<&Integer> for $ty {
+            type Error = <$ty as FromStr>::Err;
+            fn try_from(val: &Integer) -> Result<$ty, <$ty as FromStr>::Err>
             {
                 match val.0 {
-                    Radix::Bin => <$typ>::from_str_radix(&val.1, 2),
-                    Radix::Oct => <$typ>::from_str_radix(&val.1, 8),
-                    Radix::Dec => <$typ>::from_str(&val.1),
-                    Radix::Hex => <$typ>::from_str_radix(&val.1, 16),
+                    Radix::Bin => <$ty>::from_str_radix(&val.1, 2),
+                    Radix::Oct => <$ty>::from_str_radix(&val.1, 8),
+                    Radix::Dec => <$ty>::from_str(&val.1),
+                    Radix::Hex => <$ty>::from_str_radix(&val.1, 16),
                 }
             }
         }
 
-        impl<S: ErrorSpan> DecodeScalar<S> for $typ {
-            fn decode(scalar: &crate::ast::Scalar<S>, _: &mut Context<S>)
-                -> Result<Self, DecodeError<S>>
+        impl DecodeScalar for $ty {
+            fn decode(scalar: &Scalar, ctx: &mut Context)
+                -> Result<Self, DecodeError>
             {
                 if let Some(typ) = scalar.type_name.as_ref() {
                     if typ.as_builtin() != Some(&BuiltinType::$marker) {
                         return Err(DecodeError::TypeName {
-                            span: typ.span().clone(),
-                            found: Some(typ.value.clone()),
+                            span: ctx.span(&typ),
+                            found: Some(typ.clone()),
                             expected: ExpectedType::optional(
                                 BuiltinType::$marker),
-                            rust_type: stringify!($typ),
+                            rust_type: stringify!($ty),
                         });
                     }
                 }
-                match &*scalar.literal {
+                match &scalar.literal {
                     Literal::Int(ref v) => v.try_into()
                         .map_err(|err| DecodeError::conversion(
-                            &scalar.literal, err)),
-                    _ => Err(DecodeError::scalar_kind("string",
+                                 ctx.span(&scalar), err)),
+                    _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "string",
                              &scalar.literal))
                 }
+            }
+        }
+
+        impl TryFrom<&$ty> for Integer {
+            type Error = <$ty as FromStr>::Err;
+            fn try_from(val: &$ty) -> Result<Integer, <$ty as FromStr>::Err>
+            {
+                Ok(Integer(
+                    Radix::Oct,
+                    val.to_string().into()
+                ))
+            }
+        }
+
+        impl EncodeScalar for $ty {
+            fn encode(&self, _: &mut Context)
+                -> Result<Scalar, EncodeError>
+            {
+                let literal = Literal::Int(Integer::try_from(self).unwrap());
+                Ok(Scalar {
+                    type_name: None,
+                    literal: literal.into()
+                })
+                
             }
         }
     }
@@ -65,46 +89,46 @@ impl_integer!(isize, Isize);
 impl_integer!(usize, Usize);
 
 macro_rules! impl_decimal {
-    ($typ:ident, $marker:ident) => {
-        impl TryFrom<&Integer> for $typ {
-            type Error = <$typ as FromStr>::Err;
-            fn try_from(val: &Integer) -> Result<$typ, <$typ as FromStr>::Err>
+    ($ty:ident, $marker:ident) => {
+        impl TryFrom<&Integer> for $ty {
+            type Error = <$ty as FromStr>::Err;
+            fn try_from(val: &Integer) -> Result<$ty, <$ty as FromStr>::Err>
             {
-                <$typ>::from_str(&val.1)
+                <$ty>::from_str(&val.1)
             }
         }
 
-        impl TryFrom<&Decimal> for $typ {
-            type Error = <$typ as FromStr>::Err;
-            fn try_from(val: &Decimal) -> Result<$typ, <$typ as FromStr>::Err>
+        impl TryFrom<&Decimal> for $ty {
+            type Error = <$ty as FromStr>::Err;
+            fn try_from(val: &Decimal) -> Result<$ty, <$ty as FromStr>::Err>
             {
-                <$typ>::from_str(&val.0)
+                <$ty>::from_str(&val.0)
             }
         }
 
-        impl<S: ErrorSpan> DecodeScalar<S> for $typ {
-            fn decode(scalar: &crate::ast::Scalar<S>, _: &mut Context<S>)
-                -> Result<Self, DecodeError<S>>
+        impl DecodeScalar for $ty {
+            fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
+                -> Result<Self, DecodeError>
             {
                 if let Some(typ) = scalar.type_name.as_ref() {
                     if typ.as_builtin() != Some(&BuiltinType::$marker) {
                         return Err(DecodeError::TypeName {
-                            span: typ.span().clone(),
-                            found: Some(typ.value.clone()),
+                            span: ctx.span(&typ),
+                            found: Some(typ.clone()),
                             expected: ExpectedType::optional(
                                 BuiltinType::$marker),
-                            rust_type: stringify!($typ),
+                            rust_type: stringify!($ty),
                         });
                     }
                 }
-                match &*scalar.literal {
+                match &scalar.literal {
                     Literal::Int(ref v) => v.try_into()
                         .map_err(|err| DecodeError::conversion(
-                            &scalar.literal, err)),
+                                 ctx.span(&scalar), err)),
                     Literal::Decimal(ref v) => v.try_into()
                         .map_err(|err| DecodeError::conversion(
-                            &scalar.literal, err)),
-                    _ => Err(DecodeError::scalar_kind("string",
+                                 ctx.span(&scalar), err)),
+                    _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "string",
                              &scalar.literal))
                 }
             }
@@ -115,44 +139,45 @@ macro_rules! impl_decimal {
 impl_decimal!(f32, F32);
 impl_decimal!(f64, F64);
 
-impl<S: ErrorSpan> DecodeScalar<S> for String {
-    fn decode(scalar: &crate::ast::Scalar<S>, _: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl DecodeScalar for String {
+    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
         if let Some(typ) = scalar.type_name.as_ref() {
             return Err(DecodeError::TypeName {
-                span: typ.span().clone(),
-                found: Some(typ.value.clone()),
+                span: ctx.span(&typ),
+                found: Some(typ.clone()),
                 expected: ExpectedType::no_type(),
                 rust_type: "String",
             });
         }
-        match &*scalar.literal {
+        match &scalar.literal {
             Literal::String(ref s) => Ok(s.clone().into()),
-            _ => Err(DecodeError::scalar_kind("string", &scalar.literal))
+            _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "string",
+                                              &scalar.literal))
         }
     }
 }
 
 macro_rules! impl_from_str {
     ($ty:ty, $display:literal) => {
-        impl<S: ErrorSpan> DecodeScalar<S> for $ty {
-            fn decode(scalar: &crate::ast::Scalar<S>, _: &mut Context<S>)
-                -> Result<Self, DecodeError<S>>
+        impl DecodeScalar for $ty {
+            fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
+                -> Result<Self, DecodeError>
             {
                 if let Some(typ) = scalar.type_name.as_ref() {
                     return Err(DecodeError::TypeName {
-                        span: typ.span().clone(),
-                        found: Some(typ.value.clone()),
+                        span: ctx.span(&typ),
+                        found: Some(typ.clone()),
                         expected: ExpectedType::no_type(),
                         rust_type: $display,
                     });
                 }
-                match &*scalar.literal {
+                match &scalar.literal {
                     Literal::String(ref s) => <$ty>::from_str(&s)
                         .map_err(|err| DecodeError::conversion(
-                                 &scalar.literal, err)),
-                    _ => Err(DecodeError::scalar_kind("string",
+                                 ctx.span(&scalar), err)),
+                    _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "string",
                              &scalar.literal))
                 }
             }
@@ -165,21 +190,21 @@ impl_from_str!(SocketAddr, "SocketAddr");
 #[cfg(feature = "chrono")]
 impl_from_str!(chrono::NaiveDateTime, "NaiveDateTime");
 
-impl<S: ErrorSpan> DecodeScalar<S> for bool {
-    fn decode(scalar: &crate::ast::Scalar<S>, _: &mut Context<S>)
-        -> Result<Self, DecodeError<S>>
+impl DecodeScalar for bool {
+    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
+        -> Result<Self, DecodeError>
     {
         if let Some(typ) = scalar.type_name.as_ref() {
             return Err(DecodeError::TypeName {
-                span: typ.span().clone(),
-                found: Some(typ.value.clone()),
+                span: ctx.span(&typ),
+                found: Some(typ.clone()),
                 expected: ExpectedType::no_type(),
                 rust_type: "bool",
             });
         }
-        match &*scalar.literal {
+        match &scalar.literal {
             Literal::Bool(v) => Ok(*v),
-            _ => Err(DecodeError::scalar_kind("boolean", &scalar.literal))
+            _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "boolean", &scalar.literal))
         }
     }
 }

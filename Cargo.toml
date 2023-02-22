@@ -21,8 +21,10 @@ readme = "README.md"
 [dependencies]
 base64 = { version = "0.21", optional = true }
 chrono = { version = "0.4", optional = true }
-chumsky = { version = "0.8", default-features = false }
+#chumsky = { version = "0.8", default-features = false }
+chumsky = { git = "https://github.com/zesterer/chumsky", branch = "zero-copy" }
 kfl-derive = { path = "./derive", version = "0", optional = true }
+log = "*"
 miette = "5"
 minicbor = { version = "0.19", optional = true, features = ["std", "derive"] }
 thiserror = "1"

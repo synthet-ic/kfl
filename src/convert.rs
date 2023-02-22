@@ -1,9 +1,9 @@
-//! Transparent conversion.
+//! Literal conversion. Makes Node and Scalar transparent objects.
 
 mod scalars;
 
 use crate::{
-    ast::{Node, Literal, Scalar},
+    ast::{Node, Scalar},
     context::Context,
     errors::DecodeError,
     traits::{Decode, DecodeScalar}
@@ -44,10 +44,11 @@ impl DecodeScalar for Scalar {
     }
 }
 
-impl DecodeScalar for Literal {
-    fn decode(scalar: &Scalar, _: &mut Context)
-        -> Result<Self, DecodeError>
-    {
-        Ok(scalar.literal.clone())
-    }
-}
+// TODO(rnarkk) 
+// impl DecodeScalar for Literal {
+//     fn decode(scalar: &Scalar, _: &mut Context)
+//         -> Result<Self, DecodeError>
+//     {
+//         Ok(scalar.literal.clone())
+//     }
+// }

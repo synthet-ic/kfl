@@ -1,3 +1,5 @@
+//! Convert built-in scalar types.
+
 use std::{
     net::SocketAddr,
     path::PathBuf,

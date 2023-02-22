@@ -1,10 +1,10 @@
 mod common;
 
-// use std::{
-//     collections::BTreeMap,
+use std::{
+    collections::BTreeMap,
 //     default::Default,
 //     net::SocketAddr
-// };
+};
 use kfl::{Decode, Encode};
 
 #[test]
@@ -281,21 +281,21 @@ fn print_var_arguments() {
                    r#"node"#);
 }
 
-// #[test]
-// fn print_var_properties() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Node {
-//         #[kfl(properties)]
-//         scores: BTreeMap<String, u64>,
-//     }
-//     let mut scores = BTreeMap::new();
-//     scores.insert("john".into(), 13);
-//     scores.insert("jack".into(), 7);
-//     assert_encode!(r#"node john=13 jack=7"#,
-//                    Node { scores });
-//     assert_encode!(r#"node"#,
-//                    Node { scores: BTreeMap::new() });
-// }
+#[test]
+fn print_var_properties() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(properties)]
+        scores: BTreeMap<String, u64>,
+    }
+    let mut scores = BTreeMap::new();
+    scores.insert("john".into(), 13);
+    scores.insert("jack".into(), 7);
+    assert_encode!(Node { scores },
+                   r#"node john=13 jack=7"#);
+    assert_encode!(Node { scores: BTreeMap::new() },
+                   r#"node"#);
+}
 
 // #[test]
 // fn print_children() {

@@ -10,7 +10,7 @@ use crate::{
 };
 
 /// Parse KDL text and return AST
-pub fn parse(ctx: &mut Context, input: &'static str)
+pub fn parse(ctx: &mut Context, input: &str)
     -> Result<Vec<Node>, Error>
 {
     grammar::document()
@@ -24,7 +24,7 @@ pub fn parse(ctx: &mut Context, input: &'static str)
 }
 
 /// Parse KDL text and decode it into Rust object
-pub fn decode<T>(file_name: &'static str, input: &'static str) -> Result<T, Error>
+pub fn decode<T>(file_name: &'static str, input: &str) -> Result<T, Error>
     where T: Decode,
 {
     let mut ctx = Context::new();
@@ -57,7 +57,7 @@ pub fn decode<T>(file_name: &'static str, input: &'static str) -> Result<T, Erro
 // }
 
 /// Parse KDL text and decode Rust object
-pub fn decode_children<T>(file_name: &'static str, input: &'static str) -> Result<T, Error>
+pub fn decode_children<T>(file_name: &'static str, input: &str) -> Result<T, Error>
     where T: DecodeChildren,
 {
     decode_with_context(file_name, input, |_| {})
@@ -65,7 +65,7 @@ pub fn decode_children<T>(file_name: &'static str, input: &'static str) -> Resul
 
 /// Parse KDL text and decode Rust object providing extra context for the
 /// decoder
-pub fn decode_with_context<T, F>(file_name: &'static str, input: &'static str, set_ctx: F)
+pub fn decode_with_context<T, F>(file_name: &'static str, input: &str, set_ctx: F)
     -> Result<T, Error>
     where F: FnOnce(&mut Context),
           T: DecodeChildren,
@@ -121,8 +121,8 @@ pub fn encode<T>(file_name: &str, t: &T) -> Result<String, Error>
 
 // #[test]
 // fn normal() {
-//     let ctx = Rc::new(RefCell::new(Context::new()));
-//     let nodes = parse::<Span>(ctx.clone(), r#"node "hello""#).unwrap();
+//     let mut ctx = Context::new();
+//     let nodes = parse(&mut ctx, r#"node "hello""#).unwrap();
 //     assert_eq!(nodes.len(), 1);
 //     assert_eq!(&*nodes[0].node_name, "node");
 // }

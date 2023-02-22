@@ -781,10 +781,11 @@ fn encode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                 let default = if let Some(expr) = default_value {
                     quote!(#expr)
                 } else {
-                    quote!(<#ty as ::std::default::Default>::default())
+                    quote!(::std::default::Default::default())
                 };
                 encoder.push(quote! {
-                    if #default != #field {
+                    let default: #ty = #default;
+                    if default != #field {
                         let #scalar = #encode_scalar?;
                         #node.arguments.push(#scalar);
                     }
@@ -852,10 +853,11 @@ fn encode_props(s: &Common, node: &syn::Ident)
                 let default = if let Some(expr) = value {
                     quote!(#expr)
                 } else {
-                    quote!(<#ty as ::std::default::Default>::default())
+                    quote!(::std::default::Default::default())
                 };
                 branches.push(quote! {
-                    if #default != #field {
+                    let default: #ty = #default;
+                    if default != #field {
                         let #scalar = #encode_scalar?;
                         #node.properties.insert(#name, #scalar);
                     }

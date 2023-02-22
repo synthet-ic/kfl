@@ -88,41 +88,41 @@ fn print_argument_default_named() {
 //                    Node { name: "".into() });
 }
 
-// #[test]
-// fn print_argument_default_unnamed() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Node(
-//         #[kfl(argument, default)]
-//         String,
-//     );
-//     assert_encode!(
-//         r#"node "hello""#,
-//         Node("hello".into()));
+#[test]
+fn print_argument_default_unnamed() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Node(
+        #[kfl(argument, default)]
+        String,
+    );
+    assert_encode!(
+        Node("hello".into()),
+        r#"node "hello""#);
 //     assert_encode_error!(Node,
 //         r#"node "hello" "world""#,
 //         "unexpected argument");
-//     assert_encode!(
-//         r#"node"#,
-//         Node("".into()));
-// }
+    assert_encode!(
+        Node("".into()),
+        r#"node"#);
+}
 
-// #[test]
-// fn print_argument_default_value_named() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Node {
-//         #[kfl(argument, default = "unnamed".into())]
-//         name: String,
-//     }
-//     assert_encode!(
-//         r#"node "hello""#,
-//         Node { name: "hello".into() });
+#[test]
+fn print_argument_default_value_named() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(argument, default = "unnamed".into())]
+        name: String,
+    }
+    assert_encode!(
+        Node { name: "hello".into() },
+        r#"node "hello""#);
 //     assert_encode_error!(Node,
 //         r#"node "hello" "world""#,
 //         "unexpected argument");
-//     assert_encode!(
-//         r#"node"#,
-//         Node { name: "unnamed".into() });
-// }
+    assert_encode!(
+        Node { name: "unnamed".into() },
+        r#"node"#);
+}
 
 // #[test]
 // fn print_argument_default_option_value_named() {

@@ -1,4 +1,12 @@
-# [KFL](https://synthet-ic.github.io/kfl/)
+# KFL
+
+[mdbook](https://synthet-ic.github.io/kfl/)
+
+- Nominal Typing
+- Trait-Based
+- Two-Level
+- Decode-Encode Duality
+- Query
 
 A [KDL](https://kdl.dev) file format parser with great error reporting and convenient derive macros.
 

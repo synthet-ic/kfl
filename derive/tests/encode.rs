@@ -124,23 +124,23 @@ fn print_argument_default_value_named() {
         r#"node"#);
 }
 
-// #[test]
-// fn print_argument_default_option_value_named() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Node {
-//         #[kfl(argument, default = Some("unnamed".into()))]
-//         name: Option<String>,
-//     }
-//     assert_encode!(r#"node "hello""#,
-//                    Node { name: Some("hello".into()) });
+#[test]
+fn print_argument_default_option_value_named() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(argument, default = Some("unnamed".into()))]
+        name: Option<String>,
+    }
+    assert_encode!(Node { name: Some("hello".into()) },
+                   r#"node "hello""#);
 //     assert_encode_error!(Node,
 //         r#"node "hello" "world""#,
 //         "unexpected argument");
-//     assert_encode!(r#"node"#,
-//                    Node { name: Some("unnamed".into()) });
-//     assert_encode!(r#"node null"#,
-//                    Node { name: None } );
-// }
+    assert_encode!(Node { name: Some("unnamed".into()) },
+                   r#"node"#);
+    assert_encode!(Node { name: None },
+                   r#"node null"#);
+}
 
 // #[test]
 // fn print_property_named() {

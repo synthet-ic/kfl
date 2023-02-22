@@ -6,10 +6,11 @@ use std::{
 };
 
 use crate::{
-    ast::{Node, Literal, BuiltinType},
+    ast::{Node, Scalar, Literal, BuiltinType},
     context::Context,
-    errors::{DecodeError, ExpectedType},
+    errors::{DecodeError, ExpectedType, EncodeError},
     traits::{Decode, DecodePartial, DecodeChildren, DecodeScalar},
+    traits::{Encode, EncodeScalar},
 };
 
 impl<T: Decode> Decode for Box<T> {
@@ -248,12 +249,19 @@ impl<T: Decode> DecodePartial for Option<T> {
 }
 
 impl<T: DecodeScalar> DecodeScalar for Option<T> {
-    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
-        -> Result<Self, DecodeError>
-    {
+    fn decode(scalar: &Scalar, ctx: &mut Context) -> Result<Self, DecodeError> {
         match &scalar.literal {
             Literal::Null => Ok(None),
             _ => <T as DecodeScalar>::decode(scalar, ctx).map(Some),
+        }
+    }
+}
+
+impl<T: EncodeScalar> EncodeScalar for Option<T> {
+    fn encode(&self, ctx: &mut Context) -> Result<Scalar, EncodeError> {
+        match &self {
+            None => Ok(Scalar { type_name: None, literal: Literal::Null }),
+            Some(scalar) => <T as EncodeScalar>::encode(&scalar, ctx),
         }
     }
 }

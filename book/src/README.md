@@ -3,6 +3,8 @@
 - Nominal Typing
 - Trait-Based
 - Two-Level
+- Decode-Encode Duality
+- Query System
 
 ## KDL
 
@@ -14,6 +16,7 @@
 
 ## TODO
 
+- [ ] Should wrap Box<str>?
 - [ ] Make AST span free, accomodate span in context
 - [ ] Use previous version of KFL itself when testing grammar, instead of serde/serde_json
 - [ ] `-`

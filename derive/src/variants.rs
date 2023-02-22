@@ -12,7 +12,7 @@ pub(crate) struct Common<'a> {
     pub ctx: &'a syn::Ident,
 }
 
-pub fn emit_enum(e: &Enum) -> syn::Result<TokenStream> {
+pub fn emit_decode_enum(e: &Enum) -> syn::Result<TokenStream> {
     let name = &e.ident;
     let node = syn::Ident::new("node", Span::mixed_site());
     let ctx = syn::Ident::new("ctx", Span::mixed_site());

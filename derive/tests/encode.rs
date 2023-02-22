@@ -1,32 +1,35 @@
-// mod common;
+mod common;
 
 // use std::{
 //     collections::BTreeMap,
 //     default::Default,
 //     net::SocketAddr
 // };
-// use kfl::{Decode, Encode};
+use kfl::{Decode, Encode};
 
-// #[test]
-// fn parse_argument_named() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Node {
-//         #[kfl(argument)]
-//         name: String,
-//     }
-//     assert_encode!(
-//         r#"node "hello""#,
-//         Node { name: "hello".into() });
-//     assert_encode_error!(Node,
-//         r#"node "hello" "world""#,
-//         "unexpected argument");
-//     assert_encode_error!(Node,
-//         r#"(some)node "hello""#,
-//         "no type name expected for this node");
-//     assert_encode_error!(Node,
-//         r#"node"#,
-//         "additional argument `name` is required");
-// }
+#[test]
+fn print_argument_named() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(argument)]
+        name: String,
+    }
+    assert_encode!(
+        Node { name: "hello".into() },
+        r#"node "hello""#);
+    // assert_encode_error!(Node,
+    //     r#"node "hello" "world""#,
+    //     "unexpected argument"
+    // );
+    // assert_encode_error!(Node,
+    //     r#"(some)node "hello""#,
+    //     "no type name expected for this node"
+    // );
+    // assert_encode_error!(Node,
+    //     r#"node"#,
+    //     "additional argument `name` is required"
+    // );
+}
 
 // #[test]
 // fn parse_argument_unnamed() {

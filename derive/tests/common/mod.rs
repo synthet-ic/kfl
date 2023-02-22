@@ -46,9 +46,9 @@ macro_rules! assert_decode_children_error {
 #[macro_export]
 macro_rules! assert_encode {
     ($input:expr, $output:literal) => {
-        let input = kfl::encode("<test>", $input).unwrap();
-        let output = $output;
-        common::hint_same_type(&input, &output);
+        let input = kfl::encode("<test>", &$input).unwrap();
+        let output = $output.to_string();
+        // common::hint_same_type(&input, &output);
         assert_eq!(input, output);
     }
 }

@@ -133,6 +133,29 @@ macro_rules! impl_decimal {
                 }
             }
         }
+
+        impl TryFrom<&$ty> for Decimal {
+            type Error = <$ty as FromStr>::Err;
+            fn try_from(val: &$ty) -> Result<Decimal, <$ty as FromStr>::Err>
+            {
+                Ok(Decimal(
+                    val.to_string().into()
+                ))
+            }
+        }
+
+        impl EncodeScalar for $ty {
+            fn encode(&self, _: &mut Context)
+                -> Result<Scalar, EncodeError>
+            {
+                let literal = Literal::Decimal(Decimal::try_from(self).unwrap());
+                Ok(Scalar {
+                    type_name: None,
+                    literal: literal.into()
+                })
+                
+            }
+        }
     }
 }
 
@@ -158,9 +181,21 @@ impl DecodeScalar for String {
         }
     }
 }
+impl EncodeScalar for String {
+    fn encode(&self, _: &mut Context)
+        -> Result<Scalar, EncodeError>
+    {
+        let literal = Literal::String(self.clone().into());
+        Ok(Scalar {
+            type_name: None,
+            literal: literal.into()
+        })
+        
+    }
+}
 
 macro_rules! impl_from_str {
-    ($ty:ty, $display:literal) => {
+    ($ty:ty) => {
         impl DecodeScalar for $ty {
             fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
                 -> Result<Self, DecodeError>
@@ -170,7 +205,7 @@ macro_rules! impl_from_str {
                         span: ctx.span(&typ),
                         found: Some(typ.clone()),
                         expected: ExpectedType::no_type(),
-                        rust_type: $display,
+                        rust_type: stringify!($ty),
                     });
                 }
                 match &scalar.literal {
@@ -185,10 +220,36 @@ macro_rules! impl_from_str {
     }
 }
 
-impl_from_str!(PathBuf, "PathBuf");
-impl_from_str!(SocketAddr, "SocketAddr");
+impl_from_str!(PathBuf);
+impl EncodeScalar for PathBuf {
+    fn encode(&self, _: &mut Context)
+        -> Result<Scalar, EncodeError>
+    {
+        let string = format!("{}", self.display());
+        let literal = Literal::String(string.into_boxed_str());
+        Ok(Scalar {
+            type_name: None,
+            literal: literal.into()
+        })
+        
+    }
+}
+
+impl_from_str!(SocketAddr);
+impl EncodeScalar for SocketAddr {
+    fn encode(&self, _: &mut Context)
+        -> Result<Scalar, EncodeError>
+    {
+        let string = format!("{}", self);
+        let literal = Literal::String(string.into_boxed_str());
+        Ok(Scalar {
+            type_name: None,
+            literal: literal.into()
+        })
+    }
+}
 #[cfg(feature = "chrono")]
-impl_from_str!(chrono::NaiveDateTime, "NaiveDateTime");
+impl_from_str!(chrono::NaiveDateTime);
 
 impl DecodeScalar for bool {
     fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
@@ -206,5 +267,16 @@ impl DecodeScalar for bool {
             Literal::Bool(v) => Ok(*v),
             _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "boolean", &scalar.literal))
         }
+    }
+}
+impl EncodeScalar for bool {
+    fn encode(&self, _: &mut Context)
+        -> Result<Scalar, EncodeError>
+    {
+        let literal = Literal::Bool(self.clone());
+        Ok(Scalar {
+            type_name: None,
+            literal: literal.into()
+        })
     }
 }

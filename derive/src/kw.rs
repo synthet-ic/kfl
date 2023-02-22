@@ -8,5 +8,4 @@ syn::custom_keyword!(name);
 syn::custom_keyword!(properties);
 syn::custom_keyword!(property);
 syn::custom_keyword!(skip);
-syn::custom_keyword!(span);
 syn::custom_keyword!(unwrap);

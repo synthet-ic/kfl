@@ -36,7 +36,6 @@ pub enum FieldMode {
     Children,
     Child,
     Flatten,
-    Span,
 }
 
 #[derive(Debug)]
@@ -71,10 +70,6 @@ pub struct Field {
     pub attr: AttrAccess,
     pub tmp_name: syn::Ident,
     pub ty: syn::Type
-}
-
-pub struct SpanField {
-    pub field: Field,
 }
 
 pub struct Arg {
@@ -127,7 +122,6 @@ pub struct Struct {
     pub ident: syn::Ident,
     pub trait_props: TraitProps,
     pub generics: syn::Generics,
-    pub spans: Vec<SpanField>,
     pub arguments: Vec<Arg>,
     pub var_args: Option<VarArgs>,
     pub properties: Vec<Prop>,
@@ -142,7 +136,6 @@ pub struct StructBuilder {
     pub ident: syn::Ident,
     pub trait_props: TraitProps,
     pub generics: syn::Generics,
-    pub spans: Vec<SpanField>,
     pub arguments: Vec<Arg>,
     pub var_args: Option<VarArgs>,
     pub properties: Vec<Prop>,
@@ -276,7 +269,6 @@ impl StructBuilder {
             ident,
             trait_props,
             generics,
-            spans: Vec::new(),
             arguments: Vec::new(),
             var_args: None::<VarArgs>,
             properties: Vec::new(),
@@ -290,7 +282,6 @@ impl StructBuilder {
             ident: self.ident,
             trait_props: self.trait_props,
             generics: self.generics,
-            spans: self.spans,
             has_arguments:
                 !self.arguments.is_empty() || self.var_args.is_some(),
             has_properties:
@@ -384,9 +375,6 @@ impl StructBuilder {
                     default: None,
                 });
             }
-            Some(FieldMode::Span) => {
-                self.spans.push(SpanField { field });
-            }
             None => {
                 self.extra_fields.push(ExtraField {
                     field,
@@ -415,7 +403,6 @@ impl Struct {
     }
     pub fn all_fields(&self) -> Vec<&Field> {
         let mut res = Vec::new();
-        res.extend(self.spans.iter().map(|a| &a.field));
         res.extend(self.arguments.iter().map(|a| &a.field));
         res.extend(self.var_args.iter().map(|a| &a.field));
         res.extend(self.properties.iter().map(|p| &p.field));
@@ -644,9 +631,6 @@ impl Attr {
             } else {
                 Ok(Attr::Default(None))
             }
-        } else if lookahead.peek(kw::span) {
-            let _kw: kw::span = input.parse()?;
-            Ok(Attr::FieldMode(FieldMode::Span))
         } else {
             Err(lookahead.error())
         }

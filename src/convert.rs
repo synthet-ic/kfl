@@ -1,4 +1,4 @@
-//! Literal conversion. Makes Node and Scalar transparent objects.
+//! Transparent conversions. Makes `Node` and `Scalar` literal objects.
 
 mod containers;
 mod scalars;
@@ -34,10 +34,14 @@ impl Decode for Node {
     }
 }
 
+impl Encode for Node {
+    fn encode(&self, _: &mut Context) -> Result<Node, EncodeError> {
+        Ok(self.clone())
+    }
+}
+
 impl DecodeScalar for Scalar {
-    fn decode(scalar: &Scalar, _: &mut Context)
-        -> Result<Self, DecodeError>
-    {
+    fn decode(scalar: &Scalar, _: &mut Context) -> Result<Self, DecodeError> {
         Ok(Scalar {
             type_name: scalar.type_name.as_ref().map(|n| n.clone()),
             literal: scalar.literal.clone(),
@@ -46,9 +50,7 @@ impl DecodeScalar for Scalar {
 }
 
 impl EncodeScalar for Scalar {
-    fn encode(&self, _: &mut Context)
-        -> Result<Scalar, EncodeError>
-    {
+    fn encode(&self, _: &mut Context) -> Result<Scalar, EncodeError> {
         Ok(self.clone())
     }
 }

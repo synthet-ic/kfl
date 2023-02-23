@@ -3,7 +3,7 @@ mod common;
 use std::{
     collections::BTreeMap,
 //     default::Default,
-//     net::SocketAddr
+    net::SocketAddr
 };
 use kfl::{Decode, Encode};
 
@@ -542,63 +542,63 @@ fn print_enum_unnamed() {
     //     "expected one of `var0`, `var1`, `var2`");
 }
 
-// // #[test]
-// // fn print_enum() {
-// //     #[derive(Decode, Encode, Debug, PartialEq)]
-// //     enum Variant {
-// //         Arg1(Arg1),
-// //         Prop1(Prop1),
-// //         #[kfl(skip)]
-// //         #[allow(dead_code)]
-// //         Var3(u32),
-// //     }
-// //     #[derive(Decode, Encode, Debug, PartialEq)]
-// //     struct Arg1 {
-// //         #[kfl(argument)]
-// //         name: String,
-// //     }
-// //     #[derive(Decode, Encode, Debug, PartialEq, Default)]
-// //     struct Prop1 {
-// //         #[kfl(property)]
-// //         label: String,
-// //     }
-// //     assert_eq!(parse::<Variant>(r#"arg1 "hello""#),
-// //                Variant::Arg1(Arg1 { name: "hello".into() }));
-// //     assert_eq!(parse::<Variant>(r#"prop1 label="hello""#),
-// //                Variant::Prop1(Prop1 { label: "hello".into() }));
-// //     assert_eq!(parse_err::<Variant>(r#"something"#),
-// //         "expected one of `arg1`, `prop1`");
-// // }
-
 // #[test]
-// fn print_str() {
+// fn print_enum() {
 //     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Node {
-//         #[kfl(argument)]  /* str */
-//         listen: SocketAddr,
+//     enum Variant {
+//         Arg1(Arg1),
+//         Prop1(Prop1),
+//         #[kfl(skip)]
+//         #[allow(dead_code)]
+//         Var3(u32),
 //     }
-//     assert_encode!(r#"node "127.0.0.1:8080""#,
-//                Node { listen: "127.0.0.1:8080".parse().unwrap() });
-//     assert_encode_error!(Node,
-//         r#"node "2/3""#,
-//         "invalid socket address syntax");
+//     #[derive(Decode, Encode, Debug, PartialEq)]
+//     struct Arg1 {
+//         #[kfl(argument)]
+//         name: String,
+//     }
+//     #[derive(Decode, Encode, Debug, PartialEq, Default)]
+//     struct Prop1 {
+//         #[kfl(property)]
+//         label: String,
+//     }
+//     assert_eq!(parse::<Variant>(r#"arg1 "hello""#),
+//                Variant::Arg1(Arg1 { name: "hello".into() }));
+//     assert_eq!(parse::<Variant>(r#"prop1 label="hello""#),
+//                Variant::Prop1(Prop1 { label: "hello".into() }));
+//     assert_eq!(parse_err::<Variant>(r#"something"#),
+//         "expected one of `arg1`, `prop1`");
 // }
 
-// #[test]
-// fn print_option_str() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Server {
-//         #[kfl(property, default)]  /* str */
-//         listen: Option<SocketAddr>,
-//     }
-//     assert_encode!(r#"server listen="127.0.0.1:8080""#,
-//                    Server { listen: Some("127.0.0.1:8080".parse().unwrap()) });
-//     assert_encode_error!(Server,
-//         r#"server listen="2/3""#,
-//         "invalid socket address syntax");
-//     assert_encode!(r#"server listen=null"#,
-//                    Server { listen: None });
-// }
+#[test]
+fn print_str() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Node {
+        #[kfl(argument)]  /* str */
+        listen: SocketAddr,
+    }
+    assert_encode!(Node { listen: "127.0.0.1:8080".parse().unwrap() },
+                   r#"node "127.0.0.1:8080""#);
+    // assert_encode_error!(Node,
+    //     r#"node "2/3""#,
+    //     "invalid socket address syntax");
+}
+
+#[test]
+fn print_option_str() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Server {
+        #[kfl(property, default)]  /* str */
+        listen: Option<SocketAddr>,
+    }
+    assert_encode!(Server { listen: Some("127.0.0.1:8080".parse().unwrap()) },
+                   r#"server listen="127.0.0.1:8080""#);
+    // assert_encode_error!(Server,
+    //     r#"server listen="2/3""#,
+    //     "invalid socket address syntax");
+    // assert_encode!(Server { listen: None },
+    //                r#"server listen=null"#);
+}
 
 // #[test]
 // fn print_bytes() {
@@ -607,15 +607,13 @@ fn print_enum_unnamed() {
 //         #[kfl(argument)]  /* bytes */
 //         data: Vec<u8>,
 //     }
-//     assert_encode!(
-//         r#"bytes (base64)"aGVsbG8=""#,
-//         Bytes { data: b"hello".to_vec() });
-//     assert_encode!(
-//         r#"bytes "world""#,
-//         Bytes { data: b"world".to_vec() });
-//     assert_encode_error!(Bytes,
-//         r#"bytes (base64)"2/3""#,
-//         "Invalid padding");
+//     assert_encode!(Bytes { data: b"hello".to_vec() },
+//                    r#"bytes (base64)"aGVsbG8=""#);
+//     assert_encode!(Bytes { data: b"world".to_vec() },
+//                    r#"bytes "world""#);
+//     // assert_encode_error!(Bytes,
+//     //     r#"bytes (base64)"2/3""#,
+//     //     "Invalid padding");
 // }
 
 // #[test]
@@ -636,16 +634,15 @@ fn print_enum_unnamed() {
 //         Bytes { data: None });
 // }
 
-// #[test]
-// fn print_extra() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Node {
-//         field: String,
-//     }
-//     assert_encode!(
-//         r#"node"#,
-//         Node { field: "".into() });
-//     assert_encode_error!(Node,
-//         r#"node x=1"#,
-//         "unexpected property `x`");
-// }
+#[test]
+fn print_extra() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Node {
+        field: String,
+    }
+    assert_encode!(Node { field: "".into() },
+                   r#"node"#);
+    // assert_encode_error!(Node,
+    //     r#"node x=1"#,
+    //     "unexpected property `x`");
+}

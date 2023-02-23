@@ -617,12 +617,12 @@ pub fn emit_encode_struct(s: &Struct, partial: bool)
     };
 
     let declare_node = declare_node(&node, &s_name);
-    // let decode_specials = decode_specials(&common, &node)?;
+    // let encode_specials = encode_specials(&common, &node)?;
     let encode_arguments = encode_arguments(&common, &node, false)?;
     let encode_properties = encode_properties(&common, &node, false)?;
     let encode_children_normal = encode_children(
         &common, &node, Some(quote!(#ctx.span(&#node))))?;
-    let assign_extra = assign_extra(&common)?;
+    // let assign_extra = assign_extra(&common)?;
 
     let mut extra_traits = Vec::new();
     if partial {
@@ -690,7 +690,7 @@ pub fn emit_encode_struct(s: &Struct, partial: bool)
                 #encode_arguments
                 #encode_properties
                 #encode_children_normal
-                #assign_extra
+                // #assign_extra
                 Ok(#node)
             }
         }

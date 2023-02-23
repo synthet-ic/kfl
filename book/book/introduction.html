@@ -81,7 +81,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> KFL</a></li><li class="chapter-item expanded "><a href="introduction.html" class="active"><strong aria-hidden="true">2.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="tutorial.html"><strong aria-hidden="true">3.</strong> Tutorial</a></li><li class="chapter-item expanded "><a href="rationale.html"><strong aria-hidden="true">4.</strong> Rationale</a></li><li class="chapter-item expanded "><a href="appendix.html"><strong aria-hidden="true">5.</strong> Appendix</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="appendix/knuffel.html"><strong aria-hidden="true">5.1.</strong> knuffel</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> KFL</a></li><li class="chapter-item expanded "><a href="introduction.html" class="active"><strong aria-hidden="true">2.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="tutorial.html"><strong aria-hidden="true">3.</strong> Tutorial</a></li><li class="chapter-item expanded "><a href="rationale.html"><strong aria-hidden="true">4.</strong> Rationale</a></li><li class="chapter-item expanded "><a href="decode-encode.html"><strong aria-hidden="true">5.</strong> Decode and Encode</a></li><li class="chapter-item expanded "><a href="appendix.html"><strong aria-hidden="true">6.</strong> Appendix</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="appendix/knuffel.html"><strong aria-hidden="true">6.1.</strong> knuffel</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -230,6 +230,62 @@ struct Node2 {
     </td>
   </tr>
 </table>
+<h1 id="usage"><a class="header" href="#usage">Usage</a></h1>
+<p>Most common usage of this library is using <code>derive</code> and [parse] function:</p>
+<pre><pre class="playground"><code class="language-rust">use kfl::Decode;
+
+#[derive(Decode)]
+struct Config {
+    #[kfl(children)]
+    routes: Vec&lt;Route&gt;,
+    #[kfl(children)]
+    plugins: Vec&lt;Plugin&gt;,
+}
+
+#[derive(Decode)]
+struct Route {
+    #[kfl(argument)]
+    path: String,
+    #[kfl(children)]
+    subroutes: Vec&lt;Route&gt;,
+}
+
+#[derive(Decode)]
+struct Plugin {
+    #[kfl(argument)]
+    name: String,
+    #[kfl(property)]
+    url: String,
+}
+
+<span class="boring">fn main() -&gt; miette::Result&lt;()&gt; {
+</span>let config = kfl::decode_children::&lt;Config&gt;(&quot;example.kdl&quot;, r#&quot;
+    route &quot;/api&quot; {
+        route &quot;/api/v1&quot;
+    }
+    plugin &quot;http&quot; url=&quot;https://example.org/http&quot;
+&quot;#)?;
+<span class="boring">Ok(())
+</span><span class="boring">}</span></code></pre></pre>
+<p>This parses into a vector of nodes as enums <code>Config</code>, but you also use some node as a root of the document if there is no properties and arguments declared:</p>
+<pre><code class="language-rust ignore">#[derive(Decode)]
+struct Document {
+    #[kfl(child, unwrap(argument))]
+    version: Option&lt;String&gt;,
+    #[kfl(children)]
+    routes: Vec&lt;Route&gt;,
+    #[kfl(children)]
+    plugins: Vec&lt;Plugin&gt;,
+}
+
+let config = kfl::decode_children::&lt;Document&gt;(&quot;example.kdl&quot;, r#&quot;
+    version &quot;2.0&quot;
+    route &quot;/api&quot; {
+        route &quot;/api/v1&quot;
+    }
+    plugin &quot;http&quot; url=&quot;https://example.org/http&quot;
+&quot;#)?;</code></pre>
+<p>See description of <a href="derive@Decode">Decode</a> and <a href="derive@DecodeScalar">DecodeScalar</a> for the full reference on allowed attributes and parse modes.</p>
 
                     </main>
 

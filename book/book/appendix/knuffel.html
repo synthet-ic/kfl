@@ -81,7 +81,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="../index.html"><strong aria-hidden="true">1.</strong> KFL</a></li><li class="chapter-item expanded "><a href="../introduction.html"><strong aria-hidden="true">2.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../tutorial.html"><strong aria-hidden="true">3.</strong> Tutorial</a></li><li class="chapter-item expanded "><a href="../rationale.html"><strong aria-hidden="true">4.</strong> Rationale</a></li><li class="chapter-item expanded "><a href="../appendix.html"><strong aria-hidden="true">5.</strong> Appendix</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../appendix/knuffel.html" class="active"><strong aria-hidden="true">5.1.</strong> knuffel</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../index.html"><strong aria-hidden="true">1.</strong> KFL</a></li><li class="chapter-item expanded "><a href="../introduction.html"><strong aria-hidden="true">2.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../tutorial.html"><strong aria-hidden="true">3.</strong> Tutorial</a></li><li class="chapter-item expanded "><a href="../rationale.html"><strong aria-hidden="true">4.</strong> Rationale</a></li><li class="chapter-item expanded "><a href="../decode-encode.html"><strong aria-hidden="true">5.</strong> Decode and Encode</a></li><li class="chapter-item expanded "><a href="../appendix.html"><strong aria-hidden="true">6.</strong> Appendix</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../appendix/knuffel.html" class="active"><strong aria-hidden="true">6.1.</strong> knuffel</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -147,28 +147,25 @@
 <ul>
 <li>Children
 <ul>
-<li>Not eble to use enum as a single child</li>
+<li>Not able to use enum as a single child</li>
 </ul>
 </li>
 <li>Nominal
 <ul>
-<li>Flatten properties (analogous to serde)
-<ul>
-<li>Not implemented <code>DecodeScalar</code> for structs</li>
-</ul>
-</li>
+<li>Flatten properties (analogous to serde)</li>
 <li>NodeName</li>
 <li>TypeName
 <ul>
-<li>hence type annotations for nodes and scalars are different</li>
+<li>type annotations for nodes and scalars are different</li>
 </ul>
 </li>
 <li>bool child</li>
 </ul>
 </li>
+<li><code>DecodeChildren</code></li>
 <li>Option vs Default
 <ul>
-<li>benefit: form of type path doesn't matter </li>
+<li>form of type path doesn't matter </li>
 </ul>
 </li>
 <li>unwrap</li>
@@ -189,7 +186,7 @@
 <li>Beautiful fact is that default <code>Decode</code> behaviour anyway coerce <code>T</code> into <code>Option&lt;T&gt;</code> when <code>ChildMode::Normal</code> or <code>Vec&lt;T&gt;</code> when <code>ChildMode::Multi</code> at decoding (and then unwrap or into_iter.collect)</li>
 </ul>
 </li>
-<li>Remove <code>DecodeMode</code></li>
+<li>Removed <code>DecodeMode</code></li>
 <li><code>DecodeScalar</code>
 <ul>
 <li>Separation of <code>check_type</code> and <code>raw_decode</code> is inefficient when implementing <code>bytes</code> for <code>Vec&lt;u8&gt;</code>
@@ -198,6 +195,31 @@
 </ul>
 </li>
 <li>We can expect more that one kind of value, so DecodeError::ScalarKind cannot expect one fixed Kind</li>
+</ul>
+</li>
+<li>Removed <code>Document</code> struct as root of nodes
+<ul>
+<li><input disabled="" type="checkbox"/>
+Make <code>DecodeChildren</code> sealed?</li>
+</ul>
+</li>
+<li>Removed <code>Spanned</code>, now <code>Context</code> has spans map, prepared at parsing
+<ul>
+<li>To avoid spreading <code>DUMMY_SP</code> kind everywhere when implement<code>Encode</code></li>
+</ul>
+</li>
+<li><code>Span</code> now our AST is span-free, spans are accomodated in context
+<ul>
+<li><code>Span</code> is to protect from being dereferenced <code>AsRef</code> to hold pointer identity</li>
+<li>Instead of <code>Spanned&lt;Box&lt;str&gt;, S&gt;</code>, just <code>Span</code> (with <code>Context</code> including the input text) suffices. Another beautiful fact.</li>
+<li>chumsky now operates on its own Input trait that has an associated type <code>Span</code>, so we cannot be passive about <code>S</code> expecting only some specific set of traits consisting of third party's ones (<code>Into&lt;miette::SourceSpan&gt;</code>).
+<ul>
+<li>In addition to that, each span type from different crates anyway resembles at all and conversion is direct as well. So let's be bold to carry around our own.</li>
+</ul>
+</li>
+<li>Now that users can get spans from <code>Context</code> returned from <code>decode</code>, removed <code>span</code> and <code>span_type</code> directives and correspoinding fields from ast.</li>
+<li>Now <code>DecodePatial</code> compatibility and <code>DecodeChilden</code> compatibility coincide.</li>
+<li><code>Context</code> is not primarily for stacking erros, the need is partially met by <code>DecodePartial</code></li>
 </ul>
 </li>
 </ul>

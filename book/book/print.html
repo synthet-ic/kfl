@@ -82,7 +82,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> KFL</a></li><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">2.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="tutorial.html"><strong aria-hidden="true">3.</strong> Tutorial</a></li><li class="chapter-item expanded "><a href="rationale.html"><strong aria-hidden="true">4.</strong> Rationale</a></li><li class="chapter-item expanded "><a href="appendix.html"><strong aria-hidden="true">5.</strong> Appendix</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="appendix/knuffel.html"><strong aria-hidden="true">5.1.</strong> knuffel</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> KFL</a></li><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">2.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="tutorial.html"><strong aria-hidden="true">3.</strong> Tutorial</a></li><li class="chapter-item expanded "><a href="rationale.html"><strong aria-hidden="true">4.</strong> Rationale</a></li><li class="chapter-item expanded "><a href="decode-encode.html"><strong aria-hidden="true">5.</strong> Decode and Encode</a></li><li class="chapter-item expanded "><a href="appendix.html"><strong aria-hidden="true">6.</strong> Appendix</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="appendix/knuffel.html"><strong aria-hidden="true">6.1.</strong> knuffel</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -147,116 +147,83 @@
 <ul>
 <li>Nominal Typing</li>
 <li>Trait-Based</li>
+<li>Two-Level</li>
+<li>Decode-Encode Duality</li>
+<li>Query System</li>
 </ul>
-<h1 id="about-kdl"><a class="header" href="#about-kdl">About KDL</a></h1>
-<p>To give you some background on the KDL format. Here is a small example:</p>
-<pre><code class="language-kdl">foo 1 &quot;three&quot; key=&quot;val&quot; {
-    bar
-    (role)baz 1 2
-}
-</code></pre>
-<p>Here is what are annotations for all the datum as described by the [specification] and this guide:</p>
-<pre><code class="language-text">foo 1 &quot;three&quot; key=&quot;val&quot; {                           ╮
-─┬─ ┬ ───┬─── ────┬────                             │
- │  │    │        ╰───── property (can be multiple) │
- │  │    │                                          │
- │  ╰────┴────────────── arguments                  │
- │                                                  │
- ╰── node name                                      ├─ node &quot;foo&quot;, with
-                                                    │  &quot;bar&quot; and &quot;baz&quot;
-    bar                                             │  being children
-    (role)baz 1 2                                   │
-     ──┬─                                           │
-       ╰────── type name for node named &quot;baz&quot;       │
-}                                                   ╯
-</code></pre>
-<p>(note, the order of properties doesn't matter as well as the order of properties with respect to arguments, so I've moved arguments to have less intersections for the arrows)</p>
-<h1 id="usage"><a class="header" href="#usage">Usage</a></h1>
-<p>Most common usage of this library is using <code>derive</code> and [parse] function:</p>
-<pre><pre class="playground"><code class="language-rust">use kfl::Decode;
-
-#[derive(Decode)]
-struct Config {
-    #[kfl(children)]
-    routes: Vec&lt;Route&gt;,
-    #[kfl(children)]
-    plugins: Vec&lt;Plugin&gt;,
-}
-
-#[derive(Decode)]
-struct Route {
-    #[kfl(argument)]
-    path: String,
-    #[kfl(children)]
-    subroutes: Vec&lt;Route&gt;,
-}
-
-#[derive(Decode)]
-struct Plugin {
-    #[kfl(argument)]
-    name: String,
-    #[kfl(property)]
-    url: String,
-}
-
-<span class="boring">fn main() -&gt; miette::Result&lt;()&gt; {
-</span>let config = kfl::decode_children::&lt;Config&gt;(&quot;example.kdl&quot;, r#&quot;
-    route &quot;/api&quot; {
-        route &quot;/api/v1&quot;
-    }
-    plugin &quot;http&quot; url=&quot;https://example.org/http&quot;
-&quot;#)?;
-<span class="boring">Ok(())
-</span><span class="boring">}</span></code></pre></pre>
-<p>This parses into a vector of nodes as enums <code>Config</code>, but you also use some node as a root of the document if there is no properties and arguments declared:</p>
-<pre><code class="language-rust ignore">#[derive(Decode)]
-struct Document {
-    #[kfl(child, unwrap(argument))]
-    version: Option&lt;String&gt;,
-    #[kfl(children)]
-    routes: Vec&lt;Route&gt;,
-    #[kfl(children)]
-    plugins: Vec&lt;Plugin&gt;,
-}
-
-let config = kfl::decode_children::&lt;Document&gt;(&quot;example.kdl&quot;, r#&quot;
-    version &quot;2.0&quot;
-    route &quot;/api&quot; {
-        route &quot;/api/v1&quot;
-    }
-    plugin &quot;http&quot; url=&quot;https://example.org/http&quot;
-&quot;#)?;</code></pre>
-<p>See description of <a href="derive@Decode">Decode</a> and <a href="derive@DecodeScalar">DecodeScalar</a> for the full reference on allowed attributes and parse modes.</p>
 <h2 id="kdl"><a class="header" href="#kdl">KDL</a></h2>
 <ul>
+<li>KDL as token tree (≠ AST, ≠ token stream)
+<ul>
+<li>KDL is new string, new literal. Nodes are static just like string literals but have more structure than old literals</li>
+<li>Those raw literals (nodes) can be exposed to your final structures
+<ul>
+<li>By that, it's not 'multi-staged'</li>
+</ul>
+</li>
+</ul>
+</li>
 <li>KDL as algebraic data type with exponential</li>
-<li>KDL as token tree (≠ AST, ≠ token stream)</li>
 </ul>
 <h2 id="todo"><a class="header" href="#todo">TODO</a></h2>
+<h3 id="designing-basics"><a class="header" href="#designing-basics">Designing Basics</a></h3>
 <ul>
 <li><input disabled="" type="checkbox"/>
-<code>-</code></li>
+Delete <code>DecodeChildren</code></li>
+<li><code>flatten</code>
+<ul>
 <li><input disabled="" type="checkbox"/>
-Implement <code>DecodeScalar</code> for struct as the replacement of <code>flatten(properties)</code> and support <code>flatten(arguments)</code> equivalent as well</li>
+Implement <code>DecodeScalar</code> for struct as the replacement of <code>flatten(properties)</code> and support <code>flatten(arguments)</code> equivalent as well?</li>
 <li><input disabled="" type="checkbox"/>
-Span</li>
+flatten for enums</li>
+</ul>
+</li>
 <li><input disabled="" type="checkbox"/>
 Detect name conflicts between fields in the same struct</li>
 <li><input disabled="" type="checkbox"/>
-Understand error categories, reconsider <code>Context</code> in the presence of <code>DecodePartial</code></li>
-<li><input disabled="" type="checkbox"/>
-Test organisation, provide utility macros</li>
-<li><input disabled="" type="checkbox"/>
-<code>Encode</code>
+property enum or union?</li>
+</ul>
+<h3 id="documentation"><a class="header" href="#documentation">Documentation</a></h3>
+<h3 id="source-code-quality"><a class="header" href="#source-code-quality">Source Code Quality</a></h3>
+<h3 id="testing"><a class="header" href="#testing">Testing</a></h3>
 <ul>
 <li><input disabled="" type="checkbox"/>
-<code>EncodePartial</code> as an analogous to <code>skip_serializing_none</code></li>
+Span
+<ul>
+<li><input disabled="" type="checkbox"/>
+Should wrap Box<str>?</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"/>
+Understand error categories</li>
+<li><input disabled="" type="checkbox"/>
+Rename <code>parse_</code> to <code>decode_</code> and <code>print_</code> to <code>encode_</code> in tests?</li>
+<li><input disabled="" type="checkbox"/>
+Use previous version of KFL itself when testing grammar, instead of serde/serde_json</li>
+</ul>
+<h3 id="encoding"><a class="header" href="#encoding">Encoding</a></h3>
+<ul>
+<li><input disabled="" type="checkbox"/>
+</li>
+<li><input disabled="" type="checkbox"/>
+<p>Encoding should have ways of recovering quatiented styling/formatting</p>
+</li>
+</ul>
+<h3 id="scalars"><a class="header" href="#scalars">Scalars</a></h3>
+<ul>
+<li>Instad of predetermining strings or patterns of chars valid for scalar values, determine syntactical separation condition between meta structure and scalar representations. This would give us possible scope of scalar notations, more relaxed ones if successful, and ability for scalar objects, in AST, to hold raw strings or slices to delay parsing them.</li>
+<li>Eliminate <code>FromStr</code>, <code>ToString</code>, <code>Display</code> (as primary interfaces, as least)
+<ul>
+<li><code>#![no_std]</code></li>
 </ul>
 </li>
 <li><input disabled="" type="checkbox"/>
 Compare TokenStream with Scalar, TokenTree with Node</li>
+</ul>
+<h3 id="specials"><a class="header" href="#specials">Specials</a></h3>
+<ul>
 <li><input disabled="" type="checkbox"/>
-property enum or union</li>
+<code>-</code></li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
 <table>
@@ -346,6 +313,62 @@ struct Node2 {
     </td>
   </tr>
 </table>
+<h1 id="usage"><a class="header" href="#usage">Usage</a></h1>
+<p>Most common usage of this library is using <code>derive</code> and [parse] function:</p>
+<pre><pre class="playground"><code class="language-rust">use kfl::Decode;
+
+#[derive(Decode)]
+struct Config {
+    #[kfl(children)]
+    routes: Vec&lt;Route&gt;,
+    #[kfl(children)]
+    plugins: Vec&lt;Plugin&gt;,
+}
+
+#[derive(Decode)]
+struct Route {
+    #[kfl(argument)]
+    path: String,
+    #[kfl(children)]
+    subroutes: Vec&lt;Route&gt;,
+}
+
+#[derive(Decode)]
+struct Plugin {
+    #[kfl(argument)]
+    name: String,
+    #[kfl(property)]
+    url: String,
+}
+
+<span class="boring">fn main() -&gt; miette::Result&lt;()&gt; {
+</span>let config = kfl::decode_children::&lt;Config&gt;(&quot;example.kdl&quot;, r#&quot;
+    route &quot;/api&quot; {
+        route &quot;/api/v1&quot;
+    }
+    plugin &quot;http&quot; url=&quot;https://example.org/http&quot;
+&quot;#)?;
+<span class="boring">Ok(())
+</span><span class="boring">}</span></code></pre></pre>
+<p>This parses into a vector of nodes as enums <code>Config</code>, but you also use some node as a root of the document if there is no properties and arguments declared:</p>
+<pre><code class="language-rust ignore">#[derive(Decode)]
+struct Document {
+    #[kfl(child, unwrap(argument))]
+    version: Option&lt;String&gt;,
+    #[kfl(children)]
+    routes: Vec&lt;Route&gt;,
+    #[kfl(children)]
+    plugins: Vec&lt;Plugin&gt;,
+}
+
+let config = kfl::decode_children::&lt;Document&gt;(&quot;example.kdl&quot;, r#&quot;
+    version &quot;2.0&quot;
+    route &quot;/api&quot; {
+        route &quot;/api/v1&quot;
+    }
+    plugin &quot;http&quot; url=&quot;https://example.org/http&quot;
+&quot;#)?;</code></pre>
+<p>See description of <a href="derive@Decode">Decode</a> and <a href="derive@DecodeScalar">DecodeScalar</a> for the full reference on allowed attributes and parse modes.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="tutorial"><a class="header" href="#tutorial">Tutorial</a></h1>
 <h2 id="case-1-all-arguments"><a class="header" href="#case-1-all-arguments">Case 1: All Arguments</a></h2>
 <h3 id="case-11-with-different-types"><a class="header" href="#case-11-with-different-types">Case 1.1: With Different Types</a></h3>
@@ -549,36 +572,39 @@ fn main() {
     println!(&quot;{:?}&quot;, &amp;doc);
 }</code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="rationale"><a class="header" href="#rationale">Rationale</a></h1>
-<h1 id="decodepartial"><a class="header" href="#decodepartial"><code>DecodePartial</code></a></h1>
-<p><code>Default</code> + <code>DecodePartial</code> vs <code>FromIterator</code></p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="appendix"><a class="header" href="#appendix">Appendix</a></h1>
+<div class="table-wrapper"><table><thead><tr><th></th><th>enums</th><th>struct</th></tr></thead><tbody>
+<tr><td>error kinds</td><td>expected non-occurance</td><td>unexpected occurance</td></tr>
+</tbody></table>
+</div><div style="break-before: page; page-break-before: always;"></div><h1 id="decode-and-encode"><a class="header" href="#decode-and-encode">Decode and Encode</a></h1>
+<p>Design scketch</p>
+<div class="table-wrapper"><table><thead><tr><th>Decode</th><th>Encode</th></tr></thead><tbody>
+<tr><td><code>check_type</code> ('of course'-, !-modality)</td><td><code>declare_node</code> ('why not'-, ?-modality)</td></tr>
+</tbody></table>
+</div><div style="break-before: page; page-break-before: always;"></div><h1 id="appendix"><a class="header" href="#appendix">Appendix</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="knuffel"><a class="header" href="#knuffel">knuffel</a></h1>
 <h2 id="misconceptions"><a class="header" href="#misconceptions">Misconceptions</a></h2>
 <ul>
 <li>Children
 <ul>
-<li>Not eble to use enum as a single child</li>
+<li>Not able to use enum as a single child</li>
 </ul>
 </li>
 <li>Nominal
 <ul>
-<li>Flatten properties (analogous to serde)
-<ul>
-<li>Not implemented <code>DecodeScalar</code> for structs</li>
-</ul>
-</li>
+<li>Flatten properties (analogous to serde)</li>
 <li>NodeName</li>
 <li>TypeName
 <ul>
-<li>hence type annotations for nodes and scalars are different</li>
+<li>type annotations for nodes and scalars are different</li>
 </ul>
 </li>
 <li>bool child</li>
 </ul>
 </li>
+<li><code>DecodeChildren</code></li>
 <li>Option vs Default
 <ul>
-<li>benefit: form of type path doesn't matter </li>
+<li>form of type path doesn't matter </li>
 </ul>
 </li>
 <li>unwrap</li>
@@ -599,7 +625,7 @@ fn main() {
 <li>Beautiful fact is that default <code>Decode</code> behaviour anyway coerce <code>T</code> into <code>Option&lt;T&gt;</code> when <code>ChildMode::Normal</code> or <code>Vec&lt;T&gt;</code> when <code>ChildMode::Multi</code> at decoding (and then unwrap or into_iter.collect)</li>
 </ul>
 </li>
-<li>Remove <code>DecodeMode</code></li>
+<li>Removed <code>DecodeMode</code></li>
 <li><code>DecodeScalar</code>
 <ul>
 <li>Separation of <code>check_type</code> and <code>raw_decode</code> is inefficient when implementing <code>bytes</code> for <code>Vec&lt;u8&gt;</code>
@@ -608,6 +634,31 @@ fn main() {
 </ul>
 </li>
 <li>We can expect more that one kind of value, so DecodeError::ScalarKind cannot expect one fixed Kind</li>
+</ul>
+</li>
+<li>Removed <code>Document</code> struct as root of nodes
+<ul>
+<li><input disabled="" type="checkbox"/>
+Make <code>DecodeChildren</code> sealed?</li>
+</ul>
+</li>
+<li>Removed <code>Spanned</code>, now <code>Context</code> has spans map, prepared at parsing
+<ul>
+<li>To avoid spreading <code>DUMMY_SP</code> kind everywhere when implement<code>Encode</code></li>
+</ul>
+</li>
+<li><code>Span</code> now our AST is span-free, spans are accomodated in context
+<ul>
+<li><code>Span</code> is to protect from being dereferenced <code>AsRef</code> to hold pointer identity</li>
+<li>Instead of <code>Spanned&lt;Box&lt;str&gt;, S&gt;</code>, just <code>Span</code> (with <code>Context</code> including the input text) suffices. Another beautiful fact.</li>
+<li>chumsky now operates on its own Input trait that has an associated type <code>Span</code>, so we cannot be passive about <code>S</code> expecting only some specific set of traits consisting of third party's ones (<code>Into&lt;miette::SourceSpan&gt;</code>).
+<ul>
+<li>In addition to that, each span type from different crates anyway resembles at all and conversion is direct as well. So let's be bold to carry around our own.</li>
+</ul>
+</li>
+<li>Now that users can get spans from <code>Context</code> returned from <code>decode</code>, removed <code>span</code> and <code>span_type</code> directives and correspoinding fields from ast.</li>
+<li>Now <code>DecodePatial</code> compatibility and <code>DecodeChilden</code> compatibility coincide.</li>
+<li><code>Context</code> is not primarily for stacking erros, the need is partially met by <code>DecodePartial</code></li>
 </ul>
 </li>
 </ul>

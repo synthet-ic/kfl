@@ -1,5 +1,5 @@
 use proc_macro2::{TokenStream, Span};
-use quote::{format_ident, quote, ToTokens};
+use quote::{format_ident, quote};
 use syn::ext::IdentExt;
 
 use crate::definition::{Struct, NewType, ExtraKind, ChildMode};
@@ -29,8 +29,8 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
 
     let check_type = check_type(&common, &node)?;
     // let decode_specials = decode_specials(&common, &node)?;
-    let decode_args = decode_args(&common, &node)?;
-    let decode_props = decode_props(&common, &node)?;
+    let decode_arguments = decode_arguments(&common, &node)?;
+    let decode_properties = decode_properties(&common, &node)?;
     let decode_children_normal = decode_children(
         &common, &children, Some(quote!(#ctx.span(&#node))))?;
     let assign_extra = assign_extra(&common)?;
@@ -115,8 +115,8 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
             {
                 #check_type
                 // #decode_specials
-                #decode_args
-                #decode_props
+                #decode_arguments
+                #decode_properties
                 let #children = #node.children.as_ref()
                     .map(|lst| &lst[..]).unwrap_or(&[]);
                 #decode_children_normal
@@ -149,43 +149,6 @@ pub fn emit_new_type(s: &NewType) -> syn::Result<TokenStream> {
                 }
             }
         }
-    })
-}
-
-pub(crate) fn decode_variant(s: &Common,
-    s_name: impl ToTokens, node: &syn::Ident, named: bool)
-    -> syn::Result<TokenStream>
-{
-    let children = syn::Ident::new("children", Span::mixed_site());
-    let decode_args = decode_args(s, node)?;
-    let decode_props = decode_props(s, node)?;
-    let decode_children = decode_children(s, &children,
-                                          Some(quote!(ctx.span(&#node))))?;
-    let assign_extra = assign_extra(s)?;
-    let all_fields = s.object.all_fields();
-    let struct_val = if named {
-        let assignments = all_fields.iter()
-            .map(|f| f.as_assign_pair().unwrap());
-        quote!(#s_name { #(#assignments,)* })
-    } else {
-        let mut fields = all_fields.iter()
-            .map(|f| (f.as_index().unwrap(), &f.tmp_name))
-            .collect::<Vec<_>>();
-        fields.sort_by_key(|(idx, _)| *idx);
-        assert_eq!(fields.iter().map(|(idx, _)| *idx).collect::<Vec<_>>(),
-                   (0..fields.len()).collect::<Vec<_>>(),
-                   "all tuple structure fields should be filled in");
-        let assignments = fields.iter().map(|(_, v)| v);
-        quote!(#s_name(#(#assignments),*))
-    };
-    Ok(quote! {
-        #decode_args
-        #decode_props
-        let #children = #node.children.as_ref()
-            .map(|lst| &lst[..]).unwrap_or(&[]);
-        #decode_children
-        #assign_extra
-        Ok(#struct_val)
     })
 }
 
@@ -236,7 +199,7 @@ fn check_type(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
 //     Ok(quote!())
 // }
 
-fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
+pub(crate) fn decode_arguments(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     let ctx = s.ctx;
     let mut decoder = Vec::new();
     let iter_args = syn::Ident::new("iter_args", Span::mixed_site());
@@ -300,7 +263,7 @@ fn decode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     Ok(quote!(#(#decoder)*))
 }
 
-fn decode_props(s: &Common, node: &syn::Ident)
+pub(crate) fn decode_properties(s: &Common, node: &syn::Ident)
     -> syn::Result<TokenStream>
 {
     let mut declare_empty = Vec::new();
@@ -417,16 +380,16 @@ fn decode_props(s: &Common, node: &syn::Ident)
 
 //     let node = syn::Ident::new("node", Span::mixed_site());
 //     let children = syn::Ident::new("children", Span::mixed_site());
-//     let decode_args = decode_args(&common, &node)?;
-//     let decode_props = decode_props(&common, &node)?;
+//     let decode_arguments = decode_arguments(&common, &node)?;
+//     let decode_properties = decode_properties(&common, &node)?;
 //     let decode_children = decode_children(&common, &children,
 //                                           Some(quote!(#ctx.span(&#node))))?;
 //     Ok(quote! {
 //         let mut #func = |#node: &::kfl::ast::Node,
 //                          #ctx: &mut ::kfl::context::Context|
 //         {
-//             #decode_args
-//             #decode_props
+//             #decode_arguments
+//             #decode_properties
 //             let #children = #node.children.as_ref()
 //                 .map(|lst| &lst[..]).unwrap_or(&[]);
 //             #decode_children
@@ -499,8 +462,8 @@ fn decode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
 //     })
 // }
 
-fn decode_children(s: &Common, children: &syn::Ident,
-                   err_span: Option<TokenStream>)
+pub(crate) fn decode_children(s: &Common, children: &syn::Ident,
+                              err_span: Option<TokenStream>)
     -> syn::Result<TokenStream>
 {
     let mut declare_empty = Vec::new();
@@ -624,7 +587,7 @@ fn decode_children(s: &Common, children: &syn::Ident,
     })
 }
 
-fn assign_extra(s: &Common) -> syn::Result<TokenStream> {
+pub(crate) fn assign_extra(s: &Common) -> syn::Result<TokenStream> {
     let items = s.object.extra_fields.iter().map(|fld| {
         match fld.kind {
             ExtraKind::Auto => {
@@ -655,8 +618,8 @@ pub fn emit_encode_struct(s: &Struct, named: bool, partial: bool)
 
     let declare_node = declare_node(&node, &s_name);
     // let decode_specials = decode_specials(&common, &node)?;
-    let encode_args = encode_args(&common, &node)?;
-    let encode_props = encode_props(&common, &node)?;
+    let encode_arguments = encode_arguments(&common, &node)?;
+    let encode_properties = encode_properties(&common, &node)?;
     let encode_children_normal = encode_children(
         &common, &node, Some(quote!(#ctx.span(&#node))))?;
     let assign_extra = assign_extra(&common)?;
@@ -724,8 +687,8 @@ pub fn emit_encode_struct(s: &Struct, named: bool, partial: bool)
                 -> Result<::kfl::ast::Node, ::kfl::errors::EncodeError>
             {
                 #declare_node
-                #encode_args
-                #encode_props
+                #encode_arguments
+                #encode_properties
                 #encode_children_normal
                 #assign_extra
                 Ok(#node)
@@ -739,7 +702,7 @@ fn declare_node(node: &syn::Ident, name: &syn::Ident) -> TokenStream {
     quote! { let mut #node = ::kfl::ast::Node::new(#name); }
 }
 
-fn encode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
+pub(crate) fn encode_arguments(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     let ctx = s.ctx;
     let mut encoder = Vec::new();
     let scalar = syn::Ident::new("scalar", Span::mixed_site());
@@ -813,7 +776,7 @@ fn encode_args(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
 }
 
 // TODO(rnarkk) named and unnamed
-fn encode_props(s: &Common, node: &syn::Ident)
+pub(crate) fn encode_properties(s: &Common, node: &syn::Ident)
     -> syn::Result<TokenStream>
 {
     // let mut preprocess = Vec::new();
@@ -942,7 +905,7 @@ fn encode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     Ok(quote!(#(#branches)*))
 }
 
-fn encode_children(s: &Common, node: &syn::Ident, err_span: Option<TokenStream>)
+pub(crate) fn encode_children(s: &Common, node: &syn::Ident, err_span: Option<TokenStream>)
     -> syn::Result<TokenStream>
 {
     // let mut declare_empty = Vec::new();

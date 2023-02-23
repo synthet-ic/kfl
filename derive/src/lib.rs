@@ -35,7 +35,7 @@ fn emit_encode(def: &Definition) -> syn::Result<TokenStream> {
         Definition::NewType(_) => todo!(),
         Definition::TupleStruct(s) => node::emit_encode_struct(s, false, false),
         Definition::UnitStruct(s) => node::emit_encode_struct(s, true, false),
-        Definition::Enum(_) => todo!(),
+        Definition::Enum(e) => variants::emit_encode_enum(e),
     }
 }
 

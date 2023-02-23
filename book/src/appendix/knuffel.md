@@ -20,6 +20,9 @@
 
 # Implementation
 
+- floating-point
+- `Encode`
+
 # Change List
 
 - Struct variants and tuple variants

@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 pub fn hint_same_type<T>(_lhs: &T, _rhs: &T) {}
 
 #[macro_export]

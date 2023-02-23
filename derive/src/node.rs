@@ -930,12 +930,10 @@ pub(crate) fn encode_children(s: &Common, node: &syn::Ident, _err_span: Option<T
                 // declare_empty.push(quote! {
                 //     let mut #field = ::std::default::Default::default();
                 // });
-                // encodes.push(quote! {
-                //     else if let Ok(true) = <#ty as ::kfl::traits::EncodePartial>
-                //         ::encode_partial(&#field, &mut #output, #ctx) {
-                //         None
-                //     }
-                // });
+                encodes.push(quote! {
+                    let _ = <#ty as ::kfl::traits::EncodePartial>
+                        ::encode_partial(&#field, &mut #node, #ctx);
+                });
             }
             ChildMode::Multi => {
                 // declare_empty.push(quote! {

@@ -2,26 +2,6 @@ mod common;
 
 use kfl::{Decode, DecodePartial, Encode, EncodePartial};
 
-#[derive(Decode, Encode, Debug, PartialEq)]
-struct Child1(#[kfl(argument)] String);
-
-#[derive(Decode, Encode, Debug, PartialEq)]
-struct Child2(#[kfl(argument)] String);
-
-#[derive(DecodePartial, EncodePartial, Debug, Default, PartialEq)]
-struct Intermediate {
-    #[kfl(child, default)]
-    child1: Option<Child1>,
-    #[kfl(children, default)]
-    children2: Vec<Child2>
-}
-
-#[derive(Decode, Encode, Debug, PartialEq)]
-struct Parent {
-    #[kfl(flatten)]
-    intermediate: Intermediate,
-}
-
 #[test]
 fn print_flatten() {
     #[derive(Decode, Encode, Debug, PartialEq)]
@@ -47,11 +27,11 @@ fn print_flatten() {
                 children2: vec![Child2("v2".into()), Child2("v3".into())]
             }
         },
-        r#"parent {
-          child2 "v2"
-          child1 "v1"
-          child2 "v3"
-        }"#);
+r#"parent {
+  child1 "v1"
+  child2 "v2"
+  child2 "v3"
+}"#);
     // assert_encode_error!(Parent,
     //     r#"something "world""#,
     //     "unexpected node `something`");

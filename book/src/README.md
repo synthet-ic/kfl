@@ -31,6 +31,7 @@
 
 ### Testing
 
+- [ ] Move `tests` directory to the top from inside `derive`
 - [ ] Span
   - [ ] Should wrap Box<str>?
 - [ ] Understand error categories

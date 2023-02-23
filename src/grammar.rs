@@ -612,7 +612,7 @@ mod test {
     }
 
     fn parse<'a, P, T>(p: P, input: &'a str) -> Result<T, String>
-        where P: Parser<'a, str, T, Extra>
+        where P: Parser<'a, &'a str, T, Extra>
     {
         p.then_ignore(end())
         .parse(input).into_result().map_err(|errors| {

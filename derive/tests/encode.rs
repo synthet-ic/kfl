@@ -521,26 +521,26 @@ fn print_enum_named() {
 //         "expected one of `var0`, `var1`, `var2`");
 }
 
-// #[test]
-// fn print_enum_unnamed() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     enum Enum {
-//         Var0,
-//         Var1(#[kfl(argument)] String),
-//         Var2(#[kfl(property(name = "name"))] String),
-//         #[kfl(skip)]
-//         #[allow(dead_code)]
-//         Var3(u32),
-//     }
-//     assert_encode!(r#"var0"#, Enum::Var0);
-//     assert_encode!(r#"var1 "hello""#,
-//         Enum::Var1("hello".into()));
-//     assert_encode!(r#"var2 name="hello""#,
-//         Enum::Var2("hello".into()));
-//     assert_encode_error!(Enum,
-//         r#"something"#,
-//         "expected one of `var0`, `var1`, `var2`");
-// }
+#[test]
+fn print_enum_unnamed() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    enum Enum {
+        Var0,
+        Var1(#[kfl(argument)] String),
+        Var2(#[kfl(property(name = "name"))] String),
+        #[kfl(skip)]
+        #[allow(dead_code)]
+        Var3(u32),
+    }
+    assert_encode!(Enum::Var0, r#"var0"#);
+    assert_encode!(Enum::Var1("hello".into()),
+                   r#"var1 "hello""#);
+    assert_encode!(Enum::Var2("hello".into()),
+                   r#"var2 name="hello""#);
+    // assert_encode_error!(Enum,
+    //     r#"something"#,
+    //     "expected one of `var0`, `var1`, `var2`");
+}
 
 // // #[test]
 // // fn print_enum() {

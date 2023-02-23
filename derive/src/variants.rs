@@ -280,13 +280,26 @@ fn encode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                     object: s,
                     ctx,
                 };
+                let variant_pattern = {
+                    let name = &s.ident;
+                    let all_fields = s.all_fields();
+                    let mut fields = all_fields.iter()
+                        .map(|f| (f.as_index().unwrap(), &f.tmp_name))
+                        .collect::<Vec<_>>();
+                    fields.sort_by_key(|(idx, _)| *idx);
+                    assert_eq!(fields.iter().map(|(idx, _)| *idx).collect::<Vec<_>>(),
+                            (0..fields.len()).collect::<Vec<_>>(),
+                            "all tuple structure fields should be filled in");
+                    let assignments = fields.iter().map(|(_, v)| v);
+                    quote!(#name(#(#assignments),*))
+                };
                 let encode_variant = encode_variant(
                     &common,
                     enum_name,
                     node,
                 )?;
                 branches.push(quote! {
-                    #enum_name::#ident => { #encode_variant }
+                    #enum_name::#variant_pattern => { #encode_variant }
                 });
             }
             VariantKind::Named(s) => {

@@ -83,14 +83,14 @@ fn print_flatten_flatten() {
                 }
             }
         },
-        r#"parent {
-          child2 "v2"
-          child1 "v1"
-          child2 "v3"
-          child3 "v4"
-          child4 "v5"
-          child2 "v6"
-        }"#);
+r#"parent {
+  child1 "v1"
+  child2 "v2"
+  child2 "v3"
+  child2 "v6"
+  child3 "v4"
+  child4 "v5"
+}"#);
     // assert_encode_error!(Parent,
     //     r#"something "world""#,
     //     "unexpected node `something`");

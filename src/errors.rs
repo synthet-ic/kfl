@@ -365,8 +365,8 @@ impl ParseError {
 
 use chumsky::zero_copy::input::Input;
 
-impl chumsky::zero_copy::error::Error<str> for ParseError {
-    fn expected_found<E>(expected: E, found: Option<char>, span: <str as Input>::Span)
+impl<'a> chumsky::zero_copy::error::Error<'a, &'a str> for ParseError {
+    fn expected_found<E>(expected: E, found: Option<char>, span: <&'a str as Input<'a>>::Span)
         -> Self
         where E: IntoIterator<Item = Option<char>>
     {

@@ -902,7 +902,7 @@ fn encode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
         let ty = &child_def.field.ty;
         branches.push(quote! {
             let _ = <#ty as ::kfl::traits::EncodePartial>
-                ::encode_partial(&#field, &mut #node, #ctx)?;
+                ::encode_partial(&#field, #node, #ctx)?;
         });
     }
     branches.push(quote!(Ok(())));

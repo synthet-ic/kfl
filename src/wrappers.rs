@@ -92,7 +92,7 @@ pub fn decode_with_context<T, F>(file_name: &'static str, input: &str, set_ctx: 
 }
 
 /// Print ast and return KDL text
-pub fn print(ctx: &mut Context, node: Node) -> Result<String, Error> {
+pub fn print(_ctx: &mut Context, node: Node) -> Result<String, Error> {
     let mut output = String::new();
     write!(output, "{}", node).unwrap();
     Ok(output)

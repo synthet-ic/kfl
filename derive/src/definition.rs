@@ -60,7 +60,7 @@ pub struct VariantAttrs {
 
 #[derive(Clone)]
 pub enum AttrAccess {
-    Indexed(usize),
+    Indexed(syn::Index),
     Named(syn::Ident),
 }
 
@@ -656,7 +656,7 @@ impl Field {
             })
             .unwrap_or_else(|| Field {
                 span: field.span(),
-                attr: AttrAccess::Indexed(idx),
+                attr: AttrAccess::Indexed(syn::Index::from(idx)),
                 tmp_name: syn::Ident::new(
                     &format!("field{}", idx),
                     Span::mixed_site(),
@@ -673,9 +673,9 @@ impl Field {
     pub fn is_indexed(&self) -> bool {
         matches!(self.attr, AttrAccess::Indexed(_))
     }
-    pub fn as_index(&self) -> Option<usize> {
+    pub fn as_index(&self) -> Option<syn::Index> {
         match &self.attr {
-            AttrAccess::Indexed(idx) => Some(*idx),
+            AttrAccess::Indexed(idx) => Some(idx.clone()),
             AttrAccess::Named(_) => None,
         }
     }

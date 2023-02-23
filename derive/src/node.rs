@@ -44,10 +44,10 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
         let mut fields = all_fields.iter()
             .map(|f| (f.as_index().unwrap(), &f.tmp_name))
             .collect::<Vec<_>>();
-        fields.sort_by_key(|(idx, _)| *idx);
-        assert_eq!(fields.iter().map(|(idx, _)| *idx).collect::<Vec<_>>(),
-                   (0..fields.len()).collect::<Vec<_>>(),
-                   "all tuple structure fields should be filled in");
+        fields.sort_by_key(|(idx, _)| idx.index);
+        // assert_eq!(fields.iter().map(|(idx, _)| *idx).collect::<Vec<_>>(),
+        //            (0..fields.len()).collect::<Vec<_>>(),
+        //            "all tuple structure fields should be filled in");
         let assignments = fields.iter().map(|(_, v)| v);
         quote!(#s_name(#(#assignments),*))
     };

@@ -83,23 +83,23 @@ pub trait Encode: Decode {
         -> Result<Node, EncodeError>;
 }
 
-///
+/// TODO(rnarkk)
 pub trait EncodePartial: DecodePartial {
-    ///
-    fn encode_partial(&self, node: &Node, ctx: &mut Context)
+    /// TODO(rnarkk)
+    fn encode_partial(&self, out: &mut String, ctx: &mut Context)
         -> Result<bool, EncodeError>;
 }
 
-///
+/// TODO(rnarkk)
 pub trait EncodeChildren: DecodeChildren {
-    ///
+    /// TODO(rnarkk)
     fn encode_children(&self, ctx: &mut Context)
         -> Result<Vec<Node>, EncodeError>;
 }
 
 /// The trait that encodes scalar value and checks its type
 pub trait EncodeScalar: DecodeScalar {
-    ///
+    /// TODO(rnarkk)
     fn encode(&self, ctx: &mut Context)
         -> Result<Scalar, EncodeError>;
 }

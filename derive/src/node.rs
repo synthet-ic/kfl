@@ -922,6 +922,9 @@ fn encode_partial(s: &Common, out: &syn::Ident) -> syn::Result<TokenStream> {
 pub(crate) fn encode_children(s: &Common, node: &syn::Ident, _err_span: Option<TokenStream>)
     -> syn::Result<TokenStream>
 {
+    if s.object.children.is_empty() {
+        return Ok(quote!());
+    }
     // let mut declare_empty = Vec::new();
     let mut encodes = Vec::new();
     // let mut postprocess = Vec::new();

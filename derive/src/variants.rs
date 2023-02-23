@@ -362,13 +362,13 @@ fn encode_variant(s: &node::Common, enum_name: &syn::Ident, node: &syn::Ident)
     let encode_properties = node::encode_properties(s, node, true)?;
     let encode_children = node::encode_children(s, &node,
                                           Some(quote!(ctx.span(&#node))))?;
-    let assign_extra = node::assign_extra(s)?;
+    // let assign_extra = node::assign_extra(s)?;
     Ok(quote! {
         #declare_variant
         #encode_arguments
         #encode_properties
         #encode_children
-        #assign_extra
+        // #assign_extra
         Ok(#node)
     })
 }

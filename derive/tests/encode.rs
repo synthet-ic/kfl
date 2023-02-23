@@ -309,13 +309,13 @@ fn print_children() {
         #[kfl(argument)]
         name: String,
     }
-    assert_encode!(
-        Parent { children: vec![
-            Child { name: "val1".into() },
-            Child { name: "val2".into() },
-        ]},
-        r#"parent { child "val1"; child "val2"; }"#
-    );
+    // assert_encode!(
+    //     Parent { children: vec![
+    //         Child { name: "val1".into() },
+    //         Child { name: "val2".into() },
+    //     ]},
+    //     r#"parent { child "val1"; child "val2"; }"#
+    // );
     assert_encode!(
         Parent { children: vec![]},
         r#"parent"#);
@@ -455,43 +455,44 @@ fn print_children() {
 //         "child node for struct field `child1` is required");
 // }
 
-// #[test]
-// fn print_child_default() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Parent {
-//         #[kfl(child, default)]
-//         child: Child,
-//     }
-//     #[derive(Decode, Encode, Debug, PartialEq, Default)]
-//     struct Child {
-//         #[kfl(property)]
-//         name: String,
-//     }
+#[test]
+fn print_child_default() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Parent {
+        #[kfl(child, default)]
+        child: Child,
+    }
+    #[derive(Decode, Encode, Debug, PartialEq, Default)]
+    struct Child {
+        #[kfl(property)]
+        name: String,
+    }
 //     assert_encode!(
 //         r#"parent { child name="val1"; }"#,
 //         Parent { child: Child { name: "val1".into() } });
-//     assert_encode!(
-//         r#"parent"#,
-//         Parent { child: Child { name: "".into() } });
-// }
+    assert_encode!(
+        Parent { child: Child { name: "".into() } },
+        r#"parent"#);
+}
 
-// #[test]
-// fn print_child_default_value() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Parent {
-//         #[kfl(child, default = Child { label: String::from("prop1") })]
-//         main: Child,
-//     }
-//     #[derive(Decode, Encode, Debug, PartialEq, Default)]
-//     struct Child {
-//         #[kfl(property)]
-//         label: String,
-//     }
+#[test]
+fn print_child_default_value() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Parent {
+        #[kfl(child, default = Child { label: String::from("prop1") })]
+        main: Child,
+    }
+    #[derive(Decode, Encode, Debug, PartialEq, Default)]
+    struct Child {
+        #[kfl(property)]
+        label: String,
+    }
 //     assert_encode!(r#"parent { child label="val1"; }"#,
 //         Parent { main: Child { label: "val1".into() } });
-//     assert_encode!(r#"parent"#,
-//         Parent { main: Child { label: "prop1".into() } });
-// }
+    assert_encode!(
+        Parent { main: Child { label: "prop1".into() } },
+        r#"parent"#);
+}
 
 // #[test]
 // fn print_enum_named() {

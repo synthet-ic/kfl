@@ -642,7 +642,6 @@ pub fn emit_encode_struct(s: &Struct, named: bool, partial: bool)
     let s_name = &s.ident;
     let node = syn::Ident::new("node", Span::mixed_site());
     let ctx = syn::Ident::new("ctx", Span::mixed_site());
-    let children = syn::Ident::new("children", Span::mixed_site());
 
     // TODO(rnarkk) merge
     let (_, type_gen, _) = s.generics.split_for_impl();
@@ -659,7 +658,7 @@ pub fn emit_encode_struct(s: &Struct, named: bool, partial: bool)
     let encode_args = encode_args(&common, &node)?;
     let encode_props = encode_props(&common, &node)?;
     let encode_children_normal = encode_children(
-        &common, &children, Some(quote!(#ctx.span(&#node))))?;
+        &common, &node, Some(quote!(#ctx.span(&#node))))?;
     let assign_extra = assign_extra(&common)?;
 
     let mut extra_traits = Vec::new();
@@ -696,25 +695,25 @@ pub fn emit_encode_struct(s: &Struct, named: bool, partial: bool)
             return Err(syn::Error::new(s.ident.span(), "not partial compatible"));
         }
     }
-    if !s.has_arguments && !s.has_properties {
-        let encode_children = encode_children(&common, &children, None)?;
-        extra_traits.push(quote! {
-            impl #impl_gen ::kfl::traits::EncodeChildren
-                for #s_name #type_gen
-                #bounds
-            {
-                fn encode_children(
-                    &self,
-                    #ctx: &mut ::kfl::context::Context)
-                    -> Result<Vec<::kfl::ast::Node>, ::kfl::errors::EncodeError>
-                {
-                    #encode_children
-                    #assign_extra
-                    Ok(#node)
-                }
-            }
-        });
-    }
+    // if !s.has_arguments && !s.has_properties {
+    //     let encode_children = encode_children(&common, &children, None)?;
+    //     extra_traits.push(quote! {
+    //         impl #impl_gen ::kfl::traits::EncodeChildren
+    //             for #s_name #type_gen
+    //             #bounds
+    //         {
+    //             fn encode_children(
+    //                 &self,
+    //                 #ctx: &mut ::kfl::context::Context)
+    //                 -> Result<Vec<::kfl::ast::Node>, ::kfl::errors::EncodeError>
+    //             {
+    //                 #encode_children
+    //                 #assign_extra
+    //                 Ok(#node)
+    //             }
+    //         }
+    //     });
+    // }
     Ok(quote! {
         #(#extra_traits)*
         impl #impl_gen ::kfl::traits::Encode for #s_name #type_gen
@@ -727,8 +726,6 @@ pub fn emit_encode_struct(s: &Struct, named: bool, partial: bool)
                 #declare_node
                 #encode_args
                 #encode_props
-                // let #children = #node.children.as_ref()
-                //     .map(|lst| &lst[..]).unwrap_or(&[]);
                 #encode_children_normal
                 #assign_extra
                 Ok(#node)
@@ -945,114 +942,131 @@ fn encode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     Ok(quote!(#(#branches)*))
 }
 
-fn encode_children(s: &Common, children: &syn::Ident,
-                   err_span: Option<TokenStream>)
+fn encode_children(s: &Common, node: &syn::Ident, err_span: Option<TokenStream>)
     -> syn::Result<TokenStream>
 {
-    let mut declare_empty = Vec::new();
-    let mut branches = vec![quote! {
-        if false {
-            None
-        }
-    }];
-    let mut postprocess = Vec::new();
+    // let mut declare_empty = Vec::new();
+    let mut encodes = Vec::new();
+    // let mut postprocess = Vec::new();
 
     let ctx = s.ctx;
+    let children = syn::Ident::new("children", Span::mixed_site());
     let child = syn::Ident::new("child", Span::mixed_site());
     for child_def in &s.object.children {
-        let fld = &child_def.field.from_self();
+        let field = &child_def.field.from_self();
         let ty = &child_def.field.ty;
         match child_def.mode {
             ChildMode::Flatten => {
-                declare_empty.push(quote! {
-                    let mut #fld = ::std::default::Default::default();
-                });
-                branches.push(quote! {
-                    else if let Ok(true) = <#ty as ::kfl::traits::EncodePartial>
-                        ::encode_partial(&self, &mut #fld, #ctx) {
-                        None
-                    }
-                });
+                // declare_empty.push(quote! {
+                //     let mut #field = ::std::default::Default::default();
+                // });
+                // encodes.push(quote! {
+                //     else if let Ok(true) = <#ty as ::kfl::traits::EncodePartial>
+                //         ::encode_partial(&#field, &mut #output, #ctx) {
+                //         None
+                //     }
+                // });
             }
             ChildMode::Multi => {
-                declare_empty.push(quote! {
-                    let mut #fld = Vec::new();
-                });
+                // declare_empty.push(quote! {
+                //     let mut #field = Vec::new();
+                // });
                 let ctx = &s.ctx;
-                branches.push(quote! {
-                    else if let Ok(true) = <Vec<<#ty as IntoIterator>::Item> as ::kfl::traits::EncodePartial>
-                        ::encode_partial(&self, &mut #fld, #ctx)
-                    {
-                        None
-                    }
-                });
                 if let Some(default_value) = &child_def.default {
                     let default = if let Some(expr) = default_value {
                         quote!(#expr)
                     } else {
                         quote!(::std::default::Default::default())
                     };
-                    postprocess.push(quote! {
-                        let #fld = if #fld.is_empty() {
-                            #default
-                        } else {
-                            #fld.into_iter().collect()
-                        };
+                    encodes.push(quote! {
+                        let default: #ty = #default;
+                        if default != #field {
+                            for #child in #field.iter() {
+                                let #child = <<#ty as IntoIterator>::Item as ::kfl::traits::Encode>
+                                ::encode(&#child, #ctx)?;
+                                #children.push(#child);
+                            }
+                        }
+                        // else if let Ok(true) = <Vec<<#ty as IntoIterator>::Item> as ::kfl::traits::EncodePartial>
+                        //     ::encode_partial(&#field, &mut #output, #ctx)
+                        // {
+                        //     None
+                        // }
                     });
+                    // postprocess.push(quote! {
+                    //     let #field = if #field.is_empty() {
+                    //         #default
+                    //     } else {
+                    //         #field.into_iter().collect()
+                    //     };
+                    // });
                 } else {
-                    postprocess.push(quote! {
-                        let #fld = #fld.into_iter().collect();
+                    // postprocess.push(quote! {
+                    //     let #field = #field.into_iter().collect();
+                    // });
+                    encodes.push(quote! {
+                        for #child in #field.iter() {
+                            let #child = <<#ty as IntoIterator>::Item as ::kfl::traits::Encode>
+                            ::encode(&#child, #ctx)?;
+                            #children.push(#child);
+                        }
                     });
                 }
             }
             ChildMode::Normal => {
-                declare_empty.push(quote! {
-                    let mut #fld = None;
-                });
-                branches.push(quote! {
-                    else if let Ok(true) = <Option<#ty> as ::kfl::traits::EncodePartial>
-                        ::encode_partial(&self, &mut #fld, #ctx)
-                    {
-                        None
-                    }
-                });
-                let req_msg = format!(
-                    "child node for struct field `{}` is required",
-                    &fld.to_string());
+                // declare_empty.push(quote! {
+                //     let mut #field = None;
+                // });
+                // let req_msg = format!(
+                //     "child node for struct field `{}` is required",
+                //     &field.to_string());
                 if let Some(default_value) = &child_def.default {
                     let default = if let Some(expr) = default_value {
                         quote!(#expr)
                     } else {
                         quote!(::std::default::Default::default())
                     };
-                    postprocess.push(quote! {
-                        let #fld = #fld.unwrap_or_else(|| #default);
+                    encodes.push(quote! {
+                        let default: #ty = #default;
+                        if default != #field {
+                            let #child = <#ty as ::kfl::traits::Encode>
+                            ::encode(&#field, #ctx)?;
+                            #children.push(#child);
+                        }
                     });
+                    // postprocess.push(quote! {
+                    //     let #field = #field.unwrap_or_else(|| #default);
+                    // });
                 } else {
-                    if let Some(span) = &err_span {
-                        postprocess.push(quote! {
-                            let #fld = #fld.ok_or_else(|| {
-                                ::kfl::errors::EncodeError::Missing {
-                                    span: #span.clone(),
-                                    message: #req_msg.into(),
-                                }
-                            })?;
-                        });
-                    } else {
-                        postprocess.push(quote! {
-                            let #fld = #fld.ok_or_else(|| {
-                                ::kfl::errors::EncodeError::MissingNode {
-                                    message: #req_msg.into(),
-                                }
-                            })?;
-                        });
-                    }
+                    // if let Some(span) = &err_span {
+                    //     postprocess.push(quote! {
+                    //         let #field = #field.ok_or_else(|| {
+                    //             ::kfl::errors::EncodeError::Missing {
+                    //                 span: #span.clone(),
+                    //                 message: #req_msg.into(),
+                    //             }
+                    //         })?;
+                    //     });
+                    // } else {
+                    //     postprocess.push(quote! {
+                    //         let #field = #field.ok_or_else(|| {
+                    //             ::kfl::errors::EncodeError::MissingNode {
+                    //                 message: #req_msg.into(),
+                    //             }
+                    //         })?;
+                    //     });
+                    // }
+                    encodes.push(quote! {
+                        let #child = <#ty as ::kfl::traits::Encode>
+                        ::encode(&#field, #ctx)?;
+                        #children.push(#child);
+                    });
                 }
             }
         }
     }
     // TODO(rnarkk) return Err?
-    // branches.push(quote! {
+    // encodes.push(quote! {
     //     else {
     //         #ctx.emit_error(::kfl::errors::EncodeError::unexpected(
     //             #ctx.span(&#child), "node",
@@ -1062,10 +1076,15 @@ fn encode_children(s: &Common, children: &syn::Ident,
     //     }
     // });
     Ok(quote! {
-        #(#declare_empty)*
-        #children.iter().flat_map(|#child| {
-            #(#branches)*
-        }).collect::<Result<(), ::kfl::errors::EncodeError>>()?;
-        #(#postprocess)*
+        // #(#declare_empty)*
+        let mut #children = Vec::new();
+        #(#encodes)*
+        if !#children.is_empty() {
+            #node.children = Some(#children);
+        }
+        // #children.iter().flat_map(|#child| {
+        //     #(#encodes)*
+        // }).collect::<Result<(), ::kfl::errors::EncodeError>>()?;
+        // #(#postprocess)*
     })
 }

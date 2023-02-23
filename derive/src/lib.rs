@@ -31,10 +31,10 @@ fn emit_decode_partial(def: &Definition) -> syn::Result<TokenStream> {
 
 fn emit_encode(def: &Definition) -> syn::Result<TokenStream> {
     match def {
-        Definition::Struct(s) => node::emit_encode_struct(s, true, false),
+        Definition::Struct(s) => node::emit_encode_struct(s, false),
         Definition::NewType(_) => todo!(),
-        Definition::TupleStruct(s) => node::emit_encode_struct(s, false, false),
-        Definition::UnitStruct(s) => node::emit_encode_struct(s, true, false),
+        Definition::TupleStruct(s) => node::emit_encode_struct(s, false),
+        Definition::UnitStruct(s) => node::emit_encode_struct(s, false),
         Definition::Enum(e) => variants::emit_encode_enum(e),
     }
 }

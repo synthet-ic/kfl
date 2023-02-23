@@ -6,9 +6,10 @@ use crate::ast::{Node, Scalar, Literal, Integer, Decimal};
 
 impl Display for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(typ) = &self.type_name {
-            write!(f, "({})", &typ)?;
-        }
+        // TODO(rnarkk)
+        // if let Some(typ) = &self.type_name {
+        //     write!(f, "({})", &typ)?;
+        // }
         write!(f, "{}", &self.node_name)?;
         for scalar in self.arguments.iter() {
             write!(f, " {}", &scalar)?;

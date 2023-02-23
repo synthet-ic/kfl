@@ -36,7 +36,7 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
     let assign_extra = assign_extra(&common)?;
 
     let all_fields = s.all_fields();
-    let struct_val = if named {
+    let struct_expression = if named {
         let assignments = all_fields.iter()
             .map(|f| f.as_assign_pair().unwrap());
         quote!(#s_name { #(#assignments,)* })
@@ -99,7 +99,7 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
                 {
                     #decode_children
                     #assign_extra
-                    Ok(#struct_val)
+                    Ok(#struct_expression)
                 }
             }
         });
@@ -121,7 +121,7 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
                     .map(|lst| &lst[..]).unwrap_or(&[]);
                 #decode_children_normal
                 #assign_extra
-                Ok(#struct_val)
+                Ok(#struct_expression)
             }
         }
     })
@@ -206,13 +206,13 @@ pub(crate) fn decode_arguments(s: &Common, node: &syn::Ident) -> syn::Result<Tok
     decoder.push(quote! {
         let mut #iter_args = #node.arguments.iter();
     });
-    for arg in &s.object.arguments {
-        let fld = &arg.field.tmp_name;
+    for argument in &s.object.arguments {
+        let fld = &argument.field.tmp_name;
         let val = syn::Ident::new("val", Span::mixed_site());
         let decode_scalar = decode_scalar(&val, ctx)?;
-        match &arg.default {
+        match &argument.default {
             None => {
-                let error = if arg.field.is_indexed() {
+                let error = if argument.field.is_indexed() {
                     "additional argument is required".into()
                 } else {
                     format!("additional argument `{}` is required", fld.unraw())
@@ -599,7 +599,7 @@ pub(crate) fn assign_extra(s: &Common) -> syn::Result<TokenStream> {
     Ok(quote!(#(#items)*))
 }
 
-pub fn emit_encode_struct(s: &Struct, named: bool, partial: bool)
+pub fn emit_encode_struct(s: &Struct, partial: bool)
     -> syn::Result<TokenStream>
 {
     let s_name = &s.ident;
@@ -618,8 +618,8 @@ pub fn emit_encode_struct(s: &Struct, named: bool, partial: bool)
 
     let declare_node = declare_node(&node, &s_name);
     // let decode_specials = decode_specials(&common, &node)?;
-    let encode_arguments = encode_arguments(&common, &node)?;
-    let encode_properties = encode_properties(&common, &node)?;
+    let encode_arguments = encode_arguments(&common, &node, false)?;
+    let encode_properties = encode_properties(&common, &node, false)?;
     let encode_children_normal = encode_children(
         &common, &node, Some(quote!(#ctx.span(&#node))))?;
     let assign_extra = assign_extra(&common)?;
@@ -702,21 +702,29 @@ fn declare_node(node: &syn::Ident, name: &syn::Ident) -> TokenStream {
     quote! { let mut #node = ::kfl::ast::Node::new(#name); }
 }
 
-pub(crate) fn encode_arguments(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
+pub(crate) fn encode_arguments(s: &Common, node: &syn::Ident, variant: bool)
+    -> syn::Result<TokenStream>
+{
     let ctx = s.ctx;
     let mut encoder = Vec::new();
     let scalar = syn::Ident::new("scalar", Span::mixed_site());
     // encoder.push(quote! {
     //     let mut #iter_args = #node.arguments.iter();
     // });
-    for arg in &s.object.arguments {
-        let field = &arg.field.from_self();
-        let ty = &arg.field.ty;
+    for argument in &s.object.arguments {
+        let field = if variant {
+            let name = &argument.field.tmp_name;
+            quote!(#name)
+        } else {
+            let name = argument.field.from_self();
+            quote!(&#name)
+        };
+        let ty = &argument.field.ty;
         let encode_scalar = quote!(::kfl::traits::EncodeScalar::encode(
-                                   &#field, #ctx));
-        match &arg.default {
+                                   #field, #ctx));
+        match &argument.default {
             None => {
-                // let error = if arg.field.is_indexed() {
+                // let error = if argument.field.is_indexed() {
                 //     "additional argument is required".into()
                 // } else {
                 //     format!("additional argument `{}` is required", field.unraw())
@@ -739,7 +747,7 @@ pub(crate) fn encode_arguments(s: &Common, node: &syn::Ident) -> syn::Result<Tok
                 };
                 encoder.push(quote! {
                     let default: #ty = #default;
-                    if default != #field {
+                    if &default != #field {
                         let #scalar = #encode_scalar?;
                         #node.arguments.push(#scalar);
                     }
@@ -776,7 +784,7 @@ pub(crate) fn encode_arguments(s: &Common, node: &syn::Ident) -> syn::Result<Tok
 }
 
 // TODO(rnarkk) named and unnamed
-pub(crate) fn encode_properties(s: &Common, node: &syn::Ident)
+pub(crate) fn encode_properties(s: &Common, node: &syn::Ident, variant: bool)
     -> syn::Result<TokenStream>
 {
     // let mut preprocess = Vec::new();
@@ -788,7 +796,13 @@ pub(crate) fn encode_properties(s: &Common, node: &syn::Ident)
     // let declare_empty = quote!(let mut #props = Vec::new(););
 
     for property in &s.object.properties {
-        let field = &property.field.from_self();
+        let field = if variant {
+            let name = &property.field.tmp_name;
+            quote!(#name)
+        } else {
+            let name = property.field.from_self();
+            quote!(&#name)
+        };
         let name = &property.name;
         let ty = &property.field.ty;
         // let seen_name = format_ident!("seen_{}", field, span = Span::mixed_site());
@@ -803,7 +817,7 @@ pub(crate) fn encode_properties(s: &Common, node: &syn::Ident)
             // });
         } else {
             let encode_scalar = quote!(::kfl::traits::EncodeScalar::encode(
-                                       &#field, #ctx));
+                                       #field, #ctx));
             // let req_msg = format!("property `{}` is required", prop_name);
             if let Some(value) = &property.default {
                 let default = if let Some(expr) = value {
@@ -813,7 +827,7 @@ pub(crate) fn encode_properties(s: &Common, node: &syn::Ident)
                 };
                 branches.push(quote! {
                     let default: #ty = #default;
-                    if default != #field {
+                    if &default != #field {
                         let #scalar = #encode_scalar?;
                         #node.properties.insert(#name.to_string().into_boxed_str(), #scalar);
                     }
@@ -879,7 +893,7 @@ pub(crate) fn encode_properties(s: &Common, node: &syn::Ident)
     })
 }
 
-fn encode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
+fn encode_partial(s: &Common, out: &syn::Ident) -> syn::Result<TokenStream> {
     let ctx = s.ctx;
     let mut branches = vec![quote! {
         if false {
@@ -887,11 +901,11 @@ fn encode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
         }
     }];
     for child_def in &s.object.children {
-        let dest = &child_def.field.from_self();
+        let field = &child_def.field.from_self();
         let ty = &child_def.field.ty;
         branches.push(quote! {
             else if let Ok(true) = <#ty as ::kfl::traits::EncodePartial>
-                ::encode_partial(&self, &mut #dest, #ctx)
+                ::encode_partial(&#field, &mut #out, #ctx)
             {
                 Ok(true)
             }
@@ -905,7 +919,7 @@ fn encode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     Ok(quote!(#(#branches)*))
 }
 
-pub(crate) fn encode_children(s: &Common, node: &syn::Ident, err_span: Option<TokenStream>)
+pub(crate) fn encode_children(s: &Common, node: &syn::Ident, _err_span: Option<TokenStream>)
     -> syn::Result<TokenStream>
 {
     // let mut declare_empty = Vec::new();

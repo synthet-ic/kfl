@@ -86,8 +86,8 @@ pub trait Encode: Decode {
 /// TODO(rnarkk)
 pub trait EncodePartial: DecodePartial {
     /// TODO(rnarkk)
-    fn encode_partial(&self, out: &mut String, ctx: &mut Context)
-        -> Result<bool, EncodeError>;
+    fn encode_partial(&self, node: &mut Node, ctx: &mut Context)
+        -> Result<(), EncodeError>;
 }
 
 /// TODO(rnarkk)

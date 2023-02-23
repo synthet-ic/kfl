@@ -39,6 +39,16 @@ fn emit_encode(def: &Definition) -> syn::Result<TokenStream> {
     }
 }
 
+fn emit_encode_partial(def: &Definition) -> syn::Result<TokenStream> {
+    match def {
+        Definition::Struct(s) => node::emit_encode_struct(s, true),
+        Definition::NewType(_) => todo!(),
+        Definition::TupleStruct(s) => node::emit_encode_struct(s, true),
+        Definition::UnitStruct(s) => node::emit_encode_struct(s, true),
+        Definition::Enum(_) => todo!(),
+    }
+}
+
 #[proc_macro_error::proc_macro_error]
 #[proc_macro_derive(Decode, attributes(kfl))]
 // #[doc = include_str!("../derive_decode.md")]
@@ -83,6 +93,18 @@ pub fn encode_derive(input: proc_macro::TokenStream)
 {
     let item = syn::parse_macro_input!(input as Definition);
     match emit_encode(&item) {
+        Ok(stream) => stream.into(),
+        Err(e) => e.to_compile_error().into(),
+    }
+}
+
+#[proc_macro_error::proc_macro_error]
+#[proc_macro_derive(EncodePartial, attributes(kfl))]
+pub fn encode_partial_derive(input: proc_macro::TokenStream)
+    -> proc_macro::TokenStream
+{
+    let item = syn::parse_macro_input!(input as Definition);
+    match emit_encode_partial(&item) {
         Ok(stream) => stream.into(),
         Err(e) => e.to_compile_error().into(),
     }

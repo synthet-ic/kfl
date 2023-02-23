@@ -637,10 +637,11 @@ pub fn emit_encode_struct(s: &Struct, partial: bool)
                     for #s_name #type_gen
                     #bounds
                 {
-                    fn encode_partial(&mut self,
+                    fn encode_partial(
                         &self,
+                        #node: &mut ::kfl::ast::Node,
                         #ctx: &mut ::kfl::context::Context)
-                        -> Result<bool, ::kfl::errors::EncodeError>
+                        -> Result<(), ::kfl::errors::EncodeError>
                     {
                         #encode_partial
                     }
@@ -893,29 +894,18 @@ pub(crate) fn encode_properties(s: &Common, node: &syn::Ident, variant: bool)
     })
 }
 
-fn encode_partial(s: &Common, out: &syn::Ident) -> syn::Result<TokenStream> {
+fn encode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     let ctx = s.ctx;
-    let mut branches = vec![quote! {
-        if false {
-            Ok(false)
-        }
-    }];
+    let mut branches = Vec::new();
     for child_def in &s.object.children {
         let field = &child_def.field.from_self();
         let ty = &child_def.field.ty;
         branches.push(quote! {
-            else if let Ok(true) = <#ty as ::kfl::traits::EncodePartial>
-                ::encode_partial(&#field, &mut #out, #ctx)
-            {
-                Ok(true)
-            }
+            let _ = <#ty as ::kfl::traits::EncodePartial>
+                ::encode_partial(&#field, &mut #node, #ctx)?;
         });
     }
-    branches.push(quote! {
-        else {
-            Ok(false)
-        }
-    });
+    branches.push(quote!(Ok(())));
     Ok(quote!(#(#branches)*))
 }
 

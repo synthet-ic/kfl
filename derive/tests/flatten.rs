@@ -2,26 +2,6 @@ mod common;
 
 use kfl::{Decode, DecodePartial};
 
-#[derive(Decode, Debug, PartialEq)]
-struct Child1(#[kfl(argument)] String);
-
-#[derive(Decode, Debug, PartialEq)]
-struct Child2(#[kfl(argument)] String);
-
-#[derive(DecodePartial, Debug, Default, PartialEq)]
-struct Intermediate {
-    #[kfl(child, default)]
-    child1: Option<Child1>,
-    #[kfl(children, default)]
-    children2: Vec<Child2>
-}
-
-#[derive(Decode, Debug, PartialEq)]
-struct Parent {
-    #[kfl(flatten)]
-    intermediate: Intermediate,
-}
-
 #[test]
 fn parse_flatten() {
     #[derive(Decode, Debug, PartialEq)]

@@ -1,3 +1,4 @@
+use std::fmt::Write;
 use chumsky::zero_copy::Parser;
 use miette::NamedSource;
 
@@ -91,11 +92,10 @@ pub fn decode_with_context<T, F>(file_name: &'static str, input: &str, set_ctx: 
 }
 
 /// Print ast and return KDL text
-#[allow(unused)]
-pub fn print(file_name: &str, node: Node) -> Result<String, Error> {
-    Ok("".into())
-    // grammar::document()
-    // .parse(S::stream(text))
+pub fn print(_ctx: &mut Context, node: Node) -> Result<String, Error> {
+    let mut output = String::new();
+    write!(output, "{}", node).unwrap();
+    Ok(output)
     // .map_err(|errors| {
     //     Error {
     //         source_code: NamedSource::new(file_name, text.to_string()),
@@ -109,13 +109,14 @@ pub fn encode<T>(file_name: &str, t: &T) -> Result<String, Error>
     where T: Encode + std::fmt::Debug,
 {
     let mut ctx = Context::new();
+    ctx.set::<String>(file_name.to_string());
     let node = t.encode(&mut ctx).map_err(|error| {
         Error {
             source_code: NamedSource::new(file_name, format!("{:?}", &t)),
             errors: vec![error.into()],
         }
     })?;
-    print(file_name, node)
+    print(&mut ctx, node)
 }
 
 #[test]

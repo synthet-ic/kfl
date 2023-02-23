@@ -154,13 +154,20 @@ pub enum DecodeError {
 #[derive(Debug, Diagnostic, Error)]
 #[non_exhaustive]
 pub enum EncodeError {
+    /// TODO(rnarkk)
+    #[diagnostic()]
+    #[error("{} is a skipped variant", found)]
+    ExtraVariant {
+        ///
+        found: String,
+    },
     ///
     #[diagnostic()]
     #[error("{}", message)]
     Unexpected {
-        /// Position of the unexpected element
-        #[label("unexpected {}", kind)]
-        span: Span,
+        // /// Position of the unexpected element
+        // #[label("unexpected {}", kind)]
+        // span: Span,
         /// Kind of element that was found
         kind: &'static str,
         /// Description of the error
@@ -358,8 +365,8 @@ impl ParseError {
 
 use chumsky::zero_copy::input::Input;
 
-impl chumsky::zero_copy::error::Error<str> for ParseError {
-    fn expected_found<E>(expected: E, found: Option<char>, span: <str as Input>::Span)
+impl<'a> chumsky::zero_copy::error::Error<'a, &'a str> for ParseError {
+    fn expected_found<E>(expected: E, found: Option<char>, span: <&'a str as Input<'a>>::Span)
         -> Self
         where E: IntoIterator<Item = Option<char>>
     {
@@ -516,6 +523,15 @@ impl Display for ExpectedType {
                 write!(f, " or {}", last)?;
             }
             Ok(())
+        }
+    }
+}
+
+impl EncodeError {
+    /// TODO(rnarkk)
+    pub fn extra_variant(found: impl Into<String>) -> Self {
+        EncodeError::ExtraVariant {
+            found: found.into(),
         }
     }
 }

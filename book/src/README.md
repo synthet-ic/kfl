@@ -16,16 +16,18 @@
 
 ## TODO
 
+- Instad of predetermining strings or patterns of chars valid for scalar values, determine syntactical separation condition between meta structure and scalar representations. This would give us possible scope of scalar notations, more relaxed ones if successful, and ability for scalar objects, in AST, to hold raw strings or slices to delay parsing them.
+- Replace Rust's `FromStr`, `ToString`, `Display` (as primary interfaces, as least)
+  - `#![no_std]`
 - [ ] Should wrap Box<str>?
-- [ ] Make AST span free, accomodate span in context
 - [ ] Use previous version of KFL itself when testing grammar, instead of serde/serde_json
 - [ ] `-`
-- [ ] Implement `DecodeScalar` for struct as the replacement of `flatten(properties)` and support `flatten(arguments)` equivalent as well
+- [ ] Implement `DecodeScalar` for struct as the replacement of `flatten(properties)` and support `flatten(arguments)` equivalent as well?
 - [ ] Span
 - [ ] Detect name conflicts between fields in the same struct
-- [ ] Understand error categories, reconsider `Context` in the presence of `DecodePartial`
-- [ ] Test organisation, provide utility macros
+- [ ] Understand error categories
 - [ ] `Encode`
   - [ ] `EncodePartial` as an analogous to `skip_serializing_none`
+  - [ ] This should have means of recovering quatiented styling/formatting
 - [ ] Compare TokenStream with Scalar, TokenTree with Node
-- [ ] property enum or union
+- [ ] property enum or union?

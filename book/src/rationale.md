@@ -1,5 +1,5 @@
 # Rationale
 
-# `DecodePartial`
-
-`Default` + `DecodePartial` vs `FromIterator`
+| | enums | struct |
+| - | - | - |
+| error kinds | expected non-occurance | unexpected occurance |

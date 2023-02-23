@@ -168,6 +168,16 @@ pub enum Literal {
 }
 
 impl Node {
+    /// TODO(rnarkk) document
+    pub fn new(name: &str) -> Self {
+        Self {
+            type_name: None,
+            node_name: name.to_string().into_boxed_str(),
+            arguments: Vec::new(),
+            properties: BTreeMap::new(),
+            children: None,
+        }
+    }
     /// Returns node children
     pub fn children(&self)
         -> impl Iterator<Item = &Node> +

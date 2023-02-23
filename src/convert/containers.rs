@@ -1,19 +1,20 @@
+//! Convert container types.
+
 use std::{
     sync::Arc,
     rc::Rc,
 };
 
 use crate::{
-    ast::{Node, Literal, BuiltinType},
+    ast::{Node, Scalar, Literal, BuiltinType},
     context::Context,
-    errors::{DecodeError, ExpectedType},
+    errors::{DecodeError, ExpectedType, EncodeError},
     traits::{Decode, DecodePartial, DecodeChildren, DecodeScalar},
+    traits::{Encode, EncodePartial, EncodeScalar},
 };
 
 impl<T: Decode> Decode for Box<T> {
-    fn decode(node: &Node, ctx: &mut Context)
-        -> Result<Self, DecodeError>
-    {
+    fn decode(node: &Node, ctx: &mut Context) -> Result<Self, DecodeError> {
         <T as Decode>::decode(node, ctx).map(Box::new)
     }
 }
@@ -42,17 +43,13 @@ impl<T: DecodePartial> DecodePartial for Box<T> {
 }
 
 impl<T: DecodeScalar> DecodeScalar for Box<T> {
-    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
-        -> Result<Self, DecodeError>
-    {
+    fn decode(scalar: &Scalar, ctx: &mut Context) -> Result<Self, DecodeError> {
         <T as DecodeScalar>::decode(scalar, ctx).map(Box::new)
     }
 }
 
 impl<T: Decode> Decode for Arc<T> {
-    fn decode(node: &Node, ctx: &mut Context)
-        -> Result<Self, DecodeError>
-    {
+    fn decode(node: &Node, ctx: &mut Context) -> Result<Self, DecodeError> {
         <T as Decode>::decode(node, ctx).map(Arc::new)
     }
 }
@@ -83,17 +80,13 @@ impl<T: DecodePartial> DecodePartial for Arc<T> {
 }
 
 impl<T: DecodeScalar> DecodeScalar for Arc<T> {
-    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
-        -> Result<Self, DecodeError>
-    {
+    fn decode(scalar: &Scalar, ctx: &mut Context) -> Result<Self, DecodeError> {
         <T as DecodeScalar>::decode(scalar, ctx).map(Arc::new)
     }
 }
 
 impl<T: Decode> Decode for Rc<T> {
-    fn decode(node: &Node, ctx: &mut Context)
-        -> Result<Self, DecodeError>
-    {
+    fn decode(node: &Node, ctx: &mut Context) -> Result<Self, DecodeError> {
         <T as Decode>::decode(node, ctx).map(Rc::new)
     }
 }
@@ -124,25 +117,97 @@ impl<T: DecodePartial> DecodePartial for Rc<T> {
 }
 
 impl<T: DecodeScalar> DecodeScalar for Rc<T> {
-    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
-        -> Result<Self, DecodeError>
-    {
+    fn decode(scalar: &Scalar, ctx: &mut Context) -> Result<Self, DecodeError> {
         <T as DecodeScalar>::decode(scalar, ctx).map(Rc::new)
     }
 }
 
-impl<T: Decode> Decode for Vec<T> {
-    fn decode(node: &Node, ctx: &mut Context)
-        -> Result<Self, DecodeError>
+impl<T: Decode> Decode for Option<T> {
+    fn decode(node: &Node, ctx: &mut Context) -> Result<Self, DecodeError> {
+        <T as Decode>::decode(node, ctx).map(|node| Some(node))
+    }
+}
+
+impl<T: Decode> DecodePartial for Option<T> {
+    fn decode_partial(&mut self, node: &Node, ctx: &mut Context)
+        -> Result<bool, DecodeError>
     {
+        let slf = std::mem::take(self);  /* (1) */
+        let result = <Self as Decode>::decode(node, ctx);
+        match (slf, result) {
+            (None, Ok(None)) => Ok(true),  /* no-op */
+            (None, Ok(value)) => {
+                *self = value;
+                Ok(true)
+            }
+            (slf, Err(_)) => {
+                *self = slf;  /* TODO improve this with line (1) */
+                Ok(false)
+            },
+            (_, _) => {
+                let dup_err = format!("duplicate node `{}`, single node expected", node.node_name.as_ref());
+                Err(DecodeError::unexpected(ctx.span(&node.node_name), "node",
+                    dup_err))
+            }
+        }
+    }
+}
+
+impl<T: DecodeScalar> DecodeScalar for Option<T> {
+    fn decode(scalar: &Scalar, ctx: &mut Context) -> Result<Self, DecodeError> {
+        match &scalar.literal {
+            Literal::Null => Ok(None),
+            _ => <T as DecodeScalar>::decode(scalar, ctx).map(Some),
+        }
+    }
+}
+
+impl<T: Encode> Encode for Option<T> {
+    fn encode(&self, ctx: &mut Context) -> Result<Node, EncodeError> {
+        match self {
+            None => panic!(),
+            Some(t) => <T as Encode>::encode(t, ctx)
+        }
+    }
+}
+
+impl<T: Encode> EncodePartial for Option<T> {
+    fn encode_partial(&self, node: &mut Node, ctx: &mut Context)
+        -> Result<(), EncodeError>
+    {
+        let mut children = match std::mem::take(&mut node.children) {
+            None => Vec::new(),
+            Some(children) => children
+        };
+        match self {
+            None => panic!(),
+            Some(t) => {
+                let child = <T as Encode>::encode(t, ctx)?;
+                children.push(child);
+            }
+        };
+        let _ = std::mem::replace(&mut node.children, Some(children));
+        Ok(())
+    }
+}
+
+impl<T: EncodeScalar> EncodeScalar for Option<T> {
+    fn encode(&self, ctx: &mut Context) -> Result<Scalar, EncodeError> {
+        match &self {
+            None => Ok(Scalar { type_name: None, literal: Literal::Null }),
+            Some(scalar) => <T as EncodeScalar>::encode(&scalar, ctx),
+        }
+    }
+}
+
+impl<T: Decode> Decode for Vec<T> {
+    fn decode(node: &Node, ctx: &mut Context) -> Result<Self, DecodeError> {
         <T as Decode>::decode(node, ctx).map(|node| vec![node])
     }
 }
 
 impl<T: Decode> DecodePartial for Vec<T> {
-    fn decode_partial(&mut self, node: &Node, ctx: &mut Context)
-        -> Result<bool, DecodeError>
-    {
+    fn decode_partial(&mut self, node: &Node, ctx: &mut Context) -> Result<bool, DecodeError> {
         match <T as Decode>::decode(node, ctx) {
             Ok(value) => {
                 self.push(value);
@@ -168,10 +233,25 @@ impl<T: Decode> DecodeChildren for Vec<T> {
     }
 }
 
-impl DecodeScalar for Vec<u8> {
-    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
-        -> Result<Self, DecodeError>
+impl<T: Encode> EncodePartial for Vec<T> {
+    fn encode_partial(&self, node: &mut Node, ctx: &mut Context)
+        -> Result<(), EncodeError>
     {
+        let mut children = match std::mem::take(&mut node.children) {
+            None => Vec::new(),
+            Some(children) => children
+        };
+        for item in self.iter() {
+            let child = <T as Encode>::encode(item, ctx)?;
+            children.push(child);
+        }
+        let _ = std::mem::replace(&mut node.children, Some(children));
+        Ok(())
+    }
+}
+
+impl DecodeScalar for Vec<u8> {
+    fn decode(scalar: &Scalar, ctx: &mut Context) -> Result<Self, DecodeError> {
         let is_base64 = if let Some(ty) = scalar.type_name.as_ref() {
             match ty.as_builtin() {
                 Some(&BuiltinType::Base64) => true,
@@ -208,50 +288,6 @@ impl DecodeScalar for Vec<u8> {
             }
             _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "string",
                                               &scalar.literal))
-        }
-    }
-}
-
-impl<T: Decode> Decode for Option<T> {
-    fn decode(node: &Node, ctx: &mut Context)
-        -> Result<Self, DecodeError>
-    {
-        <T as Decode>::decode(node, ctx).map(|node| Some(node))
-    }
-}
-
-impl<T: Decode> DecodePartial for Option<T> {
-    fn decode_partial(&mut self, node: &Node, ctx: &mut Context)
-        -> Result<bool, DecodeError>
-    {
-        let slf = std::mem::take(self);  /* (1) */
-        let result = <Self as Decode>::decode(node, ctx);
-        match (slf, result) {
-            (None, Ok(None)) => Ok(true),  /* no-op */
-            (None, Ok(value)) => {
-                *self = value;
-                Ok(true)
-            }
-            (slf, Err(_)) => {
-                *self = slf;  /* TODO improve this with line (1) */
-                Ok(false)
-            },
-            (_, _) => {
-                let dup_err = format!("duplicate node `{}`, single node expected", node.node_name.as_ref());
-                Err(DecodeError::unexpected(ctx.span(&node.node_name), "node",
-                    dup_err))
-            }
-        }
-    }
-}
-
-impl<T: DecodeScalar> DecodeScalar for Option<T> {
-    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
-        -> Result<Self, DecodeError>
-    {
-        match &scalar.literal {
-            Literal::Null => Ok(None),
-            _ => <T as DecodeScalar>::decode(scalar, ctx).map(Some),
         }
     }
 }

@@ -16,18 +16,39 @@
 
 ## TODO
 
-- Instad of predetermining strings or patterns of chars valid for scalar values, determine syntactical separation condition between meta structure and scalar representations. This would give us possible scope of scalar notations, more relaxed ones if successful, and ability for scalar objects, in AST, to hold raw strings or slices to delay parsing them.
-- Replace Rust's `FromStr`, `ToString`, `Display` (as primary interfaces, as least)
-  - `#![no_std]`
-- [ ] Should wrap Box<str>?
-- [ ] Use previous version of KFL itself when testing grammar, instead of serde/serde_json
-- [ ] `-`
-- [ ] Implement `DecodeScalar` for struct as the replacement of `flatten(properties)` and support `flatten(arguments)` equivalent as well?
-- [ ] Span
+### Designing Basics
+
+- [ ] Delete `DecodeChildren`
+- `flatten`
+  - [ ] Implement `DecodeScalar` for struct as the replacement of `flatten(properties)` and support `flatten(arguments)` equivalent as well?
+  - [ ] flatten for enums
 - [ ] Detect name conflicts between fields in the same struct
-- [ ] Understand error categories
-- [ ] `Encode`
-  - [ ] `EncodePartial` as an analogous to `skip_serializing_none`
-  - [ ] This should have means of recovering quatiented styling/formatting
-- [ ] Compare TokenStream with Scalar, TokenTree with Node
 - [ ] property enum or union?
+
+### Documentation
+
+### Source Code Quality
+
+### Testing
+
+- [ ] Span
+  - [ ] Should wrap Box<str>?
+- [ ] Understand error categories
+- [ ] Rename `parse_` to `decode_` and `print_` to `encode_` in tests?
+- [ ] Use previous version of KFL itself when testing grammar, instead of serde/serde_json
+
+### Encoding
+
+- [ ] 
+- [ ] Encoding should have ways of recovering quatiented styling/formatting
+
+### Scalars
+
+- Instad of predetermining strings or patterns of chars valid for scalar values, determine syntactical separation condition between meta structure and scalar representations. This would give us possible scope of scalar notations, more relaxed ones if successful, and ability for scalar objects, in AST, to hold raw strings or slices to delay parsing them.
+- Eliminate `FromStr`, `ToString`, `Display` (as primary interfaces, as least)
+  - `#![no_std]`
+- [ ] Compare TokenStream with Scalar, TokenTree with Node
+
+### Specials
+
+- [ ] `-`

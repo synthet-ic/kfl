@@ -3,8 +3,8 @@
 - Nominal Typing
 - Trait-Based
 - Two-Level
-- Decode-Encode Duality
-- Query System
+- Decode-Encode Dual
+- Reflective
 
 ## KDL
 

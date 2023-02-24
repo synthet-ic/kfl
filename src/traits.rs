@@ -15,8 +15,7 @@ use crate::{
 /// Trait to decode KDL node from the AST
 pub trait Decode: Sized {
     /// Decodes the node from the ast
-    fn decode(node: &Node, ctx: &mut Context)
-        -> Result<Self, DecodeError>;
+    fn decode(node: &Node, ctx: &mut Context) -> Result<Self, DecodeError>;
 }
 
 /// Trait to decode children of the KDL node, mostly used for root document
@@ -73,15 +72,13 @@ pub trait DecodeScalar: Sized {
     ///
     /// This should not be overriden and uses `type_check` in combination with
     /// `raw_decode`.
-    fn decode(scalar: &Scalar, ctx: &mut Context)
-        -> Result<Self, DecodeError>;
+    fn decode(scalar: &Scalar, ctx: &mut Context) -> Result<Self, DecodeError>;
 }
 
 /// Trait to encode the ast into KDL node
 pub trait Encode: Decode {
     /// Encodes the ast from the node
-    fn encode(&self, ctx: &mut Context)
-        -> Result<Node, EncodeError>;
+    fn encode(&self, ctx: &mut Context) -> Result<Node, EncodeError>;
 }
 
 /// TODO(rnarkk)
@@ -101,6 +98,5 @@ pub trait EncodeChildren: DecodeChildren {
 /// The trait that encodes scalar value and checks its type
 pub trait EncodeScalar: DecodeScalar {
     /// TODO(rnarkk)
-    fn encode(&self, ctx: &mut Context)
-        -> Result<Scalar, EncodeError>;
+    fn encode(&self, ctx: &mut Context) -> Result<Scalar, EncodeError>;
 }

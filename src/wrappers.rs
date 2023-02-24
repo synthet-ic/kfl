@@ -4,7 +4,7 @@ use alloc::{
     vec,
     vec::Vec
 };
-use core::fmt::{self, Write};
+use core::fmt::{Debug, Write};
 use chumsky::zero_copy::Parser;
 use miette::NamedSource;
 
@@ -17,9 +17,7 @@ use crate::{
 };
 
 /// Parse KDL text and return AST
-pub fn parse(ctx: &mut Context, input: &str)
-    -> Result<Vec<Node>, Error>
-{
+pub fn parse(ctx: &mut Context, input: &str) -> Result<Vec<Node>, Error> {
     grammar::document()
     .parse_with_state(&input, ctx).into_result()
     .map_err(|errors| {
@@ -63,7 +61,8 @@ pub fn decode<T>(file_name: &'static str, input: &str) -> Result<T, Error>
 // }
 
 /// Parse KDL text and decode Rust object
-pub fn decode_children<T>(file_name: &'static str, input: &str) -> Result<T, Error>
+pub fn decode_children<T>(file_name: &'static str, input: &str)
+    -> Result<T, Error>
     where T: DecodeChildren,
 {
     decode_with_context(file_name, input, |_| {})
@@ -79,9 +78,7 @@ pub fn decode_with_context<T, F>(file_name: &'static str, input: &str, set_ctx: 
     let mut ctx = Context::new();
     let nodes = parse(&mut ctx, &input)?;
     set_ctx(&mut ctx);
-    let errors = match <T as DecodeChildren>
-        ::decode_children(&nodes, &mut ctx)
-    {
+    let errors = match T::decode_children(&nodes, &mut ctx) {
         Ok(_) if ctx.has_errors() => {
             ctx.into_errors()
         }
@@ -112,7 +109,7 @@ pub fn print(_ctx: &mut Context, node: Node) -> Result<String, Error> {
 
 /// Encode Rust object and print it into KDL text
 pub fn encode<T>(file_name: &str, t: &T) -> Result<String, Error>
-    where T: Encode + fmt::Debug,
+    where T: Encode + Debug,
 {
     let mut ctx = Context::new();
     ctx.set::<String>(file_name.to_string());

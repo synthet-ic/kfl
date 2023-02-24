@@ -166,8 +166,7 @@ fn decode_scalar(val: &syn::Ident, ctx: &syn::Ident) -> syn::Result<TokenStream>
 
 fn check_type(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     let ctx = s.ctx;
-    let name = heck::ToKebabCase::to_kebab_case(
-        &s.object.ident.unraw().to_string()[..]);
+    let name = crate::to_kebab_case(&s.object.ident.unraw());
     Ok(quote! {
         if let Some(type_name) = &#node.type_name {
             return Err(::kfl::errors::DecodeError::unexpected(
@@ -704,7 +703,7 @@ pub fn emit_encode_struct(s: &Struct, partial: bool)
 }
 
 fn declare_node(node: &syn::Ident, name: &syn::Ident) -> TokenStream {
-    let name = heck::ToKebabCase::to_kebab_case(name.to_string().as_str());
+    let name = crate::to_kebab_case(name);
     quote! { let mut #node = ::kfl::ast::Node::new(#name); }
 }
 

@@ -1,6 +1,7 @@
 extern crate alloc;
 use alloc::{
-    vec::Vec
+    format,
+    vec::{self, Vec}
 };
 
 use proc_macro2::{TokenStream, Span};

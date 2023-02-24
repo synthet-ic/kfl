@@ -3,6 +3,7 @@ extern crate alloc;
 
 mod definition;
 mod kw;
+mod new_type;
 mod node;
 mod scalar;
 mod variants;
@@ -15,7 +16,7 @@ use scalar::{Scalar, emit_decode_scalar, emit_encode_scalar};
 fn emit_decode(def: &Definition) -> syn::Result<TokenStream> {
     match def {
         Definition::Struct(s) => node::emit_decode_struct(s, true, false),
-        Definition::NewType(s) => node::emit_new_type(s),
+        Definition::NewType(s) => new_type::emit_new_type(s),
         Definition::TupleStruct(s) => node::emit_decode_struct(s, false, false),
         Definition::UnitStruct(s) => node::emit_decode_struct(s, true, false),
         Definition::Enum(e) => variants::emit_decode_enum(e),

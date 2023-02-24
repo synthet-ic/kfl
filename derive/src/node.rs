@@ -9,7 +9,7 @@ use proc_macro2::{TokenStream, Span};
 use quote::{format_ident, quote};
 use syn::ext::IdentExt;
 
-use crate::definition::{Struct, NewType, ExtraKind, ChildMode};
+use crate::definition::{Struct, ExtraKind, ChildMode};
 
 pub(crate) struct Common<'a> {
     pub object: &'a Struct,
@@ -29,11 +29,7 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
     let common_generics = s.generics.clone();
     let (impl_gen, _, bounds) = common_generics.split_for_impl();
 
-    let common = Common {
-        object: s,
-        ctx: &ctx,
-    };
-
+    let common = Common { object: s, ctx: &ctx };
     let check_type = check_type(&common, &node)?;
     // let decode_specials = decode_specials(&common, &node)?;
     let decode_arguments = decode_arguments(&common, &node)?;
@@ -62,9 +58,9 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
     if partial {
         if is_partial_compatible(&s) {
             let node = syn::Ident::new("node", Span::mixed_site());
+            let decode_partial = decode_partial(&common, &node)?;
             // let name = syn::Ident::new("name", Span::mixed_site());
             // let scalar = syn::Ident::new("scalar", Span::mixed_site());
-            let decode_partial = decode_partial(&common, &node)?;
             // let insert_property = insert_property(&common, &name, &scalar)?;
             extra_traits.push(quote! {
                 impl #impl_gen ::kfl::traits::DecodePartial
@@ -89,14 +85,14 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
                 }
             });
         } else {
-            return Err(syn::Error::new(s.ident.span(), "not partial compatible"));
+            return Err(syn::Error::new(s.ident.span(),
+                       "not partial compatible"));
         }
     }
     if !s.has_arguments && !s.has_properties {
         let decode_children = decode_children(&common, &children, None)?;
         extra_traits.push(quote! {
-            impl #impl_gen ::kfl::traits::DecodeChildren
-                for #s_name #type_gen
+            impl #impl_gen ::kfl::traits::DecodeChildren for #s_name #type_gen
                 #bounds
             {
                 fn decode_children(
@@ -113,9 +109,7 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
     }
     Ok(quote! {
         #(#extra_traits)*
-        impl #impl_gen ::kfl::traits::Decode for #s_name #type_gen
-            #bounds
-        {
+        impl #impl_gen ::kfl::traits::Decode for #s_name #type_gen #bounds {
             fn decode(#node: &::kfl::ast::Node,
                       #ctx: &mut ::kfl::context::Context)
                 -> Result<Self, ::kfl::errors::DecodeError>
@@ -129,31 +123,6 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
                 #decode_children_normal
                 #assign_extra
                 Ok(#struct_expression)
-            }
-        }
-    })
-}
-
-pub fn emit_new_type(s: &NewType) -> syn::Result<TokenStream> {
-    let s_name = &s.ident;
-    let node = syn::Ident::new("node", Span::mixed_site());
-    let ctx = syn::Ident::new("ctx", Span::mixed_site());
-    Ok(quote! {
-        impl ::kfl::traits::Decode for #s_name {
-            fn decode(#node: &::kfl::ast::Node,
-                      #ctx: &mut ::kfl::context::Context)
-                -> Result<Self, ::kfl::errors::DecodeError>
-            {
-                if #node.arguments.len() > 0 ||
-                    #node.properties.len() > 0 ||
-                    #node.children.is_some()
-                {
-                    ::kfl::traits::Decode::decode(#node, #ctx)
-                        .map(Some)
-                        .map(#s_name)
-                } else {
-                    Ok(#s_name(None))
-                }
             }
         }
     })
@@ -679,9 +648,7 @@ pub fn emit_encode_struct(s: &Struct, partial: bool)
     // }
     Ok(quote! {
         #(#extra_traits)*
-        impl #impl_gen ::kfl::traits::Encode for #s_name #type_gen
-            #bounds
-        {
+        impl #impl_gen ::kfl::traits::Encode for #s_name #type_gen #bounds {
             fn encode(&self, #ctx: &mut ::kfl::context::Context)
                 -> Result<::kfl::ast::Node, ::kfl::errors::EncodeError>
             {

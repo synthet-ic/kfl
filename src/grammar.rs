@@ -1,4 +1,9 @@
-use std::collections::{BTreeSet, BTreeMap};
+use alloc::{
+    boxed::Box,
+    collections::{BTreeSet, BTreeMap},
+    string::{String, ToString},
+    vec::Vec
+};
 use core::fmt::{Debug, Pointer};
 
 use chumsky::zero_copy::{
@@ -583,6 +588,7 @@ pub(crate) fn document<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
 // TODO(rnarkk) tests which need span info are comment-outed
 #[cfg(test)]
 mod test {
+    use alloc::vec::Vec;
     use chumsky::zero_copy::{
         prelude::*,
         extra::Full

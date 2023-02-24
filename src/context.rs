@@ -2,11 +2,18 @@
 //!
 //! Mostly useful for manual implementation of various `Decode*` traits.
 
-use std::collections::HashMap;
+extern crate std;
+
+use alloc::{
+    boxed::Box,
+    format,
+    vec::Vec
+};
 use core::{
     any::{Any, TypeId}, 
     fmt::{Pointer, Debug}
 };
+use std::collections::HashMap;
 
 use crate::{
     ast::Literal,

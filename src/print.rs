@@ -1,11 +1,11 @@
 //! Display implementation for ast
 
-use core::fmt::Display;
+use core::fmt::{self, Display};
 
 use crate::ast::{Node, Scalar, Literal, Integer, Decimal};
 
 impl Display for Node {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // TODO(rnarkk)
         // if let Some(typ) = &self.type_name {
         //     write!(f, "({})", &typ)?;
@@ -30,7 +30,7 @@ impl Display for Node {
 }
 
 impl Display for Scalar {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(typ) = &self.type_name {
             write!(f, "({})", &typ)?;
         }
@@ -39,7 +39,7 @@ impl Display for Scalar {
 }
 
 impl Display for Literal {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self {
             Literal::Null => write!(f, "null"),
             Literal::Bool(value) => write!(f, "{}", value),
@@ -51,7 +51,7 @@ impl Display for Literal {
 }
 
 impl Display for Integer {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.1)
         // match self.0 {
         //     Radix::Bin => write!(f, "{:b}", self.1.to_string().as_str()),
@@ -63,7 +63,7 @@ impl Display for Integer {
 }
 
 impl Display for Decimal {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }

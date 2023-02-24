@@ -2,10 +2,16 @@
 //!
 //! You only need [`Error`](enum@Error) exposed as `kfl::Error` unless you
 //! do manual implementations of any of the `Decode*` traits.
+extern crate std;
 
 use alloc::{
     borrow::Cow,
+    boxed::Box,
     collections::BTreeSet,
+    format,
+    string::String,
+    vec,
+    vec::Vec
 };
 use core::fmt::{self, Display, Write};
 

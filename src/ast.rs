@@ -12,10 +12,15 @@
 //! contain line and column numbers for things, use
 //! [`LineSpan`](crate::span::LineSpan) for that.
 
-use std::collections::BTreeMap;
+use alloc::{
+    boxed::Box,
+    collections::BTreeMap,
+    string::ToString,
+    vec::Vec
+};
 use core::{
     convert::Infallible,
-    fmt::{Debug, Display, Pointer},
+    fmt::{self, Debug, Display, Pointer},
     ops::Deref,
     str::FromStr
 };
@@ -190,7 +195,7 @@ impl Node {
 macro_rules! impl_pointer {
     ($ty:ty) => {
         impl Pointer for $ty {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 let ptr = self as *const Self;
                 Pointer::fmt(&ptr, f)
             }
@@ -300,8 +305,8 @@ impl Deref for TypeName {
 }
 
 impl Display for TypeName {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        std::fmt::Display::fmt(&self.as_str(), f)
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Display::fmt(&self.as_str(), f)
     }
 }
 

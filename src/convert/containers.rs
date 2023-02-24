@@ -1,9 +1,14 @@
 //! Convert container types.
 
-use std::{
-    sync::Arc,
+use alloc::{
+    boxed::Box,
+    format,
     rc::Rc,
+    sync::Arc,
+    vec,
+    vec::Vec
 };
+use core::mem;
 
 use crate::{
     ast::{Node, Scalar, Literal, BuiltinType},
@@ -132,7 +137,7 @@ impl<T: Decode> DecodePartial for Option<T> {
     fn decode_partial(&mut self, node: &Node, ctx: &mut Context)
         -> Result<bool, DecodeError>
     {
-        let slf = std::mem::take(self);  /* (1) */
+        let slf = mem::take(self);  /* (1) */
         let result = <Self as Decode>::decode(node, ctx);
         match (slf, result) {
             (None, Ok(None)) => Ok(true),  /* no-op */
@@ -175,7 +180,7 @@ impl<T: Encode> EncodePartial for Option<T> {
     fn encode_partial(&self, node: &mut Node, ctx: &mut Context)
         -> Result<(), EncodeError>
     {
-        let mut children = match std::mem::take(&mut node.children) {
+        let mut children = match mem::take(&mut node.children) {
             None => Vec::new(),
             Some(children) => children
         };
@@ -186,7 +191,7 @@ impl<T: Encode> EncodePartial for Option<T> {
                 children.push(child);
             }
         };
-        let _ = std::mem::replace(&mut node.children, Some(children));
+        let _ = mem::replace(&mut node.children, Some(children));
         Ok(())
     }
 }
@@ -237,7 +242,7 @@ impl<T: Encode> EncodePartial for Vec<T> {
     fn encode_partial(&self, node: &mut Node, ctx: &mut Context)
         -> Result<(), EncodeError>
     {
-        let mut children = match std::mem::take(&mut node.children) {
+        let mut children = match mem::take(&mut node.children) {
             None => Vec::new(),
             Some(children) => children
         };
@@ -245,7 +250,7 @@ impl<T: Encode> EncodePartial for Vec<T> {
             let child = <T as Encode>::encode(item, ctx)?;
             children.push(child);
         }
-        let _ = std::mem::replace(&mut node.children, Some(children));
+        let _ = mem::replace(&mut node.children, Some(children));
         Ok(())
     }
 }

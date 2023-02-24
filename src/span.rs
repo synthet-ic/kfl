@@ -13,7 +13,7 @@
 //! as a separate kind of span. See [`traits::DecodeSpan`].
 
 use core::{
-    fmt::Display,
+    fmt::{self, Display},
     ops::Range
 };
 
@@ -96,7 +96,7 @@ impl From<Range<usize>> for Span {
 }
 
 impl Display for Span {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)?;
         "..".fmt(f)?;
         self.1.fmt(f)?;

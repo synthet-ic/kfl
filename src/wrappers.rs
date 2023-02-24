@@ -1,4 +1,10 @@
-use core::fmt::Write;
+use alloc::{
+    format,
+    string::{String, ToString},
+    vec,
+    vec::Vec
+};
+use core::fmt::{self, Write};
 use chumsky::zero_copy::Parser;
 use miette::NamedSource;
 
@@ -106,7 +112,7 @@ pub fn print(_ctx: &mut Context, node: Node) -> Result<String, Error> {
 
 /// Encode Rust object and print it into KDL text
 pub fn encode<T>(file_name: &str, t: &T) -> Result<String, Error>
-    where T: Encode + std::fmt::Debug,
+    where T: Encode + fmt::Debug,
 {
     let mut ctx = Context::new();
     ctx.set::<String>(file_name.to_string());

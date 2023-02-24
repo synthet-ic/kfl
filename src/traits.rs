@@ -5,6 +5,7 @@
 //! [`DecodeScalar`](derive@crate::DecodeScalar) for a
 //! documentation of the derives to implement these traits.
 
+use alloc::vec::Vec;
 use crate::{
     ast::{Node, Scalar},
     errors::{DecodeError, EncodeError},

@@ -1,8 +1,5 @@
 #![no_std]
-
 extern crate alloc;
-
-use proc_macro2::TokenStream;
 
 mod definition;
 mod kw;
@@ -10,6 +7,8 @@ mod node;
 mod scalar;
 mod variants;
 
+use alloc::{format, string::String};
+use proc_macro2::TokenStream;
 use definition::Definition;
 use scalar::{Scalar, emit_decode_scalar, emit_encode_scalar};
 
@@ -53,7 +52,7 @@ fn emit_encode_partial(def: &Definition) -> syn::Result<TokenStream> {
     }
 }
 
-#[proc_macro_error::proc_macro_error]
+// #[proc_macro_error::proc_macro_error]
 #[proc_macro_derive(Decode, attributes(kfl))]
 // #[doc = include_str!("../derive_decode.md")]
 pub fn decode_derive(input: proc_macro::TokenStream)
@@ -66,7 +65,7 @@ pub fn decode_derive(input: proc_macro::TokenStream)
     }
 }
 
-#[proc_macro_error::proc_macro_error]
+// #[proc_macro_error::proc_macro_error]
 #[proc_macro_derive(DecodePartial, attributes(kfl))]
 pub fn decode_partial_derive(input: proc_macro::TokenStream)
     -> proc_macro::TokenStream
@@ -78,7 +77,7 @@ pub fn decode_partial_derive(input: proc_macro::TokenStream)
     }
 }
 
-#[proc_macro_error::proc_macro_error]
+// #[proc_macro_error::proc_macro_error]
 #[proc_macro_derive(DecodeScalar, attributes(kfl))]
 pub fn decode_scalar_derive(input: proc_macro::TokenStream)
     -> proc_macro::TokenStream
@@ -90,7 +89,7 @@ pub fn decode_scalar_derive(input: proc_macro::TokenStream)
     }
 }
 
-#[proc_macro_error::proc_macro_error]
+// #[proc_macro_error::proc_macro_error]
 #[proc_macro_derive(Encode, attributes(kfl))]
 pub fn encode_derive(input: proc_macro::TokenStream)
     -> proc_macro::TokenStream
@@ -102,7 +101,7 @@ pub fn encode_derive(input: proc_macro::TokenStream)
     }
 }
 
-#[proc_macro_error::proc_macro_error]
+// #[proc_macro_error::proc_macro_error]
 #[proc_macro_derive(EncodePartial, attributes(kfl))]
 pub fn encode_partial_derive(input: proc_macro::TokenStream)
     -> proc_macro::TokenStream
@@ -114,7 +113,7 @@ pub fn encode_partial_derive(input: proc_macro::TokenStream)
     }
 }
 
-#[proc_macro_error::proc_macro_error]
+// #[proc_macro_error::proc_macro_error]
 #[proc_macro_derive(EncodeScalar, attributes(kfl))]
 pub fn encode_scalar_derive(input: proc_macro::TokenStream)
     -> proc_macro::TokenStream
@@ -126,7 +125,6 @@ pub fn encode_scalar_derive(input: proc_macro::TokenStream)
     }
 }
 
-pub(crate) fn to_kebab_case(ident: &syn::Ident) -> alloc::string::String {
-    heck::ToKebabCase::to_kebab_case(
-        format!("{}", ident).as_ref())
+pub(crate) fn to_kebab_case(ident: &syn::Ident) -> String {
+    heck::ToKebabCase::to_kebab_case(format!("{}", ident).as_str())
 }

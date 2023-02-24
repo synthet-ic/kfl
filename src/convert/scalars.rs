@@ -1,11 +1,7 @@
 //! Convert built-in scalar types.
 
-use core::{
-    path::PathBuf,
-    str::FromStr
-};
-#[cfg(feature = "std")]
-use std::net::SocketAddr;
+use alloc::string::{String, ToString};
+use core::str::FromStr;
 
 use crate::{
     ast::{Scalar, Literal, Integer, Decimal, Radix, BuiltinType},
@@ -197,6 +193,7 @@ impl EncodeScalar for String {
     }
 }
 
+#[macro_export]
 macro_rules! impl_from_str {
     ($ty:ty) => {
         impl DecodeScalar for $ty {
@@ -223,36 +220,39 @@ macro_rules! impl_from_str {
     }
 }
 
-impl_from_str!(PathBuf);
-impl EncodeScalar for PathBuf {
-    fn encode(&self, _: &mut Context)
-        -> Result<Scalar, EncodeError>
-    {
-        let string = format!("{}", self.display());
-        let literal = Literal::String(string.into_boxed_str());
-        Ok(Scalar {
-            type_name: None,
-            literal: literal.into()
-        })
-        
+#[cfg(feature = "std")]
+mod std {
+    extern crate std;
+    use std::path::PathBuf;
+    use std::net::SocketAddr;
+    use super::impl_from_str;
+
+    impl_from_str!(PathBuf);
+    impl EncodeScalar for PathBuf {
+        fn encode(&self, _: &mut Context) -> Result<Scalar, EncodeError> {
+            let string = format!("{}", self.display());
+            let literal = Literal::String(string.into_boxed_str());
+            Ok(Scalar {
+                type_name: None,
+                literal: literal.into()
+            })
+            
+        }
+    }
+
+    impl_from_str!(SocketAddr);
+    impl EncodeScalar for SocketAddr {
+        fn encode(&self, _: &mut Context) -> Result<Scalar, EncodeError> {
+            let string = format!("{}", self);
+            let literal = Literal::String(string.into_boxed_str());
+            Ok(Scalar {
+                type_name: None,
+                literal: literal.into()
+            })
+        }
     }
 }
 
-#[cfg(feature = "std")]
-impl_from_str!(SocketAddr);
-#[cfg(feature = "std")]
-impl EncodeScalar for SocketAddr {
-    fn encode(&self, _: &mut Context)
-        -> Result<Scalar, EncodeError>
-    {
-        let string = format!("{}", self);
-        let literal = Literal::String(string.into_boxed_str());
-        Ok(Scalar {
-            type_name: None,
-            literal: literal.into()
-        })
-    }
-}
 #[cfg(feature = "chrono")]
 impl_from_str!(chrono::NaiveDateTime);
 

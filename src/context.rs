@@ -29,7 +29,8 @@ use crate::{
 pub struct Context {
     ///
     pub spans: HashMap<Box<str>, Span>,
-    errors: Vec<DecodeError>,
+    /// 
+    pub errors: Vec<DecodeError>,
     extensions: HashMap<TypeId, Box<dyn Any>>,
 }
 

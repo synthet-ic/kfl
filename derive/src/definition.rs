@@ -1,3 +1,4 @@
+extern crate alloc;
 use alloc::{
     boxed::Box,
     string::String,

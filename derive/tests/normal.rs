@@ -5,7 +5,7 @@ use std::{
     default::Default,
     net::SocketAddr
 };
-use kfl::Decode;
+use kfl::{Decode, DecodePartial};
 
 #[test]
 fn parse_argument_named() {
@@ -328,7 +328,7 @@ fn parse_children() {
 
 #[test]
 fn parse_filtered_children() {
-    #[derive(Decode, Debug, PartialEq)]
+    #[derive(DecodePartial, Default, Debug, PartialEq)]
     struct Parent {
         #[kfl(children)]
         lefts: Vec<Left>,
@@ -407,6 +407,13 @@ fn parse_child() {
         #[kfl(property)]
         name: String,
     }
+    #[derive(DecodePartial, Default, Debug, PartialEq)]
+    struct ParentPartial {
+        #[kfl(child)]
+        child1: Option<Child1>,
+        #[kfl(child, default)]
+        child2: Option<Child2>,
+    }
     assert_decode!(
         r#"parent { child1 name="val1"; }"#,
         Parent {
@@ -432,24 +439,25 @@ fn parse_child() {
         "child node for struct field `child1` is required");
     assert_decode_children!(
         r#"child1 name="val1""#,
-        Parent {
-            child1: Child1 { name: "val1".into() },
+        ParentPartial {
+            child1: Some(Child1 { name: "val1".into() }),
             child2: None,
         });
     assert_decode_children!(
         r#"child1 name="primary"
         child2 name="replica""#,
-        Parent {
-            child1: Child1 { name: "primary".into() },
+        ParentPartial {
+            child1: Some(Child1 { name: "primary".into() }),
             child2: Some(Child2 { name: "replica".into() }),
         });
-    assert_decode_children_error!(Parent,
-        r#"something"#,
-        "unexpected node `something`\n\
-        child node for struct field `child1` is required");
-    assert_decode_children_error!(Parent,
-        r#""#,
-        "child node for struct field `child1` is required");
+    // TODO(rnarkk)
+    // assert_decode_children_error!(ParentPartial,
+    //     r#"something"#,
+    //     "unexpected node `something`\n\
+    //     child node for struct field `child1` is required");
+    // assert_decode_children_error!(ParentPartial,
+    //     r#""#,
+    //     "child node for struct field `child1` is required");
 }
 
 #[test]

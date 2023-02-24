@@ -5,7 +5,6 @@
 //! [`DecodeScalar`](derive@crate::DecodeScalar) for a
 //! documentation of the derives to implement these traits.
 
-use alloc::vec::Vec;
 use crate::{
     ast::{Node, Scalar},
     errors::{DecodeError, EncodeError},
@@ -16,13 +15,6 @@ use crate::{
 pub trait Decode: Sized {
     /// Decodes the node from the ast
     fn decode(node: &Node, ctx: &mut Context) -> Result<Self, DecodeError>;
-}
-
-/// Trait to decode children of the KDL node, mostly used for root document
-pub trait DecodeChildren: Sized {
-    /// Decodes from a list of chidren ASTs
-    fn decode_children(nodes: &[Node], ctx: &mut Context)
-        -> Result<Self, DecodeError>;
 }
 
 /// The trait is implemented for structures that can be used as part of other
@@ -86,13 +78,6 @@ pub trait EncodePartial: DecodePartial {
     /// TODO(rnarkk)
     fn encode_partial(&self, node: &mut Node, ctx: &mut Context)
         -> Result<(), EncodeError>;
-}
-
-/// TODO(rnarkk)
-pub trait EncodeChildren: DecodeChildren {
-    /// TODO(rnarkk)
-    fn encode_children(&self, ctx: &mut Context)
-        -> Result<Vec<Node>, EncodeError>;
 }
 
 /// The trait that encodes scalar value and checks its type

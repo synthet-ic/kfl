@@ -23,6 +23,6 @@ pub use kfl_derive::{Encode, EncodePartial, EncodeScalar};
 
 pub use wrappers::{decode, decode_children, decode_with_context, parse};
 pub use wrappers::{encode, print};
-pub use traits::{Decode, DecodePartial, DecodeScalar, DecodeChildren};
-pub use traits::{Encode, EncodePartial, EncodeScalar, EncodeChildren};
+pub use traits::{Decode, DecodePartial, DecodeScalar};
+pub use traits::{Encode, EncodePartial, EncodeScalar};
 pub use errors::Error;

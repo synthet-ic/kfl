@@ -13,7 +13,7 @@ use crate::{
     context::Context,
     errors::Error,
     grammar,
-    traits::{Decode, DecodeChildren, Encode},
+    traits::{Decode, DecodePartial, Encode},
 };
 
 /// Parse KDL text and return AST
@@ -61,37 +61,32 @@ pub fn decode<T>(file_name: &'static str, input: &str) -> Result<T, Error>
 // }
 
 /// Parse KDL text and decode Rust object
-pub fn decode_children<T>(file_name: &'static str, input: &str)
-    -> Result<T, Error>
-    where T: DecodeChildren,
+pub fn decode_children<T>(file_name: &str, input: &str) -> Result<T, Error>
+    where T: DecodePartial,
 {
     decode_with_context(file_name, input, |_| {})
 }
 
 /// Parse KDL text and decode Rust object providing extra context for the
 /// decoder
-pub fn decode_with_context<T, F>(file_name: &'static str, input: &str, set_ctx: F)
+pub fn decode_with_context<T, F>(file_name: &str, input: &str, set_ctx: F)
     -> Result<T, Error>
     where F: FnOnce(&mut Context),
-          T: DecodeChildren,
+          T: DecodePartial,
 {
     let mut ctx = Context::new();
     let nodes = parse(&mut ctx, &input)?;
     set_ctx(&mut ctx);
-    let errors = match T::decode_children(&nodes, &mut ctx) {
-        Ok(_) if ctx.has_errors() => {
-            ctx.into_errors()
-        }
-        Err(e) => {
-            ctx.emit_error(e);
-            ctx.into_errors()
-        }
-        Ok(v) => return Ok(v)
-    };
-    Err(Error {
-        source_code: NamedSource::new(file_name, input.to_string()),
-        errors: errors.into_iter().map(Into::into).collect(),
-    })
+    let mut output = <T as Default>::default();
+    for node in nodes {
+        output.decode_partial(&node, &mut ctx).map_err(|error| {
+            Error {
+                source_code: NamedSource::new(file_name, input.to_string()),
+                errors: vec![error.into()],
+            }
+        })?;
+    }
+    Ok(output)
 }
 
 /// Print ast and return KDL text

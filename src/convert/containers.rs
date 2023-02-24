@@ -14,21 +14,13 @@ use crate::{
     ast::{Node, Scalar, Literal, BuiltinType},
     context::Context,
     errors::{DecodeError, ExpectedType, EncodeError},
-    traits::{Decode, DecodePartial, DecodeChildren, DecodeScalar},
+    traits::{Decode, DecodePartial, DecodeScalar},
     traits::{Encode, EncodePartial, EncodeScalar},
 };
 
 impl<T: Decode> Decode for Box<T> {
     fn decode(node: &Node, ctx: &mut Context) -> Result<Self, DecodeError> {
         <T as Decode>::decode(node, ctx).map(Box::new)
-    }
-}
-
-impl<T: DecodeChildren> DecodeChildren for Box<T> {
-    fn decode_children(nodes: &[Node], ctx: &mut Context)
-        -> Result<Self, DecodeError>
-    {
-        <T as DecodeChildren>::decode_children(nodes, ctx).map(Box::new)
     }
 }
 
@@ -59,14 +51,6 @@ impl<T: Decode> Decode for Arc<T> {
     }
 }
 
-impl<T: DecodeChildren> DecodeChildren for Arc<T> {
-    fn decode_children(nodes: &[Node], ctx: &mut Context)
-        -> Result<Self, DecodeError>
-    {
-        <T as DecodeChildren>::decode_children(nodes, ctx).map(Arc::new)
-    }
-}
-
 impl<T: DecodePartial> DecodePartial for Arc<T> {
     fn decode_partial(&mut self, node: &Node, ctx: &mut Context)
         -> Result<bool, DecodeError>
@@ -93,14 +77,6 @@ impl<T: DecodeScalar> DecodeScalar for Arc<T> {
 impl<T: Decode> Decode for Rc<T> {
     fn decode(node: &Node, ctx: &mut Context) -> Result<Self, DecodeError> {
         <T as Decode>::decode(node, ctx).map(Rc::new)
-    }
-}
-
-impl<T: DecodeChildren> DecodeChildren for Rc<T> {
-    fn decode_children(nodes: &[Node], ctx: &mut Context)
-        -> Result<Self, DecodeError>
-    {
-        <T as DecodeChildren>::decode_children(nodes, ctx).map(Rc::new)
     }
 }
 
@@ -225,20 +201,20 @@ impl<T: Decode> DecodePartial for Vec<T> {
     }
 }
 
-impl<T: Decode> DecodeChildren for Vec<T> {
-    fn decode_children(nodes: &[Node], ctx: &mut Context)
-        -> Result<Self, DecodeError>
-    {
-        let mut result = Vec::with_capacity(nodes.len());
-        for node in nodes {
-            match <T as Decode>::decode(node, ctx) {
-                Ok(node) => result.push(node),
-                Err(e) => ctx.emit_error(e),
-            }
-        }
-        Ok(result)
-    }
-}
+// impl<T: Decode> DecodeChildren for Vec<T> {
+//     fn decode_children(nodes: &[Node], ctx: &mut Context)
+//         -> Result<Self, DecodeError>
+//     {
+//         let mut result = Vec::with_capacity(nodes.len());
+//         for node in nodes {
+//             match <T as Decode>::decode(node, ctx) {
+//                 Ok(node) => result.push(node),
+//                 Err(e) => ctx.emit_error(e),
+//             }
+//         }
+//         Ok(result)
+//     }
+// }
 
 impl<T: Encode> EncodePartial for Vec<T> {
     fn encode_partial(&self, node: &mut Node, ctx: &mut Context)

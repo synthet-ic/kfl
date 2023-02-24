@@ -1,6 +1,6 @@
 use std::io::Read;
 
-use kfl::Decode;
+use kfl::{Decode, DecodePartial};
 use miette::IntoDiagnostic;
 
 #[derive(Decode, Debug)]
@@ -14,7 +14,7 @@ struct Plugin {
 //     version: String,
 }
 
-#[derive(Decode, Debug)]
+#[derive(DecodePartial, Debug, Default)]
 #[allow(dead_code)]
 struct Config {
 //     #[kfl(child, unwrap(argument))]

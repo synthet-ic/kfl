@@ -29,7 +29,7 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
     let check_type = check_type(&common, &node)?;
     let decode_arguments = decode_arguments(&common, &node)?;
     let decode_properties = decode_properties(&common, &node)?;
-    let decode_children_normal = decode_children(
+    let decode_children = decode_children(
         &common, &children, Some(quote!(#ctx.span(&#node))))?;
     let assign_extra = assign_extra(&common)?;
 
@@ -51,7 +51,7 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
     };
     let mut extra_traits = Vec::new();
     if partial {
-        if is_partial_compatible(&s) {
+        if has_only_children(&s) {
             let node = syn::Ident::new("node", Span::mixed_site());
             let decode_partial = decode_partial(&common, &node)?;
             // let name = syn::Ident::new("name", Span::mixed_site());
@@ -84,24 +84,6 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
                        "not partial compatible"));
         }
     }
-    if !s.has_arguments && !s.has_properties {
-        let decode_children = decode_children(&common, &children, None)?;
-        extra_traits.push(quote! {
-            impl #impl_gen ::kfl::traits::DecodeChildren for #s_name #type_gen
-                #bounds
-            {
-                fn decode_children(
-                    #children: &[::kfl::ast::Node],
-                    #ctx: &mut ::kfl::context::Context)
-                    -> Result<Self, ::kfl::errors::DecodeError>
-                {
-                    #decode_children
-                    #assign_extra
-                    Ok(#struct_expression)
-                }
-            }
-        });
-    }
     Ok(quote! {
         #(#extra_traits)*
         impl #impl_gen ::kfl::traits::Decode for #s_name #type_gen #bounds {
@@ -114,7 +96,7 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
                 #decode_properties
                 let #children = #node.children.as_ref()
                     .map(|lst| &lst[..]).unwrap_or(&[]);
-                #decode_children_normal
+                #decode_children
                 #assign_extra
                 Ok(#struct_expression)
             }
@@ -360,7 +342,7 @@ pub(crate) fn decode_properties(s: &Common, node: &syn::Ident)
 //     })
 // }
 
-fn is_partial_compatible(s: &Struct) -> bool {
+fn has_only_children(s: &Struct) -> bool {
     !s.has_arguments && !s.has_properties
     // && s.children.iter().all(|child| child.default.is_some())
 }
@@ -587,7 +569,7 @@ pub fn emit_encode_struct(s: &Struct, partial: bool)
 
     let mut extra_traits = Vec::new();
     if partial {
-        if is_partial_compatible(&s) {
+        if has_only_children(&s) {
             let node = syn::Ident::new("node", Span::mixed_site());
             // let name = syn::Ident::new("name", Span::mixed_site());
             // let scalar = syn::Ident::new("scalar", Span::mixed_site());
@@ -620,25 +602,6 @@ pub fn emit_encode_struct(s: &Struct, partial: bool)
             return Err(syn::Error::new(s.ident.span(), "not partial compatible"));
         }
     }
-    // if !s.has_arguments && !s.has_properties {
-    //     let encode_children = encode_children(&common, &children, None)?;
-    //     extra_traits.push(quote! {
-    //         impl #impl_gen ::kfl::traits::EncodeChildren
-    //             for #s_name #type_gen
-    //             #bounds
-    //         {
-    //             fn encode_children(
-    //                 &self,
-    //                 #ctx: &mut ::kfl::context::Context)
-    //                 -> Result<Vec<::kfl::ast::Node>, ::kfl::errors::EncodeError>
-    //             {
-    //                 #encode_children
-    //                 #assign_extra
-    //                 Ok(#node)
-    //             }
-    //         }
-    //     });
-    // }
     Ok(quote! {
         #(#extra_traits)*
         impl #impl_gen ::kfl::traits::Encode for #s_name #type_gen #bounds {

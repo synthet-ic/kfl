@@ -1,9 +1,10 @@
 //! Decode support stuff
 //!
 //! Mostly useful for manual implementation of various `Decode*` traits.
-use std::{
-    any::{Any, TypeId},
-    collections::HashMap,
+
+use std::collections::HashMap;
+use core::{
+    any::{Any, TypeId}, 
     fmt::{Pointer, Debug}
 };
 

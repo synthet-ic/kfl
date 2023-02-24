@@ -1,7 +1,5 @@
-use std::{
-    collections::{BTreeSet, BTreeMap},
-    fmt::{Debug, Pointer},
-};
+use std::collections::{BTreeSet, BTreeMap},
+use core::fmt::{Debug, Pointer};
 
 use chumsky::zero_copy::{
     extra::Full,

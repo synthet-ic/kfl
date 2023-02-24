@@ -1,4 +1,4 @@
-use std::fmt::Write;
+use core::fmt::Write;
 use chumsky::zero_copy::Parser;
 use miette::NamedSource;
 

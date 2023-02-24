@@ -12,8 +12,8 @@
 //! contain line and column numbers for things, use
 //! [`LineSpan`](crate::span::LineSpan) for that.
 
-use std::{
-    collections::BTreeMap,
+use std::collections::BTreeMap;
+use core::{
     convert::Infallible,
     fmt::{Debug, Display, Pointer},
     ops::Deref,

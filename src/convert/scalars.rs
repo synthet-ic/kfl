@@ -1,6 +1,6 @@
 //! Convert built-in scalar types.
 
-use std::{
+use core::{
     net::SocketAddr,
     path::PathBuf,
     str::FromStr

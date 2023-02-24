@@ -1,6 +1,6 @@
 //! Display implementation for ast
 
-use std::fmt::Display;
+use core::fmt::Display;
 
 use crate::ast::{Node, Scalar, Literal, Integer, Decimal};
 

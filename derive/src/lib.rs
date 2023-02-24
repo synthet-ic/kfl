@@ -1,4 +1,4 @@
-!#[no_std]
+#![no_std]
 
 use proc_macro2::TokenStream;
 

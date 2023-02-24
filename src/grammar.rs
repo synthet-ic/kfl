@@ -147,9 +147,7 @@ fn raw_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
         .map_slice(|v: &str| v.chars().collect::<String>().into())
         .map_err_with_span(move |e: Error, span| {
             let span = Span::from(span);
-            if matches!(&e, Error::Unexpected {
-                found: TokenFormat::Eoi, .. })
-            {
+            if matches!(&e, Error::Unexpected { found: TokenFormat::Eoi, .. }) {
                 e.merge(Error::Unclosed {
                     label: "raw string",
                     opened_at: span.before_start(sharp_num + 2),

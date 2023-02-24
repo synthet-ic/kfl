@@ -1,10 +1,11 @@
 //! Convert built-in scalar types.
 
 use core::{
-    net::SocketAddr,
     path::PathBuf,
     str::FromStr
 };
+#[cfg(feature = "std")]
+use std::net::SocketAddr;
 
 use crate::{
     ast::{Scalar, Literal, Integer, Decimal, Radix, BuiltinType},
@@ -237,7 +238,9 @@ impl EncodeScalar for PathBuf {
     }
 }
 
+#[cfg(feature = "std")]
 impl_from_str!(SocketAddr);
+#[cfg(feature = "std")]
 impl EncodeScalar for SocketAddr {
     fn encode(&self, _: &mut Context)
         -> Result<Scalar, EncodeError>

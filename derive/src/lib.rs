@@ -1,3 +1,5 @@
+!#[no_std]
+
 use proc_macro2::TokenStream;
 
 mod definition;

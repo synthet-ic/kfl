@@ -589,7 +589,8 @@ pub(crate) fn document<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
 #[cfg(test)]
 mod test {
     extern crate std;
-    use alloc::{string::String, vec::Vec};
+    use std::println;
+    use alloc::{string::{String, ToString}, vec::Vec};
     use chumsky::zero_copy::{
         prelude::*,
         extra::Full

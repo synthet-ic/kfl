@@ -212,7 +212,9 @@ impl<T: Decode> Decode for Vec<T> {
 }
 
 impl<T: Decode> DecodePartial for Vec<T> {
-    fn decode_partial(&mut self, node: &Node, ctx: &mut Context) -> Result<bool, DecodeError> {
+    fn decode_partial(&mut self, node: &Node, ctx: &mut Context)
+        -> Result<bool, DecodeError>
+    {
         match <T as Decode>::decode(node, ctx) {
             Ok(value) => {
                 self.push(value);

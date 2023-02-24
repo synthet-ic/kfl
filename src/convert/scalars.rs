@@ -14,8 +14,7 @@ macro_rules! impl_integer {
     ($ty:ident, $marker:ident) => {
         impl TryFrom<&Integer> for $ty {
             type Error = <$ty as FromStr>::Err;
-            fn try_from(val: &Integer) -> Result<$ty, <$ty as FromStr>::Err>
-            {
+            fn try_from(val: &Integer) -> Result<$ty, <$ty as FromStr>::Err> {
                 match val.0 {
                     Radix::Bin => <$ty>::from_str_radix(&val.1, 2),
                     Radix::Oct => <$ty>::from_str_radix(&val.1, 8),
@@ -44,32 +43,23 @@ macro_rules! impl_integer {
                     Literal::Int(ref v) => v.try_into()
                         .map_err(|err| DecodeError::conversion(
                                  ctx.span(&scalar), err)),
-                    _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "string",
-                             &scalar.literal))
+                    _ => Err(DecodeError::scalar_kind(ctx.span(&scalar),
+                             "string", &scalar.literal))
                 }
             }
         }
 
         impl TryFrom<&$ty> for Integer {
             type Error = <$ty as FromStr>::Err;
-            fn try_from(val: &$ty) -> Result<Integer, <$ty as FromStr>::Err>
-            {
-                Ok(Integer(
-                    Radix::Oct,
-                    val.to_string().into()
-                ))
+            fn try_from(val: &$ty) -> Result<Integer, <$ty as FromStr>::Err> {
+                Ok(Integer(Radix::Oct, val.to_string().into()))
             }
         }
 
         impl EncodeScalar for $ty {
-            fn encode(&self, _: &mut Context)
-                -> Result<Scalar, EncodeError>
-            {
+            fn encode(&self, _: &mut Context) -> Result<Scalar, EncodeError> {
                 let literal = Literal::Int(Integer::try_from(self).unwrap());
-                Ok(Scalar {
-                    type_name: None,
-                    literal: literal.into()
-                })
+                Ok(Scalar { type_name: None, literal: literal.into() })
                 
             }
         }
@@ -135,23 +125,15 @@ macro_rules! impl_decimal {
 
         impl TryFrom<&$ty> for Decimal {
             type Error = <$ty as FromStr>::Err;
-            fn try_from(val: &$ty) -> Result<Decimal, <$ty as FromStr>::Err>
-            {
-                Ok(Decimal(
-                    val.to_string().into()
-                ))
+            fn try_from(val: &$ty) -> Result<Decimal, <$ty as FromStr>::Err> {
+                Ok(Decimal(val.to_string().into()))
             }
         }
 
         impl EncodeScalar for $ty {
-            fn encode(&self, _: &mut Context)
-                -> Result<Scalar, EncodeError>
-            {
+            fn encode(&self, _: &mut Context) -> Result<Scalar, EncodeError> {
                 let literal = Literal::Decimal(Decimal::try_from(self).unwrap());
-                Ok(Scalar {
-                    type_name: None,
-                    literal: literal.into()
-                })
+                Ok(Scalar { type_name: None, literal: literal.into() })
                 
             }
         }
@@ -162,9 +144,7 @@ impl_decimal!(f32, F32);
 impl_decimal!(f64, F64);
 
 impl DecodeScalar for String {
-    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
-        -> Result<Self, DecodeError>
-    {
+    fn decode(scalar: &Scalar, ctx: &mut Context) -> Result<Self, DecodeError> {
         if let Some(typ) = scalar.type_name.as_ref() {
             return Err(DecodeError::TypeName {
                 span: ctx.span(&typ),
@@ -181,15 +161,9 @@ impl DecodeScalar for String {
     }
 }
 impl EncodeScalar for String {
-    fn encode(&self, _: &mut Context)
-        -> Result<Scalar, EncodeError>
-    {
+    fn encode(&self, _: &mut Context) -> Result<Scalar, EncodeError> {
         let literal = Literal::String(self.clone().into());
-        Ok(Scalar {
-            type_name: None,
-            literal: literal.into()
-        })
-        
+        Ok(Scalar { type_name: None, literal: literal.into() })
     }
 }
 
@@ -211,8 +185,8 @@ macro_rules! impl_from_str {
                     Literal::String(ref s) => <$ty>::from_str(&s)
                         .map_err(|err| DecodeError::conversion(
                                  ctx.span(&scalar), err)),
-                    _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "string",
-                             &scalar.literal))
+                    _ => Err(DecodeError::scalar_kind(ctx.span(&scalar),
+                             "string", &scalar.literal))
                 }
             }
         }
@@ -274,13 +248,7 @@ impl DecodeScalar for bool {
     }
 }
 impl EncodeScalar for bool {
-    fn encode(&self, _: &mut Context)
-        -> Result<Scalar, EncodeError>
-    {
-        let literal = Literal::Bool(self.clone());
-        Ok(Scalar {
-            type_name: None,
-            literal: literal.into()
-        })
+    fn encode(&self, _: &mut Context) -> Result<Scalar, EncodeError> {
+        Ok(Scalar { type_name: None, literal: Literal::Bool(self.clone()) })
     }
 }

@@ -11,9 +11,7 @@ use crate::{
 };
 
 impl Decode for Node {
-    fn decode(node: &Node, ctx: &mut Context)
-        -> Result<Self, DecodeError>
-    {
+    fn decode(node: &Node, ctx: &mut Context) -> Result<Self, DecodeError> {
         Ok(Node {
             type_name: node.type_name.as_ref().map(|n| n.clone()),
             node_name: node.node_name.clone(),

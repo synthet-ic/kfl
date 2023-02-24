@@ -3,11 +3,11 @@
 //! You only need [`Error`](enum@Error) exposed as `kfl::Error` unless you
 //! do manual implementations of any of the `Decode*` traits.
 
-use std::collections::BTreeSet;
-use core::{
+use alloc::{
     borrow::Cow,
-    fmt::{self, Display, Write}
+    collections::BTreeSet,
 };
+use core::fmt::{self, Display, Write};
 
 use thiserror::Error;
 use miette::{Diagnostic, NamedSource};

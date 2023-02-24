@@ -1,6 +1,7 @@
 extern crate alloc;
 use alloc::{
     format,
+    string::ToString,
     vec::{self, Vec}
 };
 

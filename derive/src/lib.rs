@@ -123,3 +123,8 @@ pub fn encode_scalar_derive(input: proc_macro::TokenStream)
         Err(e) => e.to_compile_error().into(),
     }
 }
+
+pub(crate) fn to_kebab_case(ident: &syn::Ident) -> String {
+    heck::ToKebabCase::to_kebab_case(
+        format!("{}", ident).as_ref())
+}

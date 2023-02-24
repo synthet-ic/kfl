@@ -67,9 +67,6 @@ impl Context {
     pub fn has_errors(&self) -> bool {
         !self.errors.is_empty()
     }
-    pub(crate) fn into_errors(self) -> Vec<DecodeError> {
-        self.errors
-    }
     /// Set context value
     ///
     /// These values aren't used by the kfl itself. But can be used by

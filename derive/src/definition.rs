@@ -192,7 +192,7 @@ impl Variant {
     fn new(ident: syn::Ident, _attrs: VariantAttrs, kind: VariantKind)
         -> syn::Result<Self>
     {
-        let name = heck::ToKebabCase::to_kebab_case(&ident.unraw().to_string()[..]);
+        let name = crate::to_kebab_case(&ident.unraw());
         Ok(Variant {
             ident,
             name,

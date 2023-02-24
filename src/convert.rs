@@ -55,9 +55,7 @@ impl EncodeScalar for Scalar {
 
 // TODO(rnarkk) 
 // impl DecodeScalar for Literal {
-//     fn decode(scalar: &Scalar, _: &mut Context)
-//         -> Result<Self, DecodeError>
-//     {
+//     fn decode(scalar: &Scalar, _: &mut Context) -> Result<Self, DecodeError> {
 //         Ok(scalar.literal.clone())
 //     }
 // }

@@ -159,11 +159,8 @@ pub fn emit_new_type(s: &NewType) -> syn::Result<TokenStream> {
     })
 }
 
-fn decode_scalar(val: &syn::Ident, ctx: &syn::Ident) -> syn::Result<TokenStream>
-{
-    Ok(quote! {
-        ::kfl::traits::DecodeScalar::decode(#val, #ctx)
-    })
+fn decode_scalar(val: &syn::Ident, ctx: &syn::Ident) -> TokenStream {
+    quote!(::kfl::traits::DecodeScalar::decode(#val, #ctx))
 }
 
 fn check_type(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
@@ -188,9 +185,9 @@ fn check_type(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
 // {
 //     let ctx = s.ctx;
 //     let type_names = s.object.type_names.iter().flat_map(|type_name| {
-//         let fld = &type_name.field.tmp_name;
+//         let field = &type_name.field.tmp_name;
 //         quote! {
-//             let #fld = if let Some(tn) = #node.type_name.as_ref() {
+//             let #field = if let Some(tn) = #node.type_name.as_ref() {
 //                 tn.as_str()
 //                     .parse()
 //                     .map_err(|e| {
@@ -213,15 +210,15 @@ pub(crate) fn decode_arguments(s: &Common, node: &syn::Ident) -> syn::Result<Tok
         let mut #iter_args = #node.arguments.iter();
     });
     for argument in &s.object.arguments {
-        let fld = &argument.field.tmp_name;
+        let field = &argument.field.tmp_name;
         let val = syn::Ident::new("val", Span::mixed_site());
-        let decode_scalar = decode_scalar(&val, ctx)?;
+        let decode_scalar = decode_scalar(&val, ctx);
         match &argument.default {
             None => {
                 let error = if argument.field.is_indexed() {
                     "additional argument is required".into()
                 } else {
-                    format!("additional argument `{}` is required", fld.unraw())
+                    format!("additional argument `{}` is required", field.unraw())
                 };
                 decoder.push(quote! {
                     let #val =
@@ -229,7 +226,7 @@ pub(crate) fn decode_arguments(s: &Common, node: &syn::Ident) -> syn::Result<Tok
                             ::kfl::errors::DecodeError::missing(
                                 #ctx.span(&#node), #error)
                         })?;
-                    let #fld = #decode_scalar?;
+                    let #field = #decode_scalar?;
                 });
             }
             Some(default_value) => {
@@ -239,23 +236,19 @@ pub(crate) fn decode_arguments(s: &Common, node: &syn::Ident) -> syn::Result<Tok
                     quote!(::std::default::Default::default())
                 };
                 decoder.push(quote! {
-                    let #fld = #iter_args.next().map(|#val| {
-                        #decode_scalar
-                    }).transpose()?.unwrap_or_else(|| {
-                        #default
-                    });
+                    let #field = #iter_args.next().map(|#val| #decode_scalar)
+                            .transpose()?.unwrap_or_else(|| #default);
                 });
             }
         }
     }
     if let Some(var_args) = &s.object.var_args {
-        let fld = &var_args.field.tmp_name;
+        let field = &var_args.field.tmp_name;
         let val = syn::Ident::new("val", Span::mixed_site());
-        let decode_scalar = decode_scalar(&val, ctx)?;
+        let decode_scalar = decode_scalar(&val, ctx);
         decoder.push(quote! {
-            let #fld = #iter_args.map(|#val| {
-                #decode_scalar
-            }).collect::<Result<_, _>>()?;
+            let #field = #iter_args.map(|#val| #decode_scalar)
+                                 .collect::<Result<_, _>>()?;
         });
     } else {
         decoder.push(quote! {
@@ -282,27 +275,27 @@ pub(crate) fn decode_properties(s: &Common, node: &syn::Ident)
     let name_str = syn::Ident::new("name_str", Span::mixed_site());
 
     for property in &s.object.properties {
-        let fld = &property.field.tmp_name;
+        let field = &property.field.tmp_name;
         let prop_name = &property.name;
-        let seen_name = format_ident!("seen_{}", fld, span = Span::mixed_site());
+        let seen_name = format_ident!("seen_{}", field, span = Span::mixed_site());
         if false /* TODO property.flatten */ {
             declare_empty.push(quote! {
-                let mut #fld = ::std::default::Default::default();
+                let mut #field = ::std::default::Default::default();
             });
             match_branches.push(quote! {
                 _ if ::kfl::traits::DecodePartial::
-                    insert_property(&mut #fld, #name, #val, #ctx)?
+                    insert_property(&mut #field, #name, #val, #ctx)?
                 => {}
             });
         } else {
-            let decode_scalar = decode_scalar(&val, ctx)?;
+            let decode_scalar = decode_scalar(&val, ctx);
             declare_empty.push(quote! {
-                let mut #fld = None;
+                let mut #field = None;
                 let mut #seen_name = false;
             });
             match_branches.push(quote! {
                 #prop_name => {
-                    #fld = Some(#decode_scalar?);
+                    #field = Some(#decode_scalar?);
                 }
             });
             let req_msg = format!("property `{}` is required", prop_name);
@@ -313,11 +306,11 @@ pub(crate) fn decode_properties(s: &Common, node: &syn::Ident)
                     quote!(::std::default::Default::default())
                 };
                 postprocess.push(quote! {
-                    let #fld = #fld.unwrap_or_else(|| #default);
+                    let #field = #field.unwrap_or_else(|| #default);
                 });
             } else {
                 postprocess.push(quote! {
-                    let #fld = #fld.ok_or_else(|| {
+                    let #field = #field.ok_or_else(|| {
                         ::kfl::errors::DecodeError::missing(
                             #ctx.span(&#node), #req_msg)
                     })?;
@@ -326,10 +319,10 @@ pub(crate) fn decode_properties(s: &Common, node: &syn::Ident)
         }
     }
     if let Some(var_props) = &s.object.var_props {
-        let fld = &var_props.field.tmp_name;
-        let decode_scalar = decode_scalar(&val, ctx)?;
+        let field = &var_props.field.tmp_name;
+        let decode_scalar = decode_scalar(&val, ctx);
         declare_empty.push(quote! {
-            let mut #fld = Vec::new();
+            let mut #field = Vec::new();
         });
         match_branches.push(quote! {
             #name_str => {
@@ -337,14 +330,14 @@ pub(crate) fn decode_properties(s: &Common, node: &syn::Ident)
                     .map_err(|e| {
                         ::kfl::errors::DecodeError::conversion(#ctx.span(&#name), e)
                     })?;
-                #fld.push((
+                #field.push((
                     converted_name,
                     #decode_scalar?,
                 ));
             }
         });
         postprocess.push(quote! {
-            let #fld = #fld.into_iter().collect();
+            let #field = #field.into_iter().collect();
         });
     } else {
         match_branches.push(quote! {
@@ -418,11 +411,11 @@ fn decode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
         }
     }];
     for child_def in &s.object.children {
-        let dest = &child_def.field.from_self();
+        let field = &child_def.field.from_self();
         let ty = &child_def.field.ty;
         branches.push(quote! {
             else if let Ok(true) = <#ty as ::kfl::traits::DecodePartial>
-                ::decode_partial(&mut #dest, #node, #ctx)
+                ::decode_partial(&mut #field, #node, #ctx)
             {
                 Ok(true)
             }
@@ -451,7 +444,7 @@ fn decode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
 //                 => Ok(true),
 //             });
 //         } else {
-//             let decode_scalar = decode_scalar(&value, ctx, &property.decode)?;
+//             let decode_scalar = decode_scalar(&value, ctx, &property.decode);
 //             match_branches.push(quote! {
 //                 #prop_name => {
 //                     #dest = Some(#decode_scalar?);
@@ -483,28 +476,28 @@ pub(crate) fn decode_children(s: &Common, children: &syn::Ident,
     let ctx = s.ctx;
     let child = syn::Ident::new("child", Span::mixed_site());
     for child_def in &s.object.children {
-        let fld = &child_def.field.tmp_name;
+        let field = &child_def.field.tmp_name;
         let ty = &child_def.field.ty;
         match child_def.mode {
             ChildMode::Flatten => {
                 declare_empty.push(quote! {
-                    let mut #fld = ::std::default::Default::default();
+                    let mut #field = ::std::default::Default::default();
                 });
                 branches.push(quote! {
                     else if let Ok(true) = <#ty as ::kfl::traits::DecodePartial>
-                        ::decode_partial(&mut #fld, #child, #ctx) {
+                        ::decode_partial(&mut #field, #child, #ctx) {
                         None
                     }
                 });
             }
             ChildMode::Multi => {
                 declare_empty.push(quote! {
-                    let mut #fld = Vec::new();
+                    let mut #field = Vec::new();
                 });
                 let ctx = &s.ctx;
                 branches.push(quote! {
                     else if let Ok(true) = <Vec<<#ty as IntoIterator>::Item> as ::kfl::traits::DecodePartial>
-                        ::decode_partial(&mut #fld, #child, #ctx)
+                        ::decode_partial(&mut #field, #child, #ctx)
                     {
                         None
                     }
@@ -516,32 +509,32 @@ pub(crate) fn decode_children(s: &Common, children: &syn::Ident,
                         quote!(::std::default::Default::default())
                     };
                     postprocess.push(quote! {
-                        let #fld = if #fld.is_empty() {
+                        let #field = if #field.is_empty() {
                             #default
                         } else {
-                            #fld.into_iter().collect()
+                            #field.into_iter().collect()
                         };
                     });
                 } else {
                     postprocess.push(quote! {
-                        let #fld = #fld.into_iter().collect();
+                        let #field = #field.into_iter().collect();
                     });
                 }
             }
             ChildMode::Normal => {
                 declare_empty.push(quote! {
-                    let mut #fld = None;
+                    let mut #field = None;
                 });
                 branches.push(quote! {
                     else if let Ok(true) = <Option<#ty> as ::kfl::traits::DecodePartial>
-                        ::decode_partial(&mut #fld, #child, #ctx)
+                        ::decode_partial(&mut #field, #child, #ctx)
                     {
                         None
                     }
                 });
                 let req_msg = format!(
                     "child node for struct field `{}` is required",
-                    &fld.unraw().to_string());
+                    &field.unraw().to_string());
                 if let Some(default_value) = &child_def.default {
                     let default = if let Some(expr) = default_value {
                         quote!(#expr)
@@ -549,12 +542,12 @@ pub(crate) fn decode_children(s: &Common, children: &syn::Ident,
                         quote!(::std::default::Default::default())
                     };
                     postprocess.push(quote! {
-                        let #fld = #fld.unwrap_or_else(|| #default);
+                        let #field = #field.unwrap_or_else(|| #default);
                     });
                 } else {
                     if let Some(span) = &err_span {
                         postprocess.push(quote! {
-                            let #fld = #fld.ok_or_else(|| {
+                            let #field = #field.ok_or_else(|| {
                                 ::kfl::errors::DecodeError::Missing {
                                     span: #span.clone(),
                                     message: #req_msg.into(),
@@ -563,7 +556,7 @@ pub(crate) fn decode_children(s: &Common, children: &syn::Ident,
                         });
                     } else {
                         postprocess.push(quote! {
-                            let #fld = #fld.ok_or_else(|| {
+                            let #field = #field.ok_or_else(|| {
                                 ::kfl::errors::DecodeError::MissingNode {
                                     message: #req_msg.into(),
                                 }
@@ -594,10 +587,10 @@ pub(crate) fn decode_children(s: &Common, children: &syn::Ident,
 }
 
 pub(crate) fn assign_extra(s: &Common) -> syn::Result<TokenStream> {
-    let items = s.object.extra_fields.iter().map(|fld| {
-        match fld.kind {
+    let items = s.object.extra_fields.iter().map(|field| {
+        match field.kind {
             ExtraKind::Auto => {
-                let name = &fld.field.tmp_name;
+                let name = &field.field.tmp_name;
                 quote!(let #name = ::std::default::Default::default();)
             }
         }
@@ -689,8 +682,7 @@ pub fn emit_encode_struct(s: &Struct, partial: bool)
         impl #impl_gen ::kfl::traits::Encode for #s_name #type_gen
             #bounds
         {
-            fn encode(&self,
-                      #ctx: &mut ::kfl::context::Context)
+            fn encode(&self, #ctx: &mut ::kfl::context::Context)
                 -> Result<::kfl::ast::Node, ::kfl::errors::EncodeError>
             {
                 #declare_node
@@ -773,9 +765,8 @@ pub(crate) fn encode_arguments(s: &Common, node: &syn::Ident, variant: bool)
         let encode_scalar = quote!(::kfl::traits::EncodeScalar::encode(
                                    #scalar, #ctx));
         encoder.push(quote! {
-            let args = #field.iter().map(|#scalar|
-                #encode_scalar
-            ).collect::<Result<Vec<_>, _>>()?;
+            let args = #field.iter().map(|#scalar| #encode_scalar)
+                    .collect::<Result<Vec<_>, _>>()?;
             #node.arguments.extend(args);
         });
     } else {

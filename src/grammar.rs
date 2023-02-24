@@ -588,7 +588,8 @@ pub(crate) fn document<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
 // TODO(rnarkk) tests which need span info are comment-outed
 #[cfg(test)]
 mod test {
-    use alloc::vec::Vec;
+    extern crate std;
+    use alloc::{string::String, vec::Vec};
     use chumsky::zero_copy::{
         prelude::*,
         extra::Full

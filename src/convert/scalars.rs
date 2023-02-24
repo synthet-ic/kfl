@@ -1,6 +1,6 @@
 //! Convert built-in scalar types.
 
-use alloc::string::{String, ToString};
+use alloc::{format, string::{String, ToString}};
 use core::str::FromStr;
 
 use crate::{
@@ -193,7 +193,6 @@ impl EncodeScalar for String {
     }
 }
 
-#[macro_export]
 macro_rules! impl_from_str {
     ($ty:ty) => {
         impl DecodeScalar for $ty {
@@ -225,7 +224,7 @@ mod std {
     extern crate std;
     use std::path::PathBuf;
     use std::net::SocketAddr;
-    use super::impl_from_str;
+    use super::*;
 
     impl_from_str!(PathBuf);
     impl EncodeScalar for PathBuf {

@@ -21,7 +21,7 @@ readme = "README.md"
 [dependencies]
 base64 = { version = "0.21", optional = true }
 chrono = { version = "0.4", optional = true }
-#chumsky = { version = "0.8", default-features = false }
+# chumsky = { version = "0.9", default-features = false }
 chumsky = { git = "https://github.com/zesterer/chumsky", branch = "zero-copy" }
 kfl-derive = { path = "./derive", version = "0", optional = true }
 log = "*"
@@ -36,6 +36,11 @@ assert-json-diff = "2"
 serde_json = "1"
 
 [features]
-default = ["derive", "base64", "line-numbers"]
+default = ["std", "derive", "base64", "line-numbers"]
 derive = ["kfl-derive"]
 line-numbers = ["unicode-width"]
+std = []
+
+# [[bin]]
+# name = "out"
+# path = "src/out.rs"

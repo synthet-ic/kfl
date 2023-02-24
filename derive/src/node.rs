@@ -23,15 +23,10 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
     let node = syn::Ident::new("node", Span::mixed_site());
     let ctx = syn::Ident::new("ctx", Span::mixed_site());
     let children = syn::Ident::new("children", Span::mixed_site());
-
-    // TODO(rnarkk) merge
-    let (_, type_gen, _) = s.generics.split_for_impl();
-    let common_generics = s.generics.clone();
-    let (impl_gen, _, bounds) = common_generics.split_for_impl();
+    let (impl_gen, type_gen, bounds) = s.generics.split_for_impl();
 
     let common = Common { object: s, ctx: &ctx };
     let check_type = check_type(&common, &node)?;
-    // let decode_specials = decode_specials(&common, &node)?;
     let decode_arguments = decode_arguments(&common, &node)?;
     let decode_properties = decode_properties(&common, &node)?;
     let decode_children_normal = decode_children(
@@ -115,7 +110,6 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
                 -> Result<Self, ::kfl::errors::DecodeError>
             {
                 #check_type
-                // #decode_specials
                 #decode_arguments
                 #decode_properties
                 let #children = #node.children.as_ref()
@@ -142,9 +136,9 @@ fn check_type(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                        "no type name expected for this node"));
         }
         if #node.node_name.as_ref() != #name {
-            return Err(::kfl::errors::DecodeError::unexpected(
-                #ctx.span(&#node), "node", format!("unexpected node `{}`",
-                #node.node_name.as_ref())));
+            return Err(::kfl::errors::DecodeError::unexpected(#ctx.span(&#node),
+                       "node", format!("unexpected node `{}`",
+                       #node.node_name.as_ref())));
         }
     })
 }
@@ -159,12 +153,11 @@ fn check_type(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
 //             let #field = if let Some(tn) = #node.type_name.as_ref() {
 //                 tn.as_str()
 //                     .parse()
-//                     .map_err(|e| {
-//                         ::kfl::errors::DecodeError::conversion(tn, e)
-//                     })?
+//                     .map_err(|e|
+//                         ::kfl::errors::DecodeError::conversion(tn, e))?
 //             } else {
 //                 return Err(::kfl::errors::DecodeError::missing(
-//                     #ctx.span(&#node), "type name required"));
+//                            #ctx.span(&#node), "type name required"));
 //             };
 //         }
 //     });

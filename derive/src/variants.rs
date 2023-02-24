@@ -51,7 +51,7 @@ pub fn emit_decode_enum(e: &Enum) -> syn::Result<TokenStream> {
 fn check_type(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     let ctx = s.ctx;
     let name = heck::ToKebabCase::to_kebab_case(
-        &s.object.ident.unraw().to_string()[..]);
+        format!("{}", &s.object.ident.unraw()).as_ref());
     Ok(quote! {
         if let Some(type_name) = #node.type_name.as_ref() {
             let type_name = type_name.as_ref();
@@ -381,8 +381,8 @@ fn encode_variant(s: &node::Common, enum_name: &syn::Ident, node: &syn::Ident)
 fn declare_variant(node: &syn::Ident, enum_name: &syn::Ident, name: &syn::Ident)
     -> TokenStream
 {
-    let enum_name = heck::ToKebabCase::to_kebab_case(enum_name.to_string().as_str());
-    let name = heck::ToKebabCase::to_kebab_case(name.to_string().as_str());
+    let enum_name = heck::ToKebabCase::to_kebab_case(format!("{}", enum_name).as_str());
+    let name = heck::ToKebabCase::to_kebab_case(format!("{}", name).as_str());
     // Ok(quote! {
     //     if let Some(type_name) = #node.type_name.as_ref() {
     //         let type_name = type_name.as_ref();

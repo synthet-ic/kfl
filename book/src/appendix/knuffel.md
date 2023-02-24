@@ -34,8 +34,10 @@
   - Separation of `check_type` and `raw_decode` is inefficient when implementing `bytes` for `Vec<u8>`
     - We need to return default values
   - We can expect more that one kind of value, so DecodeError::ScalarKind cannot expect one fixed Kind
+- Removed `DecodeChildren`, why?
+  - If top level nodes should be considered as a set, they should be accomodated in a single node.
+  - If not, they can always be decoded individually (partially).
 - Removed `Document` struct as root of nodes
-  - [ ] Make `DecodeChildren` sealed?
 - Removed `Spanned`, now `Context` has spans map, prepared at parsing
   - To avoid spreading `DUMMY_SP` kind everywhere when implement`Encode`
 - `Span` now our AST is span-free, spans are accomodated in context

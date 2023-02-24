@@ -29,6 +29,8 @@
 
 ### Error Reporting
 
+- [ ] Remove `emit_error` + `into_error` from `Context`
+  - [ ] Determine error boundaries (absolute errors (break) and relative errors (continue)) in relation to struct/enum
 - [ ] `DecodeResult`, `EncodeResult`?
 - [ ] Remove `BuiltinType`?
 - [ ] Span
@@ -64,6 +66,7 @@
 
 ### Ideas
 
+- [ ] `DecodeState` as `DecodePartial` + `DecodeError`, `EncodeState` as `EncodePartial` + `EncodeError`
 - [ ] Impl `From<Literal>` for `Scalar`
 - [ ] Deprecate new type pattern, `struct New(#[flatten] Node);`
 

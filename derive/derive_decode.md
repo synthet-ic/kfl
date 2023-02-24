@@ -57,7 +57,7 @@ node "arg1" true 1 22 333
 ... can be parsed into the following structure:
 
 ```rust
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct MyNode {
     #[kfl(argument)]
     first: String,
@@ -71,7 +71,7 @@ struct MyNode {
 Arguments can be optional:
 
 ```rust
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct MyNode {
     #[kfl(argument)]
     first: Option<String>,
@@ -122,7 +122,7 @@ Can be parsed into the following structure:
 
 ```rust
 # use std::collections::HashMap;
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct MyNode {
     #[kfl(property)]
     name: String,
@@ -136,7 +136,7 @@ struct MyNode {
 Properties can be optional:
 
 ```rust
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct MyNode {
     #[kfl(property)]
     name: Option<String>,
@@ -155,7 +155,7 @@ By default, field name is renamed to use `kebab-case` in KDL file. So field
 defined like this:
 
 ```rust
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct MyNode {
     #[kfl(property)]
     plugin_name: String,
@@ -169,7 +169,7 @@ node plugin-name="my_plugin"
 To rename a property in the source use `name=`:
 
 ```rust
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct MyNode {
     #[kfl(property(name = "pluginName"))]
     name: String,
@@ -200,7 +200,7 @@ aren't supported by `kfl` directly.
 For example:
 
 ```rust
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct Server {
     #[kfl(property, str)]
     listen: std::net::SocketAddr,
@@ -221,7 +221,7 @@ as byte buffer.
 For example:
 
 ```rust
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct Response {
     #[kfl(argument, bytes)]
     body: Vec<u8>,
@@ -284,17 +284,17 @@ node {
 ... can be parsed by into the following structures:
 
 ```rust
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 enum Setting {
     Plugin(#[kfl(argument)] String),
     Datum(#[kfl(argument)] String),
 }
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct Version {
     #[kfl(argument)]
     number: u32
 }
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct MyNode {
     #[kfl(child)]
     version: Version,
@@ -307,12 +307,12 @@ There is another form of children which is `children(name="something")`, that
 allows filtering nodes by name:
 
 ```rust
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct Plugin {
     #[kfl(argument)]
     name: u32
 }
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct MyNode {
     #[kfl(children)]
     plugins: Vec<Plugin>,
@@ -341,7 +341,7 @@ plugin "second"
 ... can be parsed into the list of the following structures:
 
 ```rust
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct Plugin {
     #[kfl(child)]
     auto_start: bool,
@@ -367,7 +367,7 @@ important role in making document readable.
 It works by transforming the following:
 
 ```rust,ignore
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct Node {
     #[kfl(child, unwrap(/* attributes */))]
     field: String,
@@ -377,12 +377,12 @@ struct Node {
 ... into something like this:
 
 ```
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct TmpChild {
     #[kfl(/* attributes */)]
     field: String,
 }
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct Node {
     #[kfl(child)]
     field: TmpChild,
@@ -422,7 +422,7 @@ plugin {
 Here is the respective Rust structure:
 
 ```rust
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct Plugin {
     #[kfl(child, unwrap(argument))]
     name: String,
@@ -459,9 +459,9 @@ files {
 ```
 This can be parsed into the following structure:
 ```rust
-# #[derive(kfl::Decode)] struct Plugin {}
-# #[derive(kfl::Decode)] struct File {}
-#[derive(kfl::Decode)]
+# #[derive(Decode)] struct Plugin {}
+# #[derive(Decode)] struct File {}
+#[derive(Decode)]
 struct Document {
     #[kfl(child, unwrap(children(name="plugin")))]
     plugins: Vec<Plugin>,
@@ -481,9 +481,9 @@ unmarked ones, can be used as the root of the document.
 
 For example, this structure can:
 ```rust
-# #[derive(kfl::Decode)]
+# #[derive(Decode)]
 # struct NamedNode { #[kfl(argument)] name: u32 }
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct MyNode {
     #[kfl(child, unwrap(argument))]
     version: u32,
@@ -497,9 +497,9 @@ struct MyNode {
 On the other hand this one can **not** because it contains a `property`:
 
 ```rust
-# #[derive(kfl::Decode)]
+# #[derive(Decode)]
 # struct NamedNode { #[kfl(argument)] name: u32 }
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct MyNode {
     #[kfl(property)]
     version: u32,
@@ -526,7 +526,7 @@ implemented for the structures that can be used as documents.
 There are two forms of it. Marker attribute:
 
 ```rust
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct MyNode {
     #[kfl(property, default)]
     first: String,
@@ -537,31 +537,38 @@ Which means that `std::default::Default` should be used if field was not
 filled otherwise (i.e. no such property encountered).
 
 Another form is `default=value`:
+
 ```rust
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct MyNode {
     #[kfl(property, default = "unnamed".into())]
     name: String,
 }
 ```
+
 Any Rust expression can be used in this case.
 
 Note, for optional properties `Some` should be included in the default value.
 And for scalar values their value can be overriden by using `null`. The
 definition like this:
+
 ```rust
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct MyNode {
     #[kfl(property, default = Some("unnamed".into()))]
     name: Option<String>,
 }
 ```
+
 Parses these two nodes differently:
+
 ```kdl
 node name=null
 node
 ```
+
 Will yield:
+
 ```rust
 # struct MyNode { name: Option<String> }
 let _ = vec![
@@ -578,14 +585,14 @@ properties or children into another structure.
 For example:
 
 ```rust
-#[derive(kfl::Decode, Default)]
+#[derive(Decode, Default)]
 struct Common {
     #[kfl(child, unwrap(argument))]
     name: Option<String>,
     #[kfl(child, unwrap(argument))]
     description: Option<String>
 }
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct Plugin {
     #[kfl(flatten)]
     common: Common,
@@ -637,16 +644,18 @@ To allow type names on specific node and to have the name stored use
 `type_name` attribute:
 
 ```rust
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct Node {
     #[kfl(type_name)]
     type_name: String,
 }
 ```
+
 Type name can be optional.
 
 The field that is a target of `type_name` can be any type that implements
 `FromStr`. This might be used to validate node type:
+
 ```rust
 pub enum PluginType {
     Builtin,
@@ -664,7 +673,7 @@ impl std::str::FromStr for PluginType {
     }
 }
 
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct Node {
     #[kfl(type_name)]
     type_name: PluginType,
@@ -676,8 +685,9 @@ struct Node {
 In kfl, it's common that parent node, document or enum type checks the node name of the node, and node name is not stored or validated in the strucuture.
 
 But for the cases where you need it, it's possible to store too:
+
 ```rust
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 struct Node {
     #[kfl(node_name)]
     node_name: String,
@@ -691,16 +701,18 @@ Node name always exists so optional node_name is not supported.
 ## Spans
 
 The following definition:
+
 ```rust
 use kfl::span::Span;  // or LineSpan
 
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 #[kfl(span_type=Span)]
 struct Node {
     #[kfl(span)]
     span: Span,  // This can be user type decoded from Span
 }
 ```
+
 Puts position of the node in the source code into the `span` field. Span
 contains the whole node, starting from parenthesis that enclose type name if
 present otherwise node name. Includes node children if exists and semicolon or
@@ -721,15 +733,17 @@ Enums are used to differentiate nodes by name when multiple kinds of nodes are
 pushed to a single collection.
 
 For example, to parse the following list of actions:
+
 ```kdl
 create "xxx"
 print-string "yyy" line=2
 finish
 ```
 The following enum might be used:
+
 ```rust
-# #[derive(kfl::Decode)] struct PrintString {}
-#[derive(kfl::Decode)]
+# #[derive(Decode)] struct PrintString {}
+#[derive(Decode)]
 enum Action {
     Create(#[kfl(argument)] String),
     PrintString(PrintString),
@@ -756,6 +770,7 @@ Enum variant names are matches against node names converted into `kebab-case`.
 ## Span Type
 
 Usually generated implemenation is for any span type:
+
 ```rust,ignore
 impl Decode<S> for MyStruct {
    # ...
@@ -768,7 +783,7 @@ Use use `span_type=` for implemenation of specific type:
 ```rust
 use kfl::span::Span;  // or LineSpan
 
-#[derive(kfl::Decode)]
+#[derive(Decode)]
 #[kfl(span_type=Span)]
 struct MyStruct {
     #[kfl(span)]
@@ -783,3 +798,46 @@ impl Decode<Span> for MyStruct {
 ```
 
 See [Spans](#spans) section for more info about decoding spans.
+
+Currently `DecodeScalar` derive is only implemented for enums
+
+# Enums
+
+Only enums that contain no data are supported:
+
+```rust
+use kfl::DecodeScalar;
+
+#[derive(DecodeScalar)]
+enum ColourKind {
+    Red,
+    Blue,
+    Green,
+    InfraRed,
+}
+```
+
+This will match scalar values in `kebab-case`. For example, this node decoder:
+
+```rust
+# use kfl::{Decode, DecodeScalar};
+# #[derive(DecodeScalar)]
+# enum ColourKind { Red, Blue, Green, InfraRed }
+#[derive(Decode)]
+struct Document {
+    #[kfl(children)]
+    colour: Vec<Colour>,
+}
+
+#[derive(Decode)]
+struct Colour(#[kfl(argument)] ColourKind);
+```
+
+Can be populated from the following text:
+
+```kdl
+colour "red"
+colour "blue"
+colour "green"
+colour "infra-red"
+```

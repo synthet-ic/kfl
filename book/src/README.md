@@ -47,7 +47,6 @@
 
 - Instad of predetermining strings or patterns of chars valid for scalar values, determine syntactical separation condition between meta structure and scalar representations. This would give us possible scope of scalar notations, more relaxed ones if successful, and ability for scalar objects, in AST, to hold raw strings or slices to delay parsing them.
 - Eliminate `FromStr`, `ToString`, `Display` (as primary interfaces, as least)
-  - `#![no_std]`
 - [ ] Compare TokenStream with Scalar, TokenTree with Node
 
 ### Specials
@@ -55,3 +54,5 @@
 - [ ] `-`
 
 ### Benchmarking
+
+### Quering

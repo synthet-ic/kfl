@@ -12,7 +12,7 @@
 //! more elaborate thing that includes file name or can refer to the defaults
 //! as a separate kind of span. See [`traits::DecodeSpan`].
 
-use std::{
+use core::{
     fmt::Display,
     ops::Range
 };

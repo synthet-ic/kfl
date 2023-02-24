@@ -1,4 +1,7 @@
-use alloc::vec::Vec;
+use alloc::{
+    string:ToString,
+    vec::Vec
+};
 
 use proc_macro2::{TokenStream, Span};
 use quote::{format_ident, quote};

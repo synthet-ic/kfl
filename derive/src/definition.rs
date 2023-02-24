@@ -1,3 +1,4 @@
+use alloc::string::ToString;
 use core::mem;
 
 use proc_macro2::{TokenStream, Span};

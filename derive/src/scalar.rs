@@ -43,8 +43,7 @@ impl Enum {
         for variant in src_variants {
             match variant.fields {
                 syn::Fields::Unit => {
-                    let name = heck::ToKebabCase
-                        ::to_kebab_case(&variant.ident.unraw().to_string()[..]);
+                    let name = crate::to_kebab_case(&variant.ident.unraw());
                     variants.push(Variant {
                         ident: variant.ident,
                         name,

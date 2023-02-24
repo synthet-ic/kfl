@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 use proc_macro2::{TokenStream, Span};
 use quote::{format_ident, quote};
 use syn::ext::IdentExt;

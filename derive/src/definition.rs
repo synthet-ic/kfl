@@ -1,6 +1,6 @@
 use alloc::{
     boxed::Box,
-    string::ToString,
+    string::String,
     vec::Vec
 };
 use core::mem;

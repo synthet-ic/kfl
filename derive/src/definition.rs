@@ -1,7 +1,7 @@
 extern crate alloc;
 use alloc::{
     boxed::Box,
-    string::String,
+    string::{String, ToString},
     vec::Vec
 };
 use core::mem;
@@ -334,7 +334,7 @@ impl StructBuilder {
                 let name = match (name, &field.attr) {
                     (Some(name), _) => name.clone(),
                     (None, AttrAccess::Named(name))
-                    => heck::ToKebabCase::to_kebab_case(&name.unraw().to_string()[..]),
+                    => crate::to_kebab_case(&name.unraw()),
                     (None, AttrAccess::Indexed(_)) => {
                         return Err(syn::Error::new(field.span,
                             "property must be named, try \

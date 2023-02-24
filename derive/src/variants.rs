@@ -1,3 +1,5 @@
+use alloc::string::ToString;
+
 use proc_macro2::{TokenStream, Span};
 use quote::{quote, ToTokens};
 use syn::ext::IdentExt;

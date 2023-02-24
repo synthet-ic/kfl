@@ -48,10 +48,7 @@ impl Enum {
             match variant.fields {
                 syn::Fields::Unit => {
                     let name = crate::to_kebab_case(&variant.ident.unraw());
-                    variants.push(Variant {
-                        ident: variant.ident,
-                        name,
-                    });
+                    variants.push(Variant { ident: variant.ident, name });
                 }
                 _ => {
                     return Err(syn::Error::new(variant.span(),
@@ -59,10 +56,7 @@ impl Enum {
                 }
             }
         }
-        Ok(Enum {
-            ident,
-            variants,
-        })
+        Ok(Enum { ident, variants })
     }
 }
 
@@ -76,8 +70,7 @@ impl Parse for Scalar {
         if lookahead.peek(syn::Token![enum]) {
             let item: syn::ItemEnum = input.parse()?;
             attrs.extend(item.attrs);
-            Enum::new(item.ident, attrs,
-                      item.variants.into_iter())
+            Enum::new(item.ident, attrs, item.variants.into_iter())
                 .map(Scalar::Enum)
         } else {
             Err(lookahead.error())
@@ -87,9 +80,7 @@ impl Parse for Scalar {
 
 pub fn emit_decode_scalar(s: &Scalar) -> syn::Result<TokenStream> {
     match s {
-        Scalar::Enum(e) => {
-            emit_decode_enum(e)
-        }
+        Scalar::Enum(e) => emit_decode_enum(e)
     }
 }
 
@@ -131,19 +122,14 @@ pub fn emit_decode_enum(e: &Enum) -> syn::Result<TokenStream> {
                     ::kfl::ast::Literal::String(ref s) => {
                         match &s[..] {
                             #(#match_branches,)*
-                            _ => {
-                                Err(::kfl::errors::DecodeError::conversion(
-                                    ctx.span(&scalar.literal), #value_err))
-                            }
+                            _ => Err(::kfl::errors::DecodeError::conversion(
+                                     ctx.span(&scalar.literal), #value_err))
                         }
                     }
-                    _ => {
-                        Err(::kfl::errors::DecodeError::scalar_kind(
-                            ctx.span(&scalar),
-                            "string",
-                            &scalar.literal,
-                        ))
-                    }
+                    _ => Err(::kfl::errors::DecodeError::scalar_kind(
+                             ctx.span(&scalar),
+                             "string",
+                             &scalar.literal))
                 }
             }
         }
@@ -152,9 +138,7 @@ pub fn emit_decode_enum(e: &Enum) -> syn::Result<TokenStream> {
 
 pub fn emit_encode_scalar(s: &Scalar) -> syn::Result<TokenStream> {
     match s {
-        Scalar::Enum(e) => {
-            emit_encode_enum(e)
-        }
+        Scalar::Enum(e) => emit_encode_enum(e)
     }
 }
 
@@ -185,8 +169,7 @@ pub fn emit_encode_enum(e: &Enum) -> syn::Result<TokenStream> {
         });
     Ok(quote! {
         impl ::kfl::traits::EncodeScalar for #e_name {
-            fn encode(&self,
-                      ctx: &mut ::kfl::context::Context)
+            fn encode(&self, ctx: &mut ::kfl::context::Context)
                 -> Result<::kfl::ast::Scalar, ::kfl::errors::EncodeError>
             {
                 // if let Some(typ) = scalar.type_name.as_ref() {

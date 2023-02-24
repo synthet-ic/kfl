@@ -34,9 +34,7 @@ pub fn emit_decode_enum(e: &Enum) -> syn::Result<TokenStream> {
     let check_type = check_type(&common, &node)?;
     let decode = decode(&common, &node)?;
     Ok(quote! {
-        impl #impl_gen ::kfl::Decode for #name #type_gen
-            #bounds
-        {
+        impl #impl_gen ::kfl::traits::Decode for #name #type_gen #bounds {
             fn decode(#node: &::kfl::ast::Node,
                       #ctx: &mut ::kfl::context::Context)
                 -> Result<Self, ::kfl::errors::DecodeError>
@@ -76,10 +74,10 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
             VariantKind::Unit => {
                 branches.push(quote! {
                     #name => {
-                        for arg in &#node.arguments {
+                        for argument in &#node.arguments {
                             return Err(
                                 ::kfl::errors::DecodeError::unexpected(
-                                    #ctx.span(&arg.literal), "argument",
+                                    #ctx.span(&argument.literal), "argument",
                                     "unexpected argument"));
                         }
                         for (name, _) in &#node.properties {
@@ -95,8 +93,7 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                                     ::kfl::errors::DecodeError::unexpected(
                                         #ctx.span(&child), "node",
                                         format!("unexpected node `{}`",
-                                            child.node_name.escape_default())
-                                    ));
+                                            child.node_name.escape_default())));
                             }
                         }
                         Ok(#enum_name::#variant_name)
@@ -110,34 +107,24 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                 });
             }
             VariantKind::Tuple(s) => {
-                let common = node::Common {
-                    object: s,
-                    ctx,
-                };
+                let common = node::Common { object: s, ctx };
                 let decode_variant = decode_variant(
                     &common,
                     quote!(#enum_name::#variant_name),
                     node,
                     false,
                 )?;
-                branches.push(quote! {
-                    #name => { #decode_variant }
-                });
+                branches.push(quote!(#name => { #decode_variant }));
             }
             VariantKind::Named(s) => {
-                let common = node::Common {
-                    object: s,
-                    ctx,
-                };
+                let common = node::Common { object: s, ctx };
                 let decode_variant = decode_variant(
                     &common,
                     quote!(#enum_name::#variant_name),
                     node,
                     true,
                 )?;
-                branches.push(quote! {
-                    #name => { #decode_variant }
-                });
+                branches.push(quote!(#name => { #decode_variant }));
             },
         }
     }
@@ -159,7 +146,7 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
             #(#branches)*
             name_str => {
                 Err(::kfl::errors::DecodeError::conversion(
-                        #ctx.span(&#node.node_name), #err))
+                    #ctx.span(&#node.node_name), #err))
             }
         }
     })
@@ -212,17 +199,11 @@ pub fn emit_encode_enum(e: &Enum) -> syn::Result<TokenStream> {
     let common_generics = e.generics.clone();
     let (impl_gen, _, bounds) = common_generics.split_for_impl();
 
-    let common = Common {
-        object: e,
-        ctx: &ctx,
-    };
+    let common = Common { object: e, ctx: &ctx };
     let encode = encode(&common, &node)?;
     Ok(quote! {
-        impl #impl_gen ::kfl::Encode for #name #type_gen
-            #bounds
-        {
-            fn encode(&self,
-                      #ctx: &mut ::kfl::context::Context)
+        impl #impl_gen ::kfl::traits::Encode for #name #type_gen #bounds {
+            fn encode(&self, #ctx: &mut ::kfl::context::Context)
                 -> Result<::kfl::ast::Node, ::kfl::errors::EncodeError>
             {
                 #encode
@@ -247,31 +228,6 @@ fn encode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                         Ok(#node)
                     }
                 });
-                // branches.push(quote! {
-                    // for arg in &#node.arguments {
-                    //     return Err(
-                    //         ::kfl::errors::DecodeError::unexpected(
-                    //             #ctx.span(&arg.literal), "argument",
-                    //             "unexpected argument"));
-                    // }
-                    // for (name, _) in &#node.properties {
-                    //     return Err(
-                    //         ::kfl::errors::DecodeError::unexpected(
-                    //             #ctx.span(&name), "property",
-                    //             format!("unexpected property `{}`",
-                    //                     name.escape_default())));
-                    // }
-                    // if let Some(children) = &#node.children {
-                    //     for child in children.iter() {
-                    //         return Err(
-                    //             ::kfl::errors::DecodeError::unexpected(
-                    //                 #ctx.span(&child), "node",
-                    //                 format!("unexpected node `{}`",
-                    //                     child.node_name.escape_default())
-                    //             ));
-                    //     }
-                    // }
-                // });
             }
             VariantKind::Nested { ty } => {
                 branches.push(quote! {
@@ -280,10 +236,7 @@ fn encode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                 });
             }
             VariantKind::Tuple(s) => {
-                let common = node::Common {
-                    object: s,
-                    ctx,
-                };
+                let common = node::Common { object: s, ctx };
                 let variant_pattern = {
                     let name = &s.ident;
                     let all_fields = s.all_fields();
@@ -307,10 +260,7 @@ fn encode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                 });
             }
             VariantKind::Named(s) => {
-                let common = node::Common {
-                    object: s,
-                    ctx,
-                };
+                let common = node::Common { object: s, ctx };
                 let variant_pattern = {
                     let name = &s.ident;
                     let all_fields = s.all_fields();
@@ -344,7 +294,7 @@ fn encode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     // };
     branches.push(quote! {
         variant => Err(::kfl::errors::EncodeError::extra_variant(
-                format!("{:?}", &variant)))
+                       format!("{:?}", &variant)))
     });
     Ok(quote! {
         match &self {
@@ -382,18 +332,6 @@ fn declare_variant(node: &syn::Ident, enum_name: &syn::Ident, name: &syn::Ident)
 {
     let enum_name = crate::to_kebab_case(enum_name);
     let name = crate::to_kebab_case(name);
-    // Ok(quote! {
-    //     if let Some(type_name) = #node.type_name.as_ref() {
-    //         let type_name = type_name.as_ref();
-    //         if type_name != #name {
-    //             return Err(::kfl::errors::DecodeError::unexpected(
-    //                 #ctx.span(&#node), "node", format!("unexpected node `({}){}`",
-    //                 type_name,
-    //                 #node.node_name.as_ref())
-    //             ))
-    //         }
-    //     }
-    // })
     quote! {
         let mut #node = ::kfl::ast::Node::new(#name);
         #node.type_name = Some(#enum_name.to_string().into_boxed_str());

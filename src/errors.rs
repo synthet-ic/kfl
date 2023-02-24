@@ -2,9 +2,10 @@
 //!
 //! You only need [`Error`](enum@Error) exposed as `kfl::Error` unless you
 //! do manual implementations of any of the `Decode*` traits.
-use std::{
+
+use std::collections::BTreeSet;
+use core::{
     borrow::Cow,
-    collections::BTreeSet,
     fmt::{self, Display, Write}
 };
 

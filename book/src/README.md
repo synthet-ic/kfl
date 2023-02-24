@@ -27,16 +27,21 @@
 
 ### Documentation
 
-### Source Code Quality
+### Error Reporting
+
+- [ ] `DecodeResult`, `EncodeResult`?
+- [ ] Remove `BuiltinType`?
+- [ ] Span
+  - [ ] Should wrap Box<str>?
 
 ### Testing
 
 - [ ] Move `tests` directory to the top from inside `derive`
-- [ ] Span
-  - [ ] Should wrap Box<str>?
 - [ ] Understand error categories
 - [ ] Rename `parse_` to `decode_` and `print_` to `encode_` in tests?
 - [ ] Use previous version of KFL itself when testing grammar, instead of serde/serde_json
+
+### Refactoring/Source Code Quality
 
 ### Encoding
 
@@ -60,5 +65,10 @@
 ### Ideas
 
 - [ ] Impl `From<Literal>` for `Scalar`
-- [ ] `DecodeResult`, `EncodeResult`?
-- [ ] Remove `BuiltinType`
+- [ ] Deprecate new type pattern, `struct New(#[flatten] Node);`
+
+### `no_std`
+
+- `miette` doesn't support `no_std`
+- [ ] `proc_macro_error` doesn't support `no_std`
+- `HashMap` isn't included in `alloc`

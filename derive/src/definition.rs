@@ -1,4 +1,4 @@
-use std::mem;
+use core::mem;
 
 use proc_macro2::{TokenStream, Span};
 use proc_macro_error::emit_error;

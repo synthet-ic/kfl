@@ -56,3 +56,9 @@
 ### Benchmarking
 
 ### Quering
+
+### Ideas
+
+- [ ] Impl `From<Literal>` for `Scalar`
+- [ ] `DecodeResult`, `EncodeResult`?
+- [ ] Remove `BuiltinType`

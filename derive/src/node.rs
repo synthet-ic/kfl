@@ -1,3 +1,4 @@
+extern crate alloc;
 use alloc::{
     string::ToString,
     vec::Vec

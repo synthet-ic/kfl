@@ -46,7 +46,7 @@ foo 1 "three" key="val" {                           ╮
 Most common usage of this library is using `derive` and [parse] function:
 
 ```rust
-use kfl::{Decode, DecodePartial};
+use kfl::{Decode, DecodePartial, Encode};
 
 #[derive(DecodePartial, Default)]
 struct Config {
@@ -56,7 +56,7 @@ struct Config {
     plugins: Vec<Plugin>,
 }
 
-#[derive(Decode)]
+#[derive(Decode, Encode)]
 struct Route {
     #[kfl(argument)]
     path: String,
@@ -64,7 +64,7 @@ struct Route {
     subroutes: Vec<Route>,
 }
 
-#[derive(Decode)]
+#[derive(Decode, Encode)]
 struct Plugin {
     #[kfl(argument)]
     name: String,

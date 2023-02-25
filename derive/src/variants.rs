@@ -8,7 +8,7 @@ use quote::{quote, ToTokens};
 use syn::ext::IdentExt;
 
 use crate::{
-    definition::{Enum, VariantKind},
+    definition::{Enum, VariantKind, Struct},
     node
 };
 
@@ -107,21 +107,21 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
                 });
             }
             VariantKind::Tuple(s) => {
-                let common = node::Common { object: s, ctx };
                 let decode_variant = decode_variant(
-                    &common,
+                    &s,
                     quote!(#enum_name::#variant_name),
                     node,
+                    ctx,
                     false,
                 )?;
                 branches.push(quote!(#name => { #decode_variant }));
             }
             VariantKind::Named(s) => {
-                let common = node::Common { object: s, ctx };
                 let decode_variant = decode_variant(
-                    &common,
+                    &s,
                     quote!(#enum_name::#variant_name),
                     node,
+                    ctx,
                     true,
                 )?;
                 branches.push(quote!(#name => { #decode_variant }));
@@ -152,17 +152,17 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
     })
 }
 
-fn decode_variant(s: &node::Common,
-    s_name: impl ToTokens, node: &syn::Ident, named: bool)
+fn decode_variant(s: &Struct,
+    s_name: impl ToTokens, node: &syn::Ident, ctx: &syn::Ident, named: bool)
     -> syn::Result<TokenStream>
 {
     let children = syn::Ident::new("children", Span::mixed_site());
-    let decode_arguments = node::decode_arguments(s, node)?;
-    let decode_properties = node::decode_properties(s, node)?;
-    let decode_children = node::decode_children(s, &children,
+    let decode_arguments = node::decode_arguments(s, node, ctx)?;
+    let decode_properties = node::decode_properties(s, node, ctx)?;
+    let decode_children = node::decode_children(s, &children, ctx,
                                           Some(quote!(ctx.span(&#node))))?;
     let assign_extra = node::assign_extra(s)?;
-    let all_fields = s.object.all_fields();
+    let all_fields = s.all_fields();
     let struct_val = if named {
         let assignments = all_fields.iter()
             .map(|f| f.as_assign_pair().unwrap());
@@ -194,13 +194,8 @@ pub fn emit_encode_enum(e: &Enum) -> syn::Result<TokenStream> {
     let node = syn::Ident::new("node", Span::mixed_site());
     let ctx = syn::Ident::new("ctx", Span::mixed_site());
 
-    // TODO(rnarkk) merge
-    let (_, type_gen, _) = e.generics.split_for_impl();
-    let common_generics = e.generics.clone();
-    let (impl_gen, _, bounds) = common_generics.split_for_impl();
-
-    let common = Common { object: e, ctx: &ctx };
-    let encode = encode(&common, &node)?;
+    let (impl_gen, type_gen, bounds) = e.generics.split_for_impl();
+    let encode = encode(&e, &node, &ctx)?;
     Ok(quote! {
         impl #impl_gen ::kfl::traits::Encode for #name #type_gen #bounds {
             fn encode(&self, #ctx: &mut ::kfl::context::Context)
@@ -212,11 +207,12 @@ pub fn emit_encode_enum(e: &Enum) -> syn::Result<TokenStream> {
     })
 }
 
-fn encode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
-    let ctx = e.ctx;
-    let mut branches = Vec::with_capacity(e.object.variants.len());
-    let enum_name = &e.object.ident;
-    for variant in &e.object.variants {
+fn encode(e: &Enum, node: &syn::Ident, ctx: &syn::Ident)
+    -> syn::Result<TokenStream>
+{
+    let mut branches = Vec::with_capacity(e.variants.len());
+    let enum_name = &e.ident;
+    for variant in &e.variants {
         let ident = &variant.ident;
         let variant_name = &variant.ident;
         match &variant.kind {

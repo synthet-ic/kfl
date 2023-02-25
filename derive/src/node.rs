@@ -25,13 +25,12 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
     let children = syn::Ident::new("children", Span::mixed_site());
     let (impl_gen, type_gen, bounds) = s.generics.split_for_impl();
 
-    let common = Common { object: s, ctx: &ctx };
     let check_type = check_type(&s_name, &node, &ctx);
-    let decode_arguments = decode_arguments(&common, &node)?;
-    let decode_properties = decode_properties(&common, &node)?;
+    let decode_arguments = decode_arguments(&s, &node, &ctx)?;
+    let decode_properties = decode_properties(&s, &node, &ctx)?;
     let decode_children = decode_children(
-        &common, &children, Some(quote!(#ctx.span(&#node))))?;
-    let assign_extra = assign_extra(&common)?;
+        &s, &children, &ctx, Some(quote!(#ctx.span(&#node))))?;
+    let assign_extra = assign_extra(&s)?;
 
     let all_fields = s.all_fields();
     let struct_expression = if named {
@@ -53,7 +52,7 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
     if partial {
         if has_only_children(&s) {
             let node = syn::Ident::new("node", Span::mixed_site());
-            let decode_partial = decode_partial(&common, &node)?;
+            let decode_partial = decode_partial(&s, &node, &ctx)?;
             // let name = syn::Ident::new("name", Span::mixed_site());
             // let scalar = syn::Ident::new("scalar", Span::mixed_site());
             // let insert_property = insert_property(&common, &name, &scalar)?;
@@ -136,14 +135,15 @@ fn check_type(ident: &syn::Ident, node: &syn::Ident, ctx: &syn::Ident)
 //     Ok(quote!())
 // }
 
-pub(crate) fn decode_arguments(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
-    let ctx = s.ctx;
+pub(crate) fn decode_arguments(s: &Struct, node: &syn::Ident, ctx: &syn::Ident)
+    -> syn::Result<TokenStream>
+    {
     let mut decoder = Vec::new();
     let iter_args = syn::Ident::new("iter_args", Span::mixed_site());
     decoder.push(quote! {
         let mut #iter_args = #node.arguments.iter();
     });
-    for argument in &s.object.arguments {
+    for argument in &s.arguments {
         let field = &argument.field.tmp_name;
         let val = syn::Ident::new("val", Span::mixed_site());
         let decode_scalar = decode_scalar(&val, ctx);
@@ -176,7 +176,7 @@ pub(crate) fn decode_arguments(s: &Common, node: &syn::Ident) -> syn::Result<Tok
             }
         }
     }
-    if let Some(var_args) = &s.object.var_args {
+    if let Some(var_args) = &s.var_args {
         let field = &var_args.field.tmp_name;
         let val = syn::Ident::new("val", Span::mixed_site());
         let decode_scalar = decode_scalar(&val, ctx);
@@ -196,19 +196,18 @@ pub(crate) fn decode_arguments(s: &Common, node: &syn::Ident) -> syn::Result<Tok
     Ok(quote!(#(#decoder)*))
 }
 
-pub(crate) fn decode_properties(s: &Common, node: &syn::Ident)
+pub(crate) fn decode_properties(s: &Struct, node: &syn::Ident, ctx: &syn::Ident)
     -> syn::Result<TokenStream>
 {
     let mut declare_empty = Vec::new();
     let mut match_branches = Vec::new();
     let mut postprocess = Vec::new();
 
-    let ctx = s.ctx;
     let val = syn::Ident::new("val", Span::mixed_site());
     let name = syn::Ident::new("name", Span::mixed_site());
     let name_str = syn::Ident::new("name_str", Span::mixed_site());
 
-    for property in &s.object.properties {
+    for property in &s.properties {
         let field = &property.field.tmp_name;
         let prop_name = &property.name;
         let seen_name = format_ident!("seen_{}", field, span = Span::mixed_site());
@@ -252,7 +251,7 @@ pub(crate) fn decode_properties(s: &Common, node: &syn::Ident)
             }
         }
     }
-    if let Some(var_props) = &s.object.var_props {
+    if let Some(var_props) = &s.var_props {
         let field = &var_props.field.tmp_name;
         let decode_scalar = decode_scalar(&val, ctx);
         declare_empty.push(quote! {
@@ -337,14 +336,15 @@ fn has_only_children(s: &Struct) -> bool {
     // && s.children.iter().all(|child| child.default.is_some())
 }
 
-fn decode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
-    let ctx = s.ctx;
+fn decode_partial(s: &Struct, node: &syn::Ident, ctx: &syn::Ident)
+    -> syn::Result<TokenStream>
+{
     let mut branches = vec![quote! {
         if false {
             Ok(false)
         }
     }];
-    for child_def in &s.object.children {
+    for child_def in &s.children {
         let field = &child_def.field.from_self();
         let ty = &child_def.field.ty;
         branches.push(quote! {
@@ -395,8 +395,8 @@ fn decode_partial(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
 //     })
 // }
 
-pub(crate) fn decode_children(s: &Common, children: &syn::Ident,
-                              err_span: Option<TokenStream>)
+pub(crate) fn decode_children(s: &Struct, children: &syn::Ident,
+                              ctx: &syn::Ident, err_span: Option<TokenStream>)
     -> syn::Result<TokenStream>
 {
     let mut declare_empty = Vec::new();
@@ -407,9 +407,8 @@ pub(crate) fn decode_children(s: &Common, children: &syn::Ident,
     }];
     let mut postprocess = Vec::new();
 
-    let ctx = s.ctx;
     let child = syn::Ident::new("child", Span::mixed_site());
-    for child_def in &s.object.children {
+    for child_def in &s.children {
         let field = &child_def.field.tmp_name;
         let ty = &child_def.field.ty;
         match child_def.mode {
@@ -428,7 +427,6 @@ pub(crate) fn decode_children(s: &Common, children: &syn::Ident,
                 declare_empty.push(quote! {
                     let mut #field = Vec::new();
                 });
-                let ctx = &s.ctx;
                 branches.push(quote! {
                     else if let Ok(true) = <Vec<<#ty as IntoIterator>::Item> as ::kfl::traits::DecodePartial>
                         ::decode_partial(&mut #field, #child, #ctx)
@@ -520,8 +518,8 @@ pub(crate) fn decode_children(s: &Common, children: &syn::Ident,
     })
 }
 
-pub(crate) fn assign_extra(s: &Common) -> syn::Result<TokenStream> {
-    let items = s.object.extra_fields.iter().map(|field| {
+pub(crate) fn assign_extra(s: &Struct) -> syn::Result<TokenStream> {
+    let items = s.extra_fields.iter().map(|field| {
         match field.kind {
             ExtraKind::Auto => {
                 let name = &field.field.tmp_name;

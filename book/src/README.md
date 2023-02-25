@@ -66,6 +66,7 @@
 
 ### Ideas
 
+- [ ] Error recovery as query system 
 - [ ] `DecodeState` as `DecodePartial` + `DecodeError`, `EncodeState` as `EncodePartial` + `EncodeError`
 - [ ] Impl `From<Literal>` for `Scalar`
 - [ ] Deprecate new type pattern, `struct New(#[flatten] Node);`

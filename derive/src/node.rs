@@ -26,7 +26,7 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
     let (impl_gen, type_gen, bounds) = s.generics.split_for_impl();
 
     let common = Common { object: s, ctx: &ctx };
-    let check_type = check_type(&common, &node)?;
+    let check_type = check_type(&s_name, &node, &ctx);
     let decode_arguments = decode_arguments(&common, &node)?;
     let decode_properties = decode_properties(&common, &node)?;
     let decode_children = decode_children(
@@ -108,21 +108,11 @@ fn decode_scalar(val: &syn::Ident, ctx: &syn::Ident) -> TokenStream {
     quote!(::kfl::traits::DecodeScalar::decode(#val, #ctx))
 }
 
-fn check_type(s: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
-    let ctx = s.ctx;
-    let name = crate::to_kebab_case(&s.object.ident.unraw());
-    Ok(quote! {
-        if let Some(type_name) = &#node.type_name {
-            return Err(::kfl::errors::DecodeError::unexpected(
-                       #ctx.span(&#node), "type name",
-                       "no type name expected for this node"));
-        }
-        if #node.node_name.as_ref() != #name {
-            return Err(::kfl::errors::DecodeError::unexpected(#ctx.span(&#node),
-                       "node", format!("unexpected node `{}`",
-                       #node.node_name.as_ref())));
-        }
-    })
+fn check_type(ident: &syn::Ident, node: &syn::Ident, ctx: &syn::Ident)
+    -> TokenStream
+{
+    let name = crate::to_kebab_case(&ident.unraw());
+    quote!(::kfl::decode::check_type(#name, #node, #ctx)?;)
 }
 
 // fn decode_specials(s: &Common, node: &syn::Ident)

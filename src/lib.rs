@@ -10,6 +10,7 @@ mod wrappers;
 
 pub mod ast;
 pub mod context;
+pub mod decode;
 pub mod errors;
 pub mod print;
 pub mod span;

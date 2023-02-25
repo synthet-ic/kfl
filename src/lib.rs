@@ -12,7 +12,6 @@ pub mod ast;
 pub mod context;
 pub mod errors;
 pub mod print;
-pub mod query;
 pub mod span;
 pub mod traits;
 

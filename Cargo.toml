@@ -1,9 +1,5 @@
 [workspace]
-members = [
-    ".",
-    "derive",
-    "crates/plist"
-]
+members = [".", "derive"]
 
 [package]
 name = "kfl"

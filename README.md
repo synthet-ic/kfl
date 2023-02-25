@@ -47,7 +47,7 @@ Most common usage of this library is using `derive` and [parse] function:
 use kfl::{Decode, DecodePartial, Encode};
 
 #[derive(DecodePartial, Default)]
-struct Config {
+struct Document {
     #[kfl(children)]
     routes: Vec<Route>,
     #[kfl(children)]
@@ -71,7 +71,7 @@ struct Plugin {
 }
 
 # fn main() -> miette::Result<()> {
-let config = kfl::decode_children::<Config>("example.kdl", r#"
+let document = kfl::decode_children::<Document>("example.kdl", r#"
     route "/api" {
         route "/api/v1"
     }

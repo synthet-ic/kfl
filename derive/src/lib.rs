@@ -5,6 +5,7 @@ mod definition;
 mod kw;
 mod new_type;
 mod node;
+mod reflect;
 mod scalar;
 mod variants;
 

@@ -39,8 +39,6 @@ foo 1 "three" key="val" {                           ╮
 }                                                   ╯
 ```
 
-(note, the order of properties doesn't matter as well as the order of properties with respect to arguments, so I've moved arguments to have less intersections for the arrows)
-
 # Usage
 
 Most common usage of this library is using `derive` and [parse] function:

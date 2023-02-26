@@ -205,12 +205,12 @@ fn esc_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
             .try_map(|hex_chars, span| {
                 let s = hex_chars.chars().collect::<String>();
                 let c =
-                    u32::from_str_radix(&s, 16).map_err(|e| e.to_string())
-                    .and_then(|n| char::try_from(n).map_err(|e| e.to_string()))
+                    u32::from_str_radix(&s, 16).map_err(|e| e.to_owned())
+                    .and_then(|n| char::try_from(n).map_err(|e| e.to_owned()))
                     .map_err(|e| ParseError::Message {
                         label: Some("invalid character code"),
                         span: Span::from(span),
-                        message: e.to_string(),
+                        message: e.to_owned(),
                     })?;
                 Ok(c)
             })

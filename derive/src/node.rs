@@ -103,8 +103,8 @@ pub fn emit_decode_struct(s: &Struct, named: bool, partial: bool)
     })
 }
 
-fn decode_scalar(val: &syn::Ident, ctx: &syn::Ident) -> TokenStream {
-    quote!(::kfl::traits::DecodeScalar::decode(#val, #ctx))
+fn decode_scalar(value: &syn::Ident, ctx: &syn::Ident) -> TokenStream {
+    quote!(::kfl::traits::DecodeScalar::decode(#value, #ctx))
 }
 
 fn check_type(ident: &syn::Ident, node: &syn::Ident, ctx: &syn::Ident)
@@ -254,9 +254,7 @@ pub(crate) fn decode_properties(s: &Struct, node: &syn::Ident, ctx: &syn::Ident)
     if let Some(var_props) = &s.var_props {
         let field = &var_props.field.tmp_name;
         let decode_scalar = decode_scalar(&val, ctx);
-        declare_empty.push(quote! {
-            let mut #field = Vec::new();
-        });
+        declare_empty.push(quote!(let mut #field = Vec::new();));
         match_branches.push(quote! {
             #name_str => {
                 let converted_name = #name_str.parse()
@@ -424,9 +422,7 @@ pub(crate) fn decode_children(s: &Struct, children: &syn::Ident,
                 });
             }
             ChildMode::Multi => {
-                declare_empty.push(quote! {
-                    let mut #field = Vec::new();
-                });
+                declare_empty.push(quote!(let mut #field = Vec::new();));
                 branches.push(quote! {
                     else if let Ok(true) = <Vec<<#ty as IntoIterator>::Item> as ::kfl::traits::DecodePartial>
                         ::decode_partial(&mut #field, #child, #ctx)
@@ -454,9 +450,7 @@ pub(crate) fn decode_children(s: &Struct, children: &syn::Ident,
                 }
             }
             ChildMode::Normal => {
-                declare_empty.push(quote! {
-                    let mut #field = None;
-                });
+                declare_empty.push(quote!(let mut #field = None;));
                 branches.push(quote! {
                     else if let Ok(true) = <Option<#ty> as ::kfl::traits::DecodePartial>
                         ::decode_partial(&mut #field, #child, #ctx)
@@ -536,11 +530,7 @@ pub fn emit_encode_struct(s: &Struct, partial: bool)
     let s_name = &s.ident;
     let node = syn::Ident::new("node", Span::mixed_site());
     let ctx = syn::Ident::new("ctx", Span::mixed_site());
-
-    // TODO(rnarkk) merge
-    let (_, type_gen, _) = s.generics.split_for_impl();
-    let common_generics = s.generics.clone();
-    let (impl_gen, _, bounds) = common_generics.split_for_impl();
+    let (impl_gen, type_gen, bounds) = s.generics.split_for_impl();
 
     let common = Common {
         object: s,
@@ -609,7 +599,7 @@ pub fn emit_encode_struct(s: &Struct, partial: bool)
 
 fn declare_node(node: &syn::Ident, name: &syn::Ident) -> TokenStream {
     let name = crate::to_kebab_case(name);
-    quote! { let mut #node = ::kfl::ast::Node::new(#name); }
+    quote!(let mut #node = ::kfl::ast::Node::new(#name);)
 }
 
 pub(crate) fn encode_arguments(s: &Common, node: &syn::Ident, variant: bool)
@@ -732,13 +722,13 @@ pub(crate) fn encode_properties(s: &Common, node: &syn::Ident, variant: bool)
                 let default = if let Some(expr) = value {
                     quote!(#expr)
                 } else {
-                    quote!(::std::default::Default::default())
+                    quote!(<#ty as ::std::default::Default>::default())
                 };
                 branches.push(quote! {
-                    let default: #ty = #default;
+                    let default = #default;
                     if &default != #field {
                         let #scalar = #encode_scalar?;
-                        #node.properties.insert(#name.to_string().into_boxed_str(), #scalar);
+                        #node.properties.insert(#name.to_owned().into_boxed_str(), #scalar);
                     }
                 });
             } else {
@@ -752,7 +742,7 @@ pub(crate) fn encode_properties(s: &Common, node: &syn::Ident, variant: bool)
                 branches.push(quote! {
                     let #scalar = #encode_scalar?;
                     // let mut #seen_name = false;
-                    #node.properties.insert(#name.to_string().into_boxed_str(), #scalar);
+                    #node.properties.insert(#name.to_owned().into_boxed_str(), #scalar);
                 });
             }
         }
@@ -900,10 +890,10 @@ pub(crate) fn encode_children(s: &Common, node: &syn::Ident, _err_span: Option<T
                     let default = if let Some(expr) = default_value {
                         quote!(#expr)
                     } else {
-                        quote!(::std::default::Default::default())
+                        quote!(<#ty as ::std::default::Default>::default())
                     };
                     encodes.push(quote! {
-                        let default: #ty = #default;
+                        let default = #default;
                         if default != #field {
                             let #child = <#ty as ::kfl::traits::Encode>
                             ::encode(&#field, #ctx)?;

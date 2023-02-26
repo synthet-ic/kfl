@@ -890,10 +890,10 @@ pub(crate) fn encode_children(s: &Common, node: &syn::Ident, _err_span: Option<T
                     let default = if let Some(expr) = default_value {
                         quote!(#expr)
                     } else {
-                        quote!(<#ty as ::std::default::Default>::default())
+                        quote!(::std::default::Default::default())
                     };
                     encodes.push(quote! {
-                        let default = #default;
+                        let default: #ty = #default;
                         if default != #field {
                             let #child = <#ty as ::kfl::traits::Encode>
                             ::encode(&#field, #ctx)?;

@@ -664,15 +664,15 @@ mod test {
     //     }"#);
     // }
 
-    // #[test]
-    // fn parse_str() {
-    //     assert_eq!(&*parse(string(), r#""hello""#).unwrap(), "hello");
-    //     assert_eq!(&*parse(string(), r#""""#).unwrap(), "");
-    //     assert_eq!(&*parse(string(), r#""hel\"lo""#).unwrap(), "hel\"lo");
-    //     assert_eq!(&*parse(string(), r#""hello\nworld!""#).unwrap(),
-    //                "hello\nworld!");
-    //     assert_eq!(&*parse(string(), r#""\u{1F680}""#).unwrap(), "🚀");
-    // }
+    #[test]
+    fn parse_str() {
+        assert_eq!(&*parse(string(), r#""hello""#).unwrap(), "hello");
+        assert_eq!(&*parse(string(), r#""""#).unwrap(), "");
+        assert_eq!(&*parse(string(), r#""hel\"lo""#).unwrap(), "hel\"lo");
+        assert_eq!(&*parse(string(), r#""hello\nworld!""#).unwrap(),
+                   "hello\nworld!");
+        assert_eq!(&*parse(string(), r#""\u{1F680}""#).unwrap(), "🚀");
+    }
 
     // #[test]
     // fn parse_raw_str() {

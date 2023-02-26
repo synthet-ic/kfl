@@ -28,7 +28,7 @@ pub struct Context {
     pub spans: BTreeMap<Box<str>, Span>,
     /// 
     pub errors: Vec<DecodeError>,
-    extensions: HashMap<TypeId, Box<dyn Any>>,
+    extensions: BTreeMap<TypeId, Box<dyn Any>>,
 }
 
 impl Context {
@@ -36,7 +36,7 @@ impl Context {
         Context {
             spans: BTreeMap::new(),
             errors: Vec::new(),
-            extensions: HashMap::new(),
+            extensions: BTreeMap::new(),
         }
     }
     ///

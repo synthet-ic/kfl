@@ -1,7 +1,8 @@
 use alloc::{
+    borrow::ToOwned,
     boxed::Box,
     collections::{BTreeSet, BTreeMap},
-    string::{String, ToString},
+    string::String,
     vec::Vec
 };
 use core::fmt::{Debug, Pointer};

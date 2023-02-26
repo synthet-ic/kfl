@@ -2,8 +2,6 @@
 //!
 //! Mostly useful for manual implementation of various `Decode*` traits.
 
-extern crate std;
-
 use alloc::{
     boxed::Box,
     collections::BTreeMap,
@@ -14,7 +12,6 @@ use core::{
     any::{Any, TypeId}, 
     fmt::{Pointer, Debug}
 };
-use std::collections::HashMap;
 
 use crate::{
     errors::DecodeError,

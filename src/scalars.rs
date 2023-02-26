@@ -241,7 +241,7 @@ impl DecodeScalar for bool {
             just("false")
                 .map_err(|e: Error| e.with_expected_token("false"))
                 .to(false),
-        )).parse(input)
+        )).parse_with_state(input, ctx)
     }
 
     fn decode_scalar(scalar: &Scalar, ctx: &mut Context)

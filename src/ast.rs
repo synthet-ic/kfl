@@ -18,9 +18,7 @@ use alloc::{
     string::ToString,
     vec::Vec
 };
-use core::{
-    fmt::{self, Debug, Pointer},
-};
+use core::fmt::{self, Debug, Pointer};
 
 /// Single node of the KDL document
 #[derive(Debug, Clone)]

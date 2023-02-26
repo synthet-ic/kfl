@@ -223,7 +223,7 @@ fn escaped_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
     .ignore_then(
         any().filter(|&c| c != '"' && c != '\\')
         .or(just('\\').ignore_then(esc_char()))
-        .repeated().map_slice(|v| v.to_string().into_boxed_str()))
+        .repeated().map_slice(|v| v.to_owned().into_boxed_str()))
     .then_ignore(just('"'))
     .map_err_with_span(|err: ParseError, span| {
         let span = Span::from(span);

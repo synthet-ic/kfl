@@ -18,7 +18,7 @@
 
 ### Designing Basics
 
-- [ ] Delete `DecodeChildren`
+- [ ] if string form can be used for name, then how this is interpreted; `node "name"`. Is `"name" an argument or boolean property which is omitting `=true`?
 - `flatten`
   - [ ] Implement `DecodeScalar` for struct as the replacement of `flatten(properties)` and support `flatten(arguments)` equivalent as well?
   - [ ] flatten for enums

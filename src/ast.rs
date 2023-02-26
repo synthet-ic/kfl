@@ -13,9 +13,9 @@
 //! [`LineSpan`](crate::span::LineSpan) for that.
 
 use alloc::{
+    borrow::ToOwned,
     boxed::Box,
     collections::BTreeMap,
-    string::ToString,
     vec::Vec
 };
 use core::fmt::{self, Debug, Pointer};

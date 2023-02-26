@@ -493,7 +493,7 @@ pub(crate) fn document<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
 mod test {
     extern crate std;
     use std::println;
-    use alloc::{string::{String, ToString}, vec::Vec};
+    use alloc::{borrow::ToOwned, string::String, vec::Vec};
     use chumsky::zero_copy::{
         prelude::*,
         extra::Full
@@ -523,7 +523,7 @@ mod test {
     {
         p.then_ignore(end())
         .parse(input).into_result().map_err(|errors| {
-            let source = input.to_string() + " ";
+            let source = input.to_owned() + " ";
             let e = Error {
                 source_code: NamedSource::new("<test>", source),
                 errors: errors.into_iter().map(Into::into).collect(),

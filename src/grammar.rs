@@ -353,12 +353,8 @@ fn prop_or_arg_inner<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra>
             .try_map_with_state(|(name, scalar), span, ctx| {
                 match (name, scalar) {
                     (name, Some(scalar)) => Ok(Prop(name, scalar)),
-                    (value, None) => {
-                        Ok(Arg(Scalar {
-                            type_name: None,
-                            literal: value,
-                        }))
-                    },
+                    (value, None) =>
+                        Ok(Arg(Scalar { type_name: None, literal: value })),
                 }
             }),
         spanned(bare_ident()).then(just('=').ignore_then(scalar()).or_not())
@@ -380,10 +376,7 @@ fn prop_or_arg_inner<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra>
                 } else {
                     // this is invalid, but we already emitted error
                     // in validate() above, so doing a sane fallback
-                    Arg(Scalar {
-                        type_name: None,
-                        literal: name,
-                    })
+                    Arg(Scalar { type_name: None, literal: name })
                 }
             }),
         type_name_value().map(Arg),

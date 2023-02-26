@@ -46,6 +46,57 @@ pub struct Node {
     pub children: Option<Vec<Node>>,
 }
 
+/// Possibly typed KDL scalar value
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
+pub struct Scalar {
+    /// A type name if specified in parenthesis
+    #[cfg_attr(feature = "minicbor", n(0))]
+    pub type_name: Option<TypeName>,
+    /// The actual value literal
+    #[cfg_attr(feature = "minicbor", n(1))]
+    pub literal: Box<str>,
+}
+
+/// Scalar KDL value
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
+pub enum Literal {
+    /// Null value (usually corresponds to `None` in Rust)
+    #[cfg_attr(feature = "minicbor", n(0))]
+    Null,
+    /// Boolean value of `true` or `false`
+    #[cfg_attr(feature = "minicbor", n(1))]
+    Bool(
+        #[cfg_attr(feature = "minicbor", n(0))]
+        bool
+    ),
+    /// Integer value
+    /// An unquoted integer value, signed or unsigned. Having no decimal point.
+    /// Can be of virtually unlimited length. Can be expressed in binary, octal,
+    /// decimal, or hexadecimal notation.
+    #[cfg_attr(feature = "minicbor", n(2))]
+    Int(
+        #[cfg_attr(feature = "minicbor", n(0))]
+        Integer
+    ),
+    /// Decimal (or floating point) value
+    /// A number that has either decimal point or exponential part. Can be only
+    /// in decimal notation. Can represent either decimal or floating value
+    /// value. No quotes.
+    #[cfg_attr(feature = "minicbor", n(3))]
+    Decimal(
+        #[cfg_attr(feature = "minicbor", n(0))]
+        Decimal
+    ),
+    /// String in `"double quotes"` or `r##"raw quotes"##`
+    #[cfg_attr(feature = "minicbor", n(4))]
+    String(
+        #[cfg_attr(feature = "minicbor", n(0))]
+        Box<str>
+    ),
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
 #[cfg_attr(feature = "minicbor", cbor(index_only))]
@@ -78,18 +129,6 @@ pub struct Decimal(
     #[cfg_attr(feature = "minicbor", n(0))]
     pub(crate) Box<str>,
 );
-
-/// Possibly typed KDL scalar value
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
-pub struct Scalar {
-    /// A type name if specified in parenthesis
-    #[cfg_attr(feature = "minicbor", n(0))]
-    pub type_name: Option<TypeName>,
-    /// The actual value literal
-    #[cfg_attr(feature = "minicbor", n(1))]
-    pub literal: Literal,
-}
 
 /// Type identifier
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -133,45 +172,6 @@ pub enum BuiltinType {
     Base64,
 }
 
-/// Scalar KDL value
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
-pub enum Literal {
-    /// Null value (usually corresponds to `None` in Rust)
-    #[cfg_attr(feature = "minicbor", n(0))]
-    Null,
-    /// Boolean value of `true` or `false`
-    #[cfg_attr(feature = "minicbor", n(1))]
-    Bool(
-        #[cfg_attr(feature = "minicbor", n(0))]
-        bool
-    ),
-    /// Integer value
-    /// An unquoted integer value, signed or unsigned. Having no decimal point.
-    /// Can be of virtually unlimited length. Can be expressed in binary, octal,
-    /// decimal, or hexadecimal notation.
-    #[cfg_attr(feature = "minicbor", n(2))]
-    Int(
-        #[cfg_attr(feature = "minicbor", n(0))]
-        Integer
-    ),
-    /// Decimal (or floating point) value
-    /// A number that has either decimal point or exponential part. Can be only
-    /// in decimal notation. Can represent either decimal or floating value
-    /// value. No quotes.
-    #[cfg_attr(feature = "minicbor", n(3))]
-    Decimal(
-        #[cfg_attr(feature = "minicbor", n(0))]
-        Decimal
-    ),
-    /// String in `"double quotes"` or `r##"raw quotes"##`
-    #[cfg_attr(feature = "minicbor", n(4))]
-    String(
-        #[cfg_attr(feature = "minicbor", n(0))]
-        Box<str>
-    ),
-}
-
 impl Node {
     /// TODO(rnarkk) document
     pub fn new(name: &str) -> Self {
@@ -205,7 +205,6 @@ macro_rules! impl_pointer {
 
 impl_pointer!(Node);
 impl_pointer!(Scalar);
-impl_pointer!(Literal);
 impl_pointer!(TypeName);
 
 impl BuiltinType {

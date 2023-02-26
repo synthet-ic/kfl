@@ -1,7 +1,6 @@
 //! Transparent conversions. Makes `Node` and `Scalar` literal objects.
 
 mod containers;
-mod scalars;
 
 use crate::{
     ast::{Node, Scalar},

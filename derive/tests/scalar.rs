@@ -27,7 +27,7 @@ fn parse_enum_scalar() {
         #[kfl(argument)]
         value: SomeScalar,
     }
-    #[derive(DecodeScalar, Debug, PartialEq)]
+    #[derive(Clone, DecodeScalar, Debug, PartialEq)]
     enum SomeScalar {
         First,
         AnotherOption,

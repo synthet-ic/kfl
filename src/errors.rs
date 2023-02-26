@@ -19,7 +19,7 @@ use thiserror::Error;
 use miette::{Diagnostic, NamedSource};
 
 use crate::{
-    ast::{TypeName, Literal},
+    ast::TypeName,
     span::Span,
 };
 
@@ -437,11 +437,11 @@ impl DecodeError {
         }
     }
     /// Construct [`DecodeError::ScalarKind`] error
-    pub fn scalar_kind(span: Span, expected: &'static str, found: &Literal) -> Self {
+    pub fn scalar_kind(span: Span, expected: &'static str, found: &str) -> Self {
         DecodeError::ScalarKind {
             span,
             expected,
-            found: &found.as_str(),
+            found,
         }
     }
     /// Construct [`DecodeError::Missing`] error

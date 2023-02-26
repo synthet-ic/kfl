@@ -3,10 +3,17 @@
 use alloc::{format, string::{String, ToString}};
 use core::str::FromStr;
 
+use chumsky::zero_copy::{
+    extra::Full,
+    prelude::*,
+};
+
+type Extra = Full<ParseError, Context, ()>;
+
 use crate::{
     ast::{Scalar, Literal, Integer, Decimal, Radix, BuiltinType},
     context::Context,
-    errors::{DecodeError, ExpectedType, EncodeError},
+    errors::{DecodeError, ExpectedType, EncodeError, ParseError},
     traits::{DecodeScalar, EncodeScalar}
 };
 
@@ -39,13 +46,13 @@ macro_rules! impl_integer {
                         });
                     }
                 }
-                match &scalar.literal {
-                    Literal::Int(ref v) => v.try_into()
-                        .map_err(|err| DecodeError::conversion(
-                                 ctx.span(&scalar), err)),
-                    _ => Err(DecodeError::scalar_kind(ctx.span(&scalar),
-                             "string", &scalar.literal))
-                }
+                scalar.literal.as_ref().try_into().map_err(|err| DecodeError::conversion(
+                                 ctx.span(&scalar), err))
+                // match &scalar.literal {
+                //     Literal::Int(ref v) => ,
+                //     _ => Err(DecodeError::scalar_kind(ctx.span(&scalar),
+                //              "string", &scalar.literal))
+                // }
             }
         }
 
@@ -60,7 +67,6 @@ macro_rules! impl_integer {
             fn encode(&self, _: &mut Context) -> Result<Scalar, EncodeError> {
                 let literal = Literal::Int(Integer::try_from(self).unwrap());
                 Ok(Scalar { type_name: None, literal: literal.into() })
-                
             }
         }
     }
@@ -96,7 +102,7 @@ macro_rules! impl_decimal {
         }
 
         impl DecodeScalar for $ty {
-            fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
+            fn decode(scalar: &Scalar, ctx: &mut Context)
                 -> Result<Self, DecodeError>
             {
                 if let Some(typ) = scalar.type_name.as_ref() {
@@ -153,17 +159,12 @@ impl DecodeScalar for String {
                 rust_type: "String",
             });
         }
-        match &scalar.literal {
-            Literal::String(ref s) => Ok(s.clone().into()),
-            _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "string",
-                                              &scalar.literal))
-        }
+        Ok(scalar.literal.clone().into())
     }
 }
 impl EncodeScalar for String {
     fn encode(&self, _: &mut Context) -> Result<Scalar, EncodeError> {
-        let literal = Literal::String(self.clone().into());
-        Ok(Scalar { type_name: None, literal: literal.into() })
+        Ok(Scalar { type_name: None, literal: self.clone().into() })
     }
 }
 
@@ -181,13 +182,9 @@ macro_rules! impl_from_str {
                         rust_type: stringify!($ty),
                     });
                 }
-                match &scalar.literal {
-                    Literal::String(ref s) => <$ty>::from_str(&s)
+                <$ty>::from_str(scalar.literal.as_ref())
                         .map_err(|err| DecodeError::conversion(
-                                 ctx.span(&scalar), err)),
-                    _ => Err(DecodeError::scalar_kind(ctx.span(&scalar),
-                             "string", &scalar.literal))
-                }
+                                 ctx.span(&scalar), err))
             }
         }
     }
@@ -204,10 +201,9 @@ mod std {
     impl EncodeScalar for PathBuf {
         fn encode(&self, _: &mut Context) -> Result<Scalar, EncodeError> {
             let string = format!("{}", self.display());
-            let literal = Literal::String(string.into_boxed_str());
             Ok(Scalar {
                 type_name: None,
-                literal: literal.into()
+                literal: string.into_boxed_str()
             })
             
         }
@@ -217,10 +213,9 @@ mod std {
     impl EncodeScalar for SocketAddr {
         fn encode(&self, _: &mut Context) -> Result<Scalar, EncodeError> {
             let string = format!("{}", self);
-            let literal = Literal::String(string.into_boxed_str());
             Ok(Scalar {
                 type_name: None,
-                literal: literal.into()
+                literal: string.into_boxed_str()
             })
         }
     }
@@ -230,9 +225,7 @@ mod std {
 impl_from_str!(chrono::NaiveDateTime);
 
 impl DecodeScalar for bool {
-    fn decode(scalar: &Scalar, ctx: &mut Context)
-        -> Result<Self, DecodeError>
-    {
+    fn decode(scalar: &Scalar, ctx: &mut Context) -> Result<Self, DecodeError> {
         if let Some(typ) = scalar.type_name.as_ref() {
             return Err(DecodeError::TypeName {
                 span: ctx.span(&typ),
@@ -241,14 +234,19 @@ impl DecodeScalar for bool {
                 rust_type: "bool",
             });
         }
-        match &scalar.literal {
-            Literal::Bool(v) => Ok(*v),
-            _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "boolean", &scalar.literal))
+        match scalar.literal.as_ref() {
+            "true" => Ok(true),
+            "false" => Ok(false),
+            _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "boolean",scalar.literal.as_ref()))
         }
     }
 }
 impl EncodeScalar for bool {
     fn encode(&self, _: &mut Context) -> Result<Scalar, EncodeError> {
-        Ok(Scalar { type_name: None, literal: Literal::Bool(self.clone()) })
+        let literal = match self {
+            true => "true",
+            false => "false"
+        };
+        Ok(Scalar { type_name: None, literal: literal.into() })
     }
 }

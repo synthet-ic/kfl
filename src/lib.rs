@@ -6,6 +6,7 @@ extern crate alloc;
 
 mod convert;
 mod grammar;
+mod scalars;
 mod wrappers;
 
 pub mod ast;

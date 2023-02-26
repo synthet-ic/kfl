@@ -2,7 +2,7 @@ use alloc::{
     borrow::ToOwned,
     boxed::Box,
     collections::{BTreeSet, BTreeMap},
-    string::String,
+    string::{String, ToString},
     vec::Vec
 };
 use core::fmt::{Debug, Pointer};

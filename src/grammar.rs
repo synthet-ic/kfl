@@ -206,12 +206,12 @@ fn esc_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
             .try_map(|hex_chars, span| {
                 let s = hex_chars.chars().collect::<String>();
                 let c =
-                    u32::from_str_radix(&s, 16).map_err(|e| e.to_owned())
-                    .and_then(|n| char::try_from(n).map_err(|e| e.to_owned()))
+                    u32::from_str_radix(&s, 16).map_err(|e| e.to_string())
+                    .and_then(|n| char::try_from(n).map_err(|e| e.to_string()))
                     .map_err(|e| ParseError::Message {
                         label: Some("invalid character code"),
                         span: Span::from(span),
-                        message: e.to_owned(),
+                        message: e.to_string(),
                     })?;
                 Ok(c)
             })
@@ -271,7 +271,7 @@ fn bare_ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
                 found: TokenFormat::Token("null"),
                 expected: expected_kind("identifier"),
             }),
-            _ => Ok(s.into()),
+            _ => Ok(s.to_owned().into_boxed_str()),
         }
     })
 }

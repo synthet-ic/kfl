@@ -722,10 +722,10 @@ pub(crate) fn encode_properties(s: &Common, node: &syn::Ident, variant: bool)
                 let default = if let Some(expr) = value {
                     quote!(#expr)
                 } else {
-                    quote!(<#ty as ::std::default::Default>::default())
+                    quote!(::std::default::Default::default())
                 };
                 branches.push(quote! {
-                    let default = #default;
+                    let default: #ty = #default;
                     if &default != #field {
                         let #scalar = #encode_scalar?;
                         #node.properties.insert(#name.to_owned().into_boxed_str(), #scalar);

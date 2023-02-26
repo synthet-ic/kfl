@@ -155,7 +155,7 @@ pub fn emit_encode_enum(e: &Enum) -> syn::Result<TokenStream> {
             quote! {
                 #e_name::#ident => Ok(::kfl::ast::Scalar {
                     type_name: None,
-                    literal: #name.to_string().into_boxed_str()
+                    literal: #name.to_owned().into_boxed_str()
                 })
             }
         });

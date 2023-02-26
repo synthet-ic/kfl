@@ -73,7 +73,7 @@ pub enum DecodeError {
         /// Scalar kind (or multiple) expected at this position
         expected: &'static str,
         /// Kind of scalar that is found
-        found: &'static str,
+        found: Box<str>,
     },
     /// Some required element is missing
     ///
@@ -434,7 +434,7 @@ impl DecodeError {
         }
     }
     /// Construct [`DecodeError::ScalarKind`] error
-    pub fn scalar_kind(span: Span, expected: &'static str, found: &str) -> Self {
+    pub fn scalar_kind(span: Span, expected: &'static str, found: Box<str>) -> Self {
         DecodeError::ScalarKind {
             span,
             expected,

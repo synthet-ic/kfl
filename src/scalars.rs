@@ -3,7 +3,7 @@
 use alloc::{
     boxed::Box,
     format,
-    string::{String, ToString}
+    string::String
 };
 use core::str::FromStr;
 
@@ -30,19 +30,18 @@ fn digits<'a>(radix: u32) -> impl Parser<'a, I<'a>, &'a str, Extra> {
     any().filter(move |c: &char| c == &'_' || c.is_digit(radix)).repeated().map_slice(|x| x)
 }
 
-fn decimal_number<'a, O>() -> impl Parser<'a, I<'a>, O, Extra> {
+fn decimal_number<'a>() -> impl Parser<'a, I<'a>, (u32, Box<str>), Extra> {
     just('-').or(just('+')).or_not()
     .then(digit(10)).then(digits(10))
     .then(just('.').then(digit(10)).then(digits(10)).or_not())
     .then(just('e').or(just('E'))
            .then(just('-').or(just('+')).or_not())
            .then(digits(10)).or_not())
-    .map_slice(|v| {
-        v.chars().filter(|c| c != &'_').collect::<String>().into()
-    })
+    .map_slice(|v|
+        (10, v.chars().filter(|c| c != &'_').collect::<String>().into()))
 }
 
-fn radix_number<'a, O>() -> impl Parser<'a, I<'a>, O, Extra> {
+fn radix_number<'a>() -> impl Parser<'a, I<'a>, (u32, Box<str>), Extra> {
     // sign
     just('-').or(just('+')).or_not()
     .then_ignore(just('0'))
@@ -58,11 +57,11 @@ fn radix_number<'a, O>() -> impl Parser<'a, I<'a>, O, Extra> {
         let mut s = String::with_capacity(value.len() + sign.map_or(0, |_| 1));
         sign.map(|c| s.push(c));
         s.extend(value.chars().filter(|&c| c != '_'));
-        O::from_str_radix(s.into(), radix)
+        (radix, s.into())
     })
 }
 
-fn number<'a, O>() -> impl Parser<'a, I<'a>, O, Extra> {
+fn number<'a>() -> impl Parser<'a, I<'a>, (u32, Box<str>), Extra> {
     radix_number().or(decimal_number())
 }
 
@@ -82,9 +81,12 @@ macro_rules! impl_integer {
                         });
                     }
                 }
-                number().parse_with_state(scalar.literal.as_ref(), ctx)
+                match number().parse_with_state(scalar.literal.as_ref(), ctx)
                     .into_result()
-                    .map_err(|err| DecodeError::conversion(ctx.span(&scalar), err))
+                {
+                    Ok((radix, value)) => <$ty>::from_str_radix(&value, radix).map_err(|err| DecodeError::conversion(ctx.span(&scalar), err)),
+                    Err(_) => Err(DecodeError::scalar_kind(ctx.span(&scalar), "integer", scalar.literal.clone()))  // TODO(rnarkk)
+                }
             }
         }
 
@@ -124,8 +126,12 @@ macro_rules! impl_decimal {
                         });
                     }
                 }
-                <$ty>::from_str(scalar.literal.as_ref()).map_err(|err| DecodeError::conversion(
-                                 ctx.span(&scalar), err))
+                match number().parse_with_state(scalar.literal.as_ref(), ctx).into_result() {
+                    Ok((10, value)) => <$ty>::from_str(value.as_ref()).map_err(|err| DecodeError::conversion(ctx.span(&scalar), err)),
+                    Ok(_) => Err(DecodeError::unexpected(ctx.span(&scalar), "radix", "radix other than 10 (decimal) is not implemented")),
+                    Err(_) => Err(DecodeError::scalar_kind(ctx.span(&scalar), "decimal", scalar.literal.clone()))
+                }
+                // <$ty>::from_str(scalar.literal.as_ref())
             }
         }
 
@@ -229,7 +235,8 @@ impl DecodeScalar for bool {
         match scalar.literal.as_ref() {
             "true" => Ok(true),
             "false" => Ok(false),
-            _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "boolean",scalar.literal.as_ref()))
+            _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "boolean",
+                     scalar.literal.clone()))
         }
     }
 }

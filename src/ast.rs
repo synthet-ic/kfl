@@ -88,23 +88,3 @@ macro_rules! impl_pointer {
 
 impl_pointer!(Node);
 impl_pointer!(Scalar);
-
-// TODO(rnarkk) Remove
-/// Potentially unlimited size integer value
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
-pub struct Integer(
-    #[cfg_attr(feature = "minicbor", n(0))]
-    pub(crate) u8,
-    #[cfg_attr(feature = "minicbor", n(1))]
-    pub(crate) Box<str>,
-);
-
-/// Potentially unlimited precision decimal value
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
-#[cfg_attr(feature = "minicbor", cbor(transparent))]
-pub struct Decimal(
-    #[cfg_attr(feature = "minicbor", n(0))]
-    pub(crate) Box<str>,
-);

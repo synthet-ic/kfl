@@ -21,11 +21,7 @@ pub fn emit_decode_enum(e: &Enum) -> syn::Result<TokenStream> {
     let name = &e.ident;
     let node = syn::Ident::new("node", Span::mixed_site());
     let ctx = syn::Ident::new("ctx", Span::mixed_site());
-
-    // TODO(rnarkk) merge
-    let (_, type_gen, _) = e.generics.split_for_impl();
-    let common_generics = e.generics.clone();
-    let (impl_gen, _, bounds) = common_generics.split_for_impl();
+    let (impl_gen, type_gen, bounds) = e.generics.split_for_impl();
 
     let common = Common {
         object: e,
@@ -330,6 +326,6 @@ fn declare_variant(node: &syn::Ident, enum_name: &syn::Ident, name: &syn::Ident)
     let name = crate::to_kebab_case(name);
     quote! {
         let mut #node = ::kfl::ast::Node::new(#name);
-        #node.type_name = Some(#enum_name.to_string().into_boxed_str());
+        #node.type_name = Some(#enum_name.to_owned().into_boxed_str());
     }
 }

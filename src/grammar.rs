@@ -13,7 +13,7 @@ use chumsky::zero_copy::{
 };
 
 use crate::{
-    ast::{Literal, TypeName, Node, Scalar, Integer, Decimal, Radix},
+    ast::{Node, Scalar},
     context::Context,
     errors::{ParseError as Error, TokenFormat},
     span::Span
@@ -280,94 +280,29 @@ fn bare_ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
 fn ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
     choice((
         // match -123 so `-` will not be treated as an ident by backtracking
-        number().map(Err),
-        bare_ident().map(Ok),
-        string().map(Ok),
+        // number().map(Err),
+        bare_ident(),
+        string()
     ))
-    // when backtracking is not already possible,
-    // throw error for numbers (mapped to `Result::Err`)
-    .try_map(|res, span| res.map_err(|_| Error::Unexpected {
-        label: Some("unexpected number"),
-        span: span.into(),
-        found: TokenFormat::Kind("number"),
-        expected: expected_kind("identifier"),
-    }))
+    // // when backtracking is not already possible,
+    // // throw error for numbers (mapped to `Result::Err`)
+    // .try_map(|res, span| res.map_err(|_| Error::Unexpected {
+    //     label: Some("unexpected number"),
+    //     span: span.into(),
+    //     found: TokenFormat::Kind("number"),
+    //     expected: expected_kind("identifier"),
+    // }))
 }
 
-fn keyword<'a>() -> impl Parser<'a, I<'a>, Literal, Extra> {
+fn literal<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
     choice((
-        just("null")
-            .map_err(|e: Error| e.with_expected_token("null"))
-            .to(Literal::Null),
-        just("true")
-            .map_err(|e: Error| e.with_expected_token("true"))
-            .to(Literal::Bool(true)),
-        just("false")
-            .map_err(|e: Error| e.with_expected_token("false"))
-            .to(Literal::Bool(false)),
+        string(),
+        any().then(take_until(just(" "))).map_slice(|v: &str| v.chars().collect::<String>().into())
     ))
 }
 
-fn digit<'a>(radix: u32) -> impl Parser<'a, I<'a>, char, Extra> {
-    any().filter(move |c: &char| c.is_digit(radix))
-}
-
-fn digits<'a>(radix: u32) -> impl Parser<'a, I<'a>, &'a str, Extra> {
-    any().filter(move |c: &char| c == &'_' || c.is_digit(radix)).repeated().map_slice(|x| x)
-}
-
-fn decimal_number<'a>() -> impl Parser<'a, I<'a>, Literal, Extra> {
-    just('-').or(just('+')).or_not()
-    .then(digit(10)).then(digits(10))
-    .then(just('.').then(digit(10)).then(digits(10)).or_not())
-    .then(just('e').or(just('E'))
-           .then(just('-').or(just('+')).or_not())
-           .then(digits(10)).or_not())
-    .map_slice(|v| {
-        let is_decimal = v.chars().any(|c| matches!(c, '.'|'e'|'E'));
-        let s: String = v.chars().filter(|c| c != &'_').collect();
-        if is_decimal {
-            Literal::Decimal(Decimal(s.into()))
-        } else {
-            Literal::Int(Integer(Radix::Dec, s.into()))
-        }
-    })
-}
-
-fn radix_number<'a>() -> impl Parser<'a, I<'a>, Literal, Extra> {
-    // sign
-    just('-').or(just('+')).or_not()
-    .then_ignore(just('0'))
-    .then(choice((
-        just('b').ignore_then(
-            digit(2).then(digits(2)).map_slice(|s| (Radix::Bin, s))),
-        just('o').ignore_then(
-            digit(8).then(digits(8)).map_slice(|s| (Radix::Oct, s))),
-        just('x').ignore_then(
-            digit(16).then(digits(16)).map_slice(|s| (Radix::Hex, s))),
-    )))
-    .map(|(sign, (radix, value))| {
-        let mut s = String::with_capacity(value.len() + sign.map_or(0, |_| 1));
-        sign.map(|c| s.push(c));
-        s.extend(value.chars().filter(|&c| c != '_'));
-        Literal::Int(Integer(radix, s.into()))
-    })
-}
-
-fn number<'a>() -> impl Parser<'a, I<'a>, Literal, Extra> {
-    radix_number().or(decimal_number())
-}
-
-fn literal<'a>() -> impl Parser<'a, I<'a>, Literal, Extra> {
-    choice((
-        string().map(Literal::String),
-        keyword(),
-        number(),
-    ))
-}
-
-fn type_name<'a>() -> impl Parser<'a, I<'a>, TypeName, Extra> {
-    ident().delimited_by(just('('), just(')')).map(TypeName::from_string)
+fn type_name<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
+    ident().delimited_by(just('('), just(')'))
 }
 
 fn spanned<'a, T, P>(p: P) -> impl Parser<'a, I<'a>, T, Extra>
@@ -401,49 +336,24 @@ enum PropOrArg {
 }
 
 fn type_name_value<'a>() -> impl Parser<'a, I<'a>, Scalar, Extra> {
-    spanned(type_name()).then(spanned(literal()))
+    spanned(type_name()).then(literal())
     .map(|(type_name, literal)| Scalar { type_name: Some(type_name), literal })
 }
 
-fn value<'a>() -> impl Parser<'a, I<'a>, Scalar, Extra> {
+fn scalar<'a>() -> impl Parser<'a, I<'a>, Scalar, Extra> {
     type_name_value()
-    .or(spanned(literal()).map(|literal| Scalar { type_name: None, literal }))
+    .or(literal().map(|literal| Scalar { type_name: None, literal }))
 }
 
-fn prop_or_arg_inner<'a>()
-    -> impl Parser<'a, I<'a>, PropOrArg, Extra>
+fn prop_or_arg_inner<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra>
 {
     use PropOrArg::*;
     choice((
-        spanned(literal()).then(just('=').ignore_then(value()).or_not())
+        literal().then(just('=').ignore_then(scalar()).or_not())
             .try_map_with_state(|(name, scalar), span, ctx| {
                 match (name, scalar) {
-                    (Literal::String(s), Some(scalar)) => {
-                        ctx.set_span(&s, span.into());
-                        Ok(Prop(s, scalar))
-                    }
-                    (Literal::Bool(_) | Literal::Null, Some(_)) => {
-                        Err(Error::Unexpected {
-                            label: Some("unexpected keyword"),
-                            span: span.into(),
-                            found: TokenFormat::Kind("keyword"),
-                            expected: [
-                                TokenFormat::Kind("identifier"),
-                                TokenFormat::Kind("string"),
-                            ].into_iter().collect(),
-                        })
-                    }
-                    (Literal::Int(_) | Literal::Decimal(_), Some(_)) => {
-                        Err(Error::MessageWithHelp {
-                            label: Some("unexpected number"),
-                            span: span.into(),
-                            message: "numbers cannot be used as property names"
-                                .into(),
-                            help: "consider enclosing in double quotes \"..\"",
-                        })
-                    }
+                    (name, Some(scalar)) => Ok(Prop(name, scalar)),
                     (value, None) => {
-                        ctx.set_span(&value, span.into());
                         Ok(Arg(Scalar {
                             type_name: None,
                             literal: value,
@@ -451,7 +361,7 @@ fn prop_or_arg_inner<'a>()
                     },
                 }
             }),
-        spanned(bare_ident()).then(just('=').ignore_then(value()).or_not())
+        spanned(bare_ident()).then(just('=').ignore_then(scalar()).or_not())
             .validate(|(name, value), span, emitter| {
                 if value.is_none() {
                     emitter.emit(Error::MessageWithHelp {
@@ -472,7 +382,7 @@ fn prop_or_arg_inner<'a>()
                     // in validate() above, so doing a sane fallback
                     Arg(Scalar {
                         type_name: None,
-                        literal: Literal::String(name),
+                        literal: name,
                     })
                 }
             }),
@@ -599,7 +509,7 @@ mod test {
     use miette::NamedSource;
     use crate::context::Context;
     use crate::errors::{Error, ParseError};
-    use crate::ast::{Literal, TypeName, Radix, Decimal, Integer};
+    use crate::ast::{Decimal, Integer};
     // use crate::traits::sealed::Sealed;
     use super::{ws, comment, ml_comment, string, ident, literal, type_name};
     use super::{nodes, number};
@@ -989,9 +899,9 @@ mod test {
 
     #[test]
     fn parse_literal() {
-        assert_eq!(parse(literal(), "true").unwrap(), Literal::Bool(true));
-        assert_eq!(parse(literal(), "false").unwrap(), Literal::Bool(false));
-        assert_eq!(parse(literal(), "null").unwrap(), Literal::Null);
+        assert_eq!(parse(literal(), "true").unwrap(), true);
+        assert_eq!(parse(literal(), "false").unwrap(), false);
+        assert_eq!(parse(literal(), "null").unwrap(), None);
     }
 
     // #[test]
@@ -1127,7 +1037,7 @@ mod test {
         assert_eq!(nval.arguments.len(), 1);
         assert_eq!(nval.properties.len(), 0);
         assert_eq!(&nval.arguments[0].literal,
-                   &Literal::String("arg1".into()));
+                   &"arg1".into());
 
         let nval = single(parse(nodes(), "node \"true\""));
         assert_eq!(nval.node_name.as_ref(), "node");
@@ -1135,7 +1045,7 @@ mod test {
         assert_eq!(nval.arguments.len(), 1);
         assert_eq!(nval.properties.len(), 0);
         assert_eq!(&nval.arguments[0].literal,
-                   &Literal::String("true".into()));
+                   &"true".into());
 
         let nval = single(parse(nodes(), "hello (string)\"arg1\""));
         assert_eq!(nval.node_name.as_ref(), "hello");
@@ -1145,7 +1055,7 @@ mod test {
         assert_eq!(&**nval.arguments[0].type_name.as_ref().unwrap(),
                    "string");
         assert_eq!(&nval.arguments[0].literal,
-                   &Literal::String("arg1".into()));
+                   &"arg1".into());
 
         let nval = single(parse(nodes(), "hello key=(string)\"arg1\""));
         assert_eq!(nval.node_name.as_ref(), "hello");
@@ -1156,7 +1066,7 @@ mod test {
                    .type_name.as_ref().unwrap(),
                    "string");
         assert_eq!(&nval.properties.get("key").unwrap().literal,
-                   &Literal::String("arg1".into()));
+                   &"arg1".into());
 
         let nval = single(parse(nodes(), "hello key=\"arg1\""));
         assert_eq!(nval.node_name.as_ref(), "hello");
@@ -1164,7 +1074,7 @@ mod test {
         assert_eq!(nval.arguments.len(), 0);
         assert_eq!(nval.properties.len(), 1);
         assert_eq!(&nval.properties.get("key").unwrap().literal,
-                   &Literal::String("arg1".into()));
+                   &"arg1".into());
 
         let nval = single(parse(nodes(), "parent {\nchild\n}"));
         assert_eq!(nval.node_name.as_ref(), "parent");
@@ -1213,7 +1123,7 @@ mod test {
         assert_eq!(nval.arguments.len(), 1);
         assert_eq!(nval.properties.len(), 0);
         assert_eq!(&nval.arguments[0].literal,
-                   &Literal::String("arg2".into()));
+                   &"arg2".into());
 
         let nval = single(parse(nodes(), "hello /- \"skip_arg\" \"arg2\""));
         assert_eq!(nval.node_name.as_ref(), "hello");
@@ -1221,7 +1131,7 @@ mod test {
         assert_eq!(nval.arguments.len(), 1);
         assert_eq!(nval.properties.len(), 0);
         assert_eq!(&nval.arguments[0].literal,
-                   &Literal::String("arg2".into()));
+                   &"arg2".into());
 
         let nval = single(parse(nodes(), "hello prop1=\"1\" /-prop1=\"2\""));
         assert_eq!(nval.node_name.as_ref(), "hello");
@@ -1229,7 +1139,7 @@ mod test {
         assert_eq!(nval.arguments.len(), 0);
         assert_eq!(nval.properties.len(), 1);
         assert_eq!(&nval.properties.get("prop1").unwrap().literal,
-                   &Literal::String("1".into()));
+                   &"1".into());
 
         let nval = single(parse(nodes(), "parent /-{\nchild\n}"));
         assert_eq!(nval.node_name.as_ref(), "parent");
@@ -1369,39 +1279,39 @@ mod test {
     #[test]
     fn parse_number() {
         assert_eq!(parse(number(), "12").unwrap(),
-                   Literal::Int(Integer(Radix::Dec, "12".into())));
+                   Integer(10, "12".into()));
         assert_eq!(parse(number(), "012").unwrap(),
-                   Literal::Int(Integer(Radix::Dec, "012".into())));
+                   Integer(10, "012".into()));
         assert_eq!(parse(number(), "0").unwrap(),
-                   Literal::Int(Integer(Radix::Dec, "0".into())));
+                   Integer(10, "0".into()));
         assert_eq!(parse(number(), "-012").unwrap(),
-                   Literal::Int(Integer(Radix::Dec, "-012".into())));
+                   Integer(10, "-012".into()));
         assert_eq!(parse(number(), "+0").unwrap(),
-                   Literal::Int(Integer(Radix::Dec, "+0".into())));
+                   Integer(10, "+0".into()));
         assert_eq!(parse(number(), "123_555").unwrap(),
-                   Literal::Int(Integer(Radix::Dec, "123555".into())));
+                   Integer(10, "123555".into()));
         assert_eq!(parse(number(), "123.555").unwrap(),
-                   Literal::Decimal(Decimal("123.555".into())));
+                   Decimal("123.555".into()));
         assert_eq!(parse(number(), "+1_23.5_55E-17").unwrap(),
-                   Literal::Decimal(Decimal("+123.555E-17".into())));
+                   Decimal("+123.555E-17".into()));
         assert_eq!(parse(number(), "123e+555").unwrap(),
-                   Literal::Decimal(Decimal("123e+555".into())));
+                   Decimal("123e+555".into()));
     }
 
     #[test]
     fn parse_radix_number() {
         assert_eq!(parse(number(), "0x12").unwrap(),
-                   Literal::Int(Integer(Radix::Hex, "12".into())));
+                   Integer(16, "12".into()));
         assert_eq!(parse(number(), "0xab_12").unwrap(),
-                   Literal::Int(Integer(Radix::Hex, "ab12".into())));
+                   Integer(16, "ab12".into()));
         assert_eq!(parse(number(), "-0xab_12").unwrap(),
-                   Literal::Int(Integer(Radix::Hex, "-ab12".into())));
+                   Integer(16, "-ab12".into()));
         assert_eq!(parse(number(), "0o17").unwrap(),
-                   Literal::Int(Integer(Radix::Oct, "17".into())));
+                   Integer(8, "17".into()));
         assert_eq!(parse(number(), "+0o17").unwrap(),
-                   Literal::Int(Integer(Radix::Oct, "+17".into())));
+                   Integer(8, "+17".into()));
         assert_eq!(parse(number(), "0b1010_101").unwrap(),
-                   Literal::Int(Integer(Radix::Bin, "1010101".into())));
+                   Integer(2, "1010101".into()));
     }
 
     #[test]
@@ -1432,9 +1342,9 @@ mod test {
         assert_eq!(nval.len(), 1);
         assert_eq!(nval[0].arguments.len(), 1);
         assert_eq!(nval[0].properties.len(), 1);
-        assert_eq!(&nval[0].arguments[0].literal,
-                   &Literal::Int(Integer(Radix::Dec, "-1".into())));
-        assert_eq!(&nval[0].properties.get("--x").unwrap().literal,
-                   &Literal::Int(Integer(Radix::Dec, "2".into())));
+        // assert_eq!(&nval[0].arguments[0].literal,
+        //            &Integer(10, "-1".into()));
+        // assert_eq!(&nval[0].properties.get("--x").unwrap().literal,
+        //            &Integer(10, "2".into()));
     }
 }

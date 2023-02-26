@@ -1,6 +1,10 @@
 //! Convert built-in scalar types.
 
-use alloc::{format, string::{String, ToString}};
+use alloc::{
+    boxed::Box,
+    format,
+    string::{String, ToString}
+};
 use core::str::FromStr;
 
 use chumsky::zero_copy::{
@@ -8,14 +12,65 @@ use chumsky::zero_copy::{
     prelude::*,
 };
 
+type I<'a> = &'a str;
 type Extra = Full<ParseError, Context, ()>;
 
 use crate::{
-    ast::{Scalar, Literal, Integer, Decimal, Radix, BuiltinType},
+    ast::{Scalar, Integer, Decimal},
     context::Context,
     errors::{DecodeError, ExpectedType, EncodeError, ParseError},
     traits::{DecodeScalar, EncodeScalar}
 };
+
+fn digit<'a>(radix: u32) -> impl Parser<'a, I<'a>, char, Extra> {
+    any().filter(move |c: &char| c.is_digit(radix))
+}
+
+fn digits<'a>(radix: u32) -> impl Parser<'a, I<'a>, &'a str, Extra> {
+    any().filter(move |c: &char| c == &'_' || c.is_digit(radix)).repeated().map_slice(|x| x)
+}
+
+fn decimal_number<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
+    just('-').or(just('+')).or_not()
+    .then(digit(10)).then(digits(10))
+    .then(just('.').then(digit(10)).then(digits(10)).or_not())
+    .then(just('e').or(just('E'))
+           .then(just('-').or(just('+')).or_not())
+           .then(digits(10)).or_not())
+    .map_slice(|v| {
+        // let is_decimal = v.chars().any(|c| matches!(c, '.'|'e'|'E'));
+        v.chars().filter(|c| c != &'_').collect::<String>().into()
+        // if is_decimal {
+        //     Decimal(s.into())
+        // } else {
+        //     Int(Integer(10, s.into())
+        // }
+    })
+}
+
+fn radix_number<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
+    // sign
+    just('-').or(just('+')).or_not()
+    .then_ignore(just('0'))
+    .then(choice((
+        just('b').ignore_then(
+            digit(2).then(digits(2)).map_slice(|s| (2, s))),
+        just('o').ignore_then(
+            digit(8).then(digits(8)).map_slice(|s| (10, s))),
+        just('x').ignore_then(
+            digit(16).then(digits(16)).map_slice(|s| (16, s))),
+    )))
+    .map(|(sign, (radix, value))| {
+        let mut s = String::with_capacity(value.len() + sign.map_or(0, |_| 1));
+        sign.map(|c| s.push(c));
+        s.extend(value.chars().filter(|&c| c != '_'));
+        Integer(radix, s.into())
+    })
+}
+
+fn number<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
+    radix_number().or(decimal_number())
+}
 
 macro_rules! impl_integer {
     ($ty:ident, $marker:ident) => {
@@ -23,10 +78,10 @@ macro_rules! impl_integer {
             type Error = <$ty as FromStr>::Err;
             fn try_from(val: &Integer) -> Result<$ty, <$ty as FromStr>::Err> {
                 match val.0 {
-                    Radix::Bin => <$ty>::from_str_radix(&val.1, 2),
-                    Radix::Oct => <$ty>::from_str_radix(&val.1, 8),
-                    Radix::Dec => <$ty>::from_str(&val.1),
-                    Radix::Hex => <$ty>::from_str_radix(&val.1, 16),
+                    2 => <$ty>::from_str_radix(&val.1, 2),
+                    8 => <$ty>::from_str_radix(&val.1, 8),
+                    10 => <$ty>::from_str(&val.1),
+                    16 => <$ty>::from_str_radix(&val.1, 16),
                 }
             }
         }
@@ -36,36 +91,29 @@ macro_rules! impl_integer {
                 -> Result<Self, DecodeError>
             {
                 if let Some(typ) = scalar.type_name.as_ref() {
-                    if typ.as_builtin() != Some(&BuiltinType::$marker) {
+                    if typ.as_ref() != stringify!($ty) {
                         return Err(DecodeError::TypeName {
                             span: ctx.span(&typ),
                             found: Some(typ.clone()),
-                            expected: ExpectedType::optional(
-                                BuiltinType::$marker),
+                            expected: ExpectedType::optional(stringify!($ty)),
                             rust_type: stringify!($ty),
                         });
                     }
                 }
-                scalar.literal.as_ref().try_into().map_err(|err| DecodeError::conversion(
-                                 ctx.span(&scalar), err))
-                // match &scalar.literal {
-                //     Literal::Int(ref v) => ,
-                //     _ => Err(DecodeError::scalar_kind(ctx.span(&scalar),
-                //              "string", &scalar.literal))
-                // }
+                scalar.literal.as_ref().try_into().map_err(|err| DecodeError::conversion(ctx.span(&scalar), err))
             }
         }
 
         impl TryFrom<&$ty> for Integer {
             type Error = <$ty as FromStr>::Err;
             fn try_from(val: &$ty) -> Result<Integer, <$ty as FromStr>::Err> {
-                Ok(Integer(Radix::Oct, val.to_string().into()))
+                Ok(Integer(10, val.to_string().into()))
             }
         }
 
         impl EncodeScalar for $ty {
             fn encode(&self, _: &mut Context) -> Result<Scalar, EncodeError> {
-                let literal = Literal::Int(Integer::try_from(self).unwrap());
+                let literal = format!("{}", self);
                 Ok(Scalar { type_name: None, literal: literal.into() })
             }
         }
@@ -106,26 +154,17 @@ macro_rules! impl_decimal {
                 -> Result<Self, DecodeError>
             {
                 if let Some(typ) = scalar.type_name.as_ref() {
-                    if typ.as_builtin() != Some(&BuiltinType::$marker) {
+                    if typ.as_ref() != stringify!($ty) {
                         return Err(DecodeError::TypeName {
                             span: ctx.span(&typ),
                             found: Some(typ.clone()),
-                            expected: ExpectedType::optional(
-                                BuiltinType::$marker),
+                            expected: ExpectedType::optional(stringify!($ty)),
                             rust_type: stringify!($ty),
                         });
                     }
                 }
-                match &scalar.literal {
-                    Literal::Int(ref v) => v.try_into()
-                        .map_err(|err| DecodeError::conversion(
-                                 ctx.span(&scalar), err)),
-                    Literal::Decimal(ref v) => v.try_into()
-                        .map_err(|err| DecodeError::conversion(
-                                 ctx.span(&scalar), err)),
-                    _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "string",
-                             &scalar.literal))
-                }
+                scalar.literal.try_into().map_err(|err| DecodeError::conversion(
+                                 ctx.span(&scalar), err))
             }
         }
 
@@ -138,9 +177,8 @@ macro_rules! impl_decimal {
 
         impl EncodeScalar for $ty {
             fn encode(&self, _: &mut Context) -> Result<Scalar, EncodeError> {
-                let literal = Literal::Decimal(Decimal::try_from(self).unwrap());
+                let literal = format!("{}", self);
                 Ok(Scalar { type_name: None, literal: literal.into() })
-                
             }
         }
     }

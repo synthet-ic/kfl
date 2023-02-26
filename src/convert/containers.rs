@@ -11,7 +11,7 @@ use alloc::{
 use core::mem;
 
 use crate::{
-    ast::{Node, Scalar, BuiltinType},
+    ast::{Node, Scalar},
     context::Context,
     errors::{DecodeError, ExpectedType, EncodeError},
     traits::{Decode, DecodePartial, DecodeScalar},
@@ -236,43 +236,18 @@ impl<T: Encode> EncodePartial for Vec<T> {
 impl DecodeScalar for Vec<u8> {
     fn decode(scalar: &Scalar, ctx: &mut Context) -> Result<Self, DecodeError> {
         let is_base64 = if let Some(ty) = scalar.type_name.as_ref() {
-            match ty.as_builtin() {
-                Some(&BuiltinType::Base64) => true,
+            match ty.as_ref() {
+                "base64" => true,
                 _ => {
                     return Err(DecodeError::TypeName {
                         span: ctx.span(&ty),
                         found: Some(ty.clone()),
-                        expected: ExpectedType::optional(BuiltinType::Base64),
+                        expected: ExpectedType::optional(ty.clone()),
                         rust_type: "bytes",
                     });
                 }
             }
         } else { false };
-        // TODO(rnarkk)
-        // match &scalar.literal {
-        //     Literal::String(ref s) => {
-        //         if is_base64 {
-        //             #[cfg(feature = "base64")] {
-        //                 use base64::{Engine as _,
-        //                              engine::general_purpose::STANDARD};
-        //                 match STANDARD.decode(s.as_bytes()) {
-        //                     Ok(vec) => Ok(vec),
-        //                     Err(e) => {
-        //                         Err(DecodeError::conversion(ctx.span(&scalar), e))
-        //                     }
-        //                 }
-        //             }
-        //             #[cfg(not(feature = "base64"))] {
-        //                 Err(DecodeError::unsupported(ctx.span(&value),
-        //                     "base64 support is not compiled in"))
-        //             }
-        //         } else {
-        //             Ok(s.as_bytes().to_vec())
-        //         }
-        //     }
-        //     _ => Err(DecodeError::scalar_kind(ctx.span(&scalar), "string",
-        //                                       &scalar.literal))
-        // }
         if is_base64 {
             #[cfg(feature = "base64")] {
                 use base64::{Engine as _,

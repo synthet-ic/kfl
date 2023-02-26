@@ -2,7 +2,7 @@
 
 use core::fmt::{self, Display};
 
-use crate::ast::{Node, Scalar, Literal, Integer, Decimal};
+use crate::ast::{Node, Scalar, Integer, Decimal};
 
 impl Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -38,26 +38,15 @@ impl Display for Scalar {
     }
 }
 
-impl Display for Literal {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self {
-            Literal::Null => write!(f, "null"),
-            Literal::Bool(value) => write!(f, "{}", value),
-            Literal::Int(value) => write!(f, "{}", value),
-            Literal::Decimal(value) => write!(f, "{}", value),  // TODO
-            Literal::String(value) => write!(f, "\"{}\"", value)
-        }
-    }
-}
-
+// TODO(rnarkk) Remove
 impl Display for Integer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.1)
         // match self.0 {
-        //     Radix::Bin => write!(f, "{:b}", self.1.to_string().as_str()),
-        //     Radix::Oct => write!(f, "{:o}", self.1.to_string().as_ref()),
-        //     Radix::Dec => write!(f, "{}", self.1),
-        //     Radix::Hex => write!(f, "{:x}", self.1.to_string().as_ref()),
+        //     2 => write!(f, "{:b}", self.1.to_string().as_str()),
+        //     8 => write!(f, "{:o}", self.1.to_string().as_ref()),
+        //     10 => write!(f, "{}", self.1),
+        //     16 => write!(f, "{:x}", self.1.to_string().as_ref()),
         // }
     }
 }

@@ -16,7 +16,6 @@ use core::{
 use std::collections::HashMap;
 
 use crate::{
-    ast::Literal,
     errors::DecodeError,
     span::Span,
 };
@@ -88,21 +87,5 @@ impl Context {
     pub fn get<T: 'static>(&self) -> Option<&T> {
         self.extensions.get(&TypeId::of::<T>())
             .and_then(|b| b.downcast_ref())
-    }
-}
-
-impl Literal {
-    /// Returns the string representation of `Literal`
-    ///
-    /// This is currently used in error messages.
-    pub const fn as_str(&self) -> &'static str {
-        use Literal::*;
-        match self {
-            Int(_) => "integer",
-            Decimal(_) => "decimal",
-            String(_) => "string",
-            Bool(_) => "boolean",
-            Null => "null",
-        }
     }
 }

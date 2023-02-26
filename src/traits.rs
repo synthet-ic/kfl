@@ -45,22 +45,6 @@ pub trait DecodePartial: Sized + Default {
 
 /// The trait that decodes scalar value and checks its type
 pub trait DecodeScalar: Sized + Clone {
-    // /// Typecheck the value
-    // ///
-    // /// This method can only emit errors to the context in type mismatch case.
-    // /// Errors emitted to the context are considered fatal once the whole data
-    // /// is processed but non fatal when encountered. So even if there is a type
-    // /// in type name we can proceed and try parsing actual value.
-    // #[allow(unused)]
-    // fn type_check(type_name: &Option<TypeName>,
-    //               ctx: &mut Context) {}
-    // /// Decode value without typecheck
-    // ///
-    // /// This can be used by wrappers to parse some known value but use a
-    // /// different typename (kinda emulated subclassing)
-    // fn raw_decode(value: &Literal, ctx: &mut Context)
-    //     -> Result<Self, DecodeError>;
-
     /// Decode the value and typecheck
     fn decode(scalar: &Scalar, ctx: &mut Context) -> Result<Self, DecodeError>;
 }

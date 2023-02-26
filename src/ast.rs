@@ -58,7 +58,7 @@ impl Node {
     pub fn new(name: &str) -> Self {
         Self {
             type_name: None,
-            node_name: name.to_string().into_boxed_str(),
+            node_name: name.to_owned().into_boxed_str(),
             arguments: Vec::new(),
             properties: BTreeMap::new(),
             children: None,

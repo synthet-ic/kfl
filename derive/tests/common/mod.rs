@@ -16,7 +16,7 @@ macro_rules! assert_decode_error {
     ($ty:ty, $input:literal, $output:literal) => {
         let err = kfl::decode::<$ty>("<test>", $input).unwrap_err();
         let err = <kfl::Error as miette::Diagnostic>::related(&err).unwrap()
-            .map(|e| e.to_owned()).collect::<Vec<_>>()
+            .map(|e| e.to_string()).collect::<Vec<_>>()
             .join("\n");
         assert_eq!(err, $output);
     }
@@ -38,7 +38,7 @@ macro_rules! assert_decode_children_error {
         let err = kfl::decode_children::<$ty>("<test>", $input)
             .unwrap_err();
         let err = <kfl::Error as miette::Diagnostic>::related(&err).unwrap()
-            .map(|e| e.to_owned()).collect::<Vec<_>>()
+            .map(|e| e.to_string()).collect::<Vec<_>>()
             .join("\n");
         assert_eq!(err, $output);
     }
@@ -59,7 +59,7 @@ macro_rules! assert_encode {
 //     ($ty:ty, $input:literal, $output:literal) => {
 //         let err = kfl::eecode::<$ty>("<test>", $input).unwrap_err();
 //         let err = <kfl::Error as miette::Diagnostic>::related(&err).unwrap()
-//             .map(|e| e.to_owned()).collect::<Vec<_>>()
+//             .map(|e| e.to_string()).collect::<Vec<_>>()
 //             .join("\n");
 //         assert_eq!(err, $output);
 //     }

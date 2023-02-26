@@ -230,7 +230,21 @@ mod std {
 impl_from_str!(chrono::NaiveDateTime);
 
 impl DecodeScalar for bool {
-    fn decode(scalar: &crate::ast::Scalar, ctx: &mut Context)
+    fn decode(input: &str, ctx: &Context) -> Result<Self, DecodeError> {
+        choice((
+            just("null")
+                .map_err(|e: Error| e.with_expected_token("null"))
+                .to(Literal::Null),
+            just("true")
+                .map_err(|e: Error| e.with_expected_token("true"))
+                .to(true),
+            just("false")
+                .map_err(|e: Error| e.with_expected_token("false"))
+                .to(false),
+        )).parse(input)
+    }
+
+    fn decode_scalar(scalar: &Scalar, ctx: &mut Context)
         -> Result<Self, DecodeError>
     {
         if let Some(typ) = scalar.type_name.as_ref() {

@@ -18,8 +18,8 @@ jobs:
       run: rustup install nightly
     - name: Build
       run: cargo build
-#    - name: Nightly test
-#      run: cargo +nightly rustc -- -Z macro-backtrace
+    - name: Nightly test
+      run: cargo +nightly test --workspace --all-features
     - name: All feature tests
       run: cargo test --workspace --all-features
     - name: Build without features

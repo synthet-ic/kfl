@@ -348,14 +348,14 @@ fn prop_or_arg_inner<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra>
 {
     use PropOrArg::*;
     choice((
-        literal().then(just('=').ignore_then(scalar()).or_not())
-            .try_map(|(name, scalar), _| {
-                match (name, scalar) {
-                    (name, Some(scalar)) => Ok(Prop(name, scalar)),
-                    (value, None) =>
-                        Ok(Arg(Scalar { type_name: None, literal: value })),
-                }
-            }),
+//        literal().then(just('=').ignore_then(scalar()).or_not())
+//            .try_map(|(name, scalar), _| {
+//                match (name, scalar) {
+//                    (name, Some(scalar)) => Ok(Prop(name, scalar)),
+//                    (value, None) =>
+//                        Ok(Arg(Scalar { type_name: None, literal: value })),
+//                }
+//            }),
         bare_ident().then(just('=').ignore_then(scalar()).or_not())
             .validate(|(name, value), span, emitter| {
                 if value.is_none() {

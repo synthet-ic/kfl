@@ -6,6 +6,7 @@ extern crate std;
 
 use alloc::{
     boxed::Box,
+    collections::BTreeMap,
     format,
     vec::Vec
 };
@@ -27,7 +28,7 @@ use crate::{
 #[derive(Debug, Default)]
 pub struct Context {
     ///
-    pub spans: HashMap<Box<str>, Span>,
+    pub spans: BTreeMap<Box<str>, Span>,
     /// 
     pub errors: Vec<DecodeError>,
     extensions: HashMap<TypeId, Box<dyn Any>>,
@@ -36,7 +37,7 @@ pub struct Context {
 impl Context {
     pub(crate) fn new() -> Context {
         Context {
-            spans: HashMap::new(),
+            spans: BTreeMap::new(),
             errors: Vec::new(),
             extensions: HashMap::new(),
         }

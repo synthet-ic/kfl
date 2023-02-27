@@ -118,18 +118,10 @@ pub fn emit_decode_enum(e: &Enum) -> syn::Result<TokenStream> {
                         rust_type: stringify!(#e_name),
                     });
                 }
-                match &scalar.literal {
-                    ::kfl::ast::Literal::String(ref s) => {
-                        match &s[..] {
-                            #(#match_branches,)*
-                            _ => Err(::kfl::errors::DecodeError::conversion(
-                                     ctx.span(&scalar.literal), #value_err))
-                        }
-                    }
-                    _ => Err(::kfl::errors::DecodeError::scalar_kind(
-                             ctx.span(&scalar),
-                             "string",
-                             &scalar.literal))
+                match scalar.literal.as_ref() {
+                    #(#match_branches,)*
+                    _ => Err(::kfl::errors::DecodeError::conversion(
+                             ctx.span(&scalar.literal), #value_err))
                 }
             }
         }
@@ -158,12 +150,12 @@ pub fn emit_encode_enum(e: &Enum) -> syn::Result<TokenStream> {
     // };
     let match_branches = e.variants.iter()
         .map(|variant| {
-            let name = &variant.name;
+            let name = format!("{:?}", &variant.name);
             let ident = &variant.ident;
             quote! {
                 #e_name::#ident => Ok(::kfl::ast::Scalar {
                     type_name: None,
-                    literal: ::kfl::ast::Literal::String(#name.to_string().into_boxed_str())
+                    literal: #name.to_owned().into_boxed_str()
                 })
             }
         });

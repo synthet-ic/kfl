@@ -2,10 +2,9 @@
 //!
 //! Mostly useful for manual implementation of various `Decode*` traits.
 
-extern crate std;
-
 use alloc::{
     boxed::Box,
+    collections::BTreeMap,
     format,
     vec::Vec
 };
@@ -13,10 +12,8 @@ use core::{
     any::{Any, TypeId}, 
     fmt::{Pointer, Debug}
 };
-use std::collections::HashMap;
 
 use crate::{
-    ast::Literal,
     errors::DecodeError,
     span::Span,
 };
@@ -28,18 +25,18 @@ use crate::{
 #[derive(Debug, Default)]
 pub struct Context {
     ///
-    pub spans: HashMap<Box<str>, Span>,
+    pub spans: BTreeMap<Box<str>, Span>,
     /// 
     pub errors: Vec<DecodeError>,
-    extensions: HashMap<TypeId, Box<dyn Any>>,
+    extensions: BTreeMap<TypeId, Box<dyn Any>>,
 }
 
 impl Context {
     pub(crate) fn new() -> Context {
         Context {
-            spans: HashMap::new(),
+            spans: BTreeMap::new(),
             errors: Vec::new(),
-            extensions: HashMap::new(),
+            extensions: BTreeMap::new(),
         }
     }
     ///
@@ -88,21 +85,5 @@ impl Context {
     pub fn get<T: 'static>(&self) -> Option<&T> {
         self.extensions.get(&TypeId::of::<T>())
             .and_then(|b| b.downcast_ref())
-    }
-}
-
-impl Literal {
-    /// Returns the string representation of `Literal`
-    ///
-    /// This is currently used in error messages.
-    pub const fn as_str(&self) -> &'static str {
-        use Literal::*;
-        match self {
-            Int(_) => "integer",
-            Decimal(_) => "decimal",
-            String(_) => "string",
-            Bool(_) => "boolean",
-            Null => "null",
-        }
     }
 }

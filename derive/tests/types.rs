@@ -24,7 +24,7 @@ fn parse_enum() {
             "hello" \
             1234 \
             1.234 \
-            "/hello/world" \
+            /hello/world \
             true \
     "#,
         Scalars {

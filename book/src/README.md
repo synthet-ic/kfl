@@ -18,7 +18,7 @@
 
 ### Designing Basics
 
-- [ ] Delete `DecodeChildren`
+- Now we don' need to quote scalars in format of `PathBuf`, `SocketAddr` and `NaiveDateTime`
 - `flatten`
   - [ ] Implement `DecodeScalar` for struct as the replacement of `flatten(properties)` and support `flatten(arguments)` equivalent as well?
   - [ ] flatten for enums
@@ -26,6 +26,10 @@
 - [ ] property enum or union?
 
 ### Documentation
+
+- Close relationship between `Clone`/`Box`/`AsRef` and `Scalar`-ness, passive
+- One-side fallibility
+- Scalar literal boundaries and what quotation actually is
 
 ### Error Reporting
 

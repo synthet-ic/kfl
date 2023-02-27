@@ -1,6 +1,7 @@
 use alloc::{
+    borrow::ToOwned,
     format,
-    string::{String, ToString},
+    string::String,
     vec,
     vec::Vec
 };
@@ -22,7 +23,7 @@ pub fn parse(ctx: &mut Context, input: &str) -> Result<Vec<Node>, Error> {
     .parse_with_state(&input, ctx).into_result()
     .map_err(|errors| {
         Error {
-            source_code: NamedSource::new(ctx.get::<&str>().unwrap(), input.to_string()),
+            source_code: NamedSource::new(ctx.get::<&str>().unwrap(), input.to_owned()),
             errors: errors.into_iter().map(Into::into).collect(),
         }
     })
@@ -34,10 +35,10 @@ pub fn decode<T>(file_name: &'static str, input: &str) -> Result<T, Error>
 {
     let mut ctx = Context::new();
     let nodes = parse(&mut ctx, &input)?;
-    ctx.set::<String>(file_name.to_string());
+    ctx.set::<String>(file_name.to_owned());
     Decode::decode(&nodes[0], &mut ctx).map_err(|error| {
         Error {
-            source_code: NamedSource::new(file_name, input.to_string()),
+            source_code: NamedSource::new(file_name, input.to_owned()),
             errors: vec![error.into()],
         }
     })
@@ -81,7 +82,7 @@ pub fn decode_with_context<T, F>(file_name: &str, input: &str, set_ctx: F)
     for node in nodes {
         output.decode_partial(&node, &mut ctx).map_err(|error| {
             Error {
-                source_code: NamedSource::new(file_name, input.to_string()),
+                source_code: NamedSource::new(file_name, input.to_owned()),
                 errors: vec![error.into()],
             }
         })?;
@@ -107,7 +108,7 @@ pub fn encode<T>(file_name: &str, t: &T) -> Result<String, Error>
     where T: Encode + Debug,
 {
     let mut ctx = Context::new();
-    ctx.set::<String>(file_name.to_string());
+    ctx.set::<String>(file_name.to_owned());
     let node = t.encode(&mut ctx).map_err(|error| {
         Error {
             source_code: NamedSource::new(file_name, format!("{:?}", &t)),

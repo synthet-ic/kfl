@@ -18,10 +18,7 @@ use core::fmt::{self, Display, Write};
 use thiserror::Error;
 use miette::{Diagnostic, NamedSource};
 
-use crate::{
-    ast::{TypeName, Literal},
-    span::Span,
-};
+use crate::span::Span;
 
 /// Main error that is returned from KDL parsers
 ///
@@ -50,14 +47,14 @@ pub enum DecodeError {
     /// Type names are identifiers and strings in parenthesis before node names
     /// or values.
     #[error("{} for {}, found {}", expected, rust_type,
-            found.as_ref().map(|x| x.as_str()).unwrap_or("no type name"))]
+            found.as_ref().map(|x| x.as_ref()).unwrap_or("no type name"))]
     #[diagnostic()]
     TypeName {
         /// Position of the type name
         #[label = "unexpected type name"]
         span: Span,
         /// Type name contained in the source code
-        found: Option<TypeName>,
+        found: Option<Box<str>>,
         /// Expected type name or type names
         expected: ExpectedType,
         /// Rust type that is being decoded when error is encountered
@@ -76,7 +73,7 @@ pub enum DecodeError {
         /// Scalar kind (or multiple) expected at this position
         expected: &'static str,
         /// Kind of scalar that is found
-        found: &'static str,
+        found: Box<str>,
     },
     /// Some required element is missing
     ///
@@ -437,11 +434,11 @@ impl DecodeError {
         }
     }
     /// Construct [`DecodeError::ScalarKind`] error
-    pub fn scalar_kind(span: Span, expected: &'static str, found: &Literal) -> Self {
+    pub fn scalar_kind(span: Span, expected: &'static str, found: Box<str>) -> Self {
         DecodeError::ScalarKind {
             span,
             expected,
-            found: &found.as_str(),
+            found,
         }
     }
     /// Construct [`DecodeError::Missing`] error
@@ -476,7 +473,7 @@ impl DecodeError {
 /// Wrapper around expected type that is used in [`DecodeError::TypeName`].
 #[derive(Debug)]
 pub struct ExpectedType {
-    types: Vec<TypeName>,
+    types: Vec<Box<str>>,
     no_type: bool,
 }
 
@@ -489,7 +486,7 @@ impl ExpectedType {
         }
     }
     /// Declare the type that has to be attached to the value
-    pub fn required(ty: impl Into<TypeName>) -> Self {
+    pub fn required(ty: impl Into<Box<str>>) -> Self {
         ExpectedType {
             types: vec![ty.into()],
             no_type: false,
@@ -499,7 +496,7 @@ impl ExpectedType {
     ///
     /// But no type is also okay in this case (although, "no type" and specified
     /// type can potentially have different meaning).
-    pub fn optional(ty: impl Into<TypeName>) -> Self {
+    pub fn optional(ty: impl Into<Box<str>>) -> Self {
         ExpectedType {
             types: vec![ty.into()],
             no_type: true,

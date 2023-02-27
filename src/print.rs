@@ -2,7 +2,7 @@
 
 use core::fmt::{self, Display};
 
-use crate::ast::{Node, Scalar, Literal, Integer, Decimal};
+use crate::ast::{Node, Scalar};
 
 impl Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -38,32 +38,12 @@ impl Display for Scalar {
     }
 }
 
-impl Display for Literal {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self {
-            Literal::Null => write!(f, "null"),
-            Literal::Bool(value) => write!(f, "{}", value),
-            Literal::Int(value) => write!(f, "{}", value),
-            Literal::Decimal(value) => write!(f, "{}", value),  // TODO
-            Literal::String(value) => write!(f, "\"{}\"", value)
-        }
-    }
-}
-
-impl Display for Integer {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.1)
-        // match self.0 {
-        //     Radix::Bin => write!(f, "{:b}", self.1.to_string().as_str()),
-        //     Radix::Oct => write!(f, "{:o}", self.1.to_string().as_ref()),
-        //     Radix::Dec => write!(f, "{}", self.1),
-        //     Radix::Hex => write!(f, "{:x}", self.1.to_string().as_ref()),
-        // }
-    }
-}
-
-impl Display for Decimal {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
+// TODO(rnarkk) Replace Display
+// impl Display for Option<Scalar> {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             None => write!(f, "null"),
+//             Some(scalar) => write!(f, "{}", scalar)
+//         }
+//     }
+// }

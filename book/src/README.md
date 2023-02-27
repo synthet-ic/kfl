@@ -18,6 +18,7 @@
 
 ### Designing Basics
 
+- Now we don' need to quote scalars in format of `PathBuf`, `SocketAddr` and `NaiveDateTime`
 - `flatten`
   - [ ] Implement `DecodeScalar` for struct as the replacement of `flatten(properties)` and support `flatten(arguments)` equivalent as well?
   - [ ] flatten for enums

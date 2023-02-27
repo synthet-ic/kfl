@@ -37,3 +37,13 @@ impl Display for Scalar {
         write!(f, "{}", &self.literal)
     }
 }
+
+// TODO(rnarkk) Replace Display
+// impl Display for Option<Scalar> {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             None => write!(f, "null"),
+//             Some(scalar) => write!(f, "{}", scalar)
+//         }
+//     }
+// }

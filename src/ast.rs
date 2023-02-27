@@ -42,7 +42,7 @@ pub struct Node {
 }
 
 /// Possibly typed KDL scalar value
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
 pub struct Scalar {
     /// A type name if specified in parenthesis
@@ -70,6 +70,12 @@ impl Node {
                 ExactSizeIterator
     {
         self.children.as_ref().map(|c| c.iter()).unwrap_or_else(|| [].iter())
+    }
+}
+
+impl From<Box<str>> for Scalar {
+    fn from(value: Box<str>) -> Self {
+        Scalar { type_name: None, literal: value }
     }
 }
 

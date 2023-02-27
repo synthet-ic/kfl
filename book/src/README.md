@@ -27,6 +27,10 @@
 
 ### Documentation
 
+- Close relationship between `Clone`/`Box`/`AsRef` and `Scalar`-ness, passive
+- One-side fallibility
+- Scalar literal boundaries and what quotation actually is
+
 ### Error Reporting
 
 - [ ] Remove `emit_error` + `into_error` from `Context`

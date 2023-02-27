@@ -48,3 +48,5 @@
   - Now that users can get spans from `Context` returned from `decode`, removed `span` and `span_type` directives and correspoinding fields from ast.
   - Now `DecodePatial` compatibility and `DecodeChilden` compatibility coincide.
   - `Context` is not primarily for stacking erros, the need is partially met by `DecodePartial`
+- Removed `Literal` and `TypeName`
+  - Now no string of literal can be decoded without specifing type; `null`, `true`, `false` for example do not inherently correspond to Rust's `None`, `true`, `false` respectively

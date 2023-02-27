@@ -18,7 +18,7 @@ struct Scalars {
 }
 
 #[test]
-fn print_enum() {
+fn encode_types() {
     assert_encode!(
         Scalars {
             str: "hello".into(),

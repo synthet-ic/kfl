@@ -8,7 +8,7 @@ use std::{
 use kfl::{Decode, Encode};
 
 #[test]
-fn print_argument_named() {
+fn encode_argument_named() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument)]
@@ -32,7 +32,7 @@ fn print_argument_named() {
 }
 
 #[test]
-fn print_argument_unnamed() {
+fn encode_argument_unnamed() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Node(
         #[kfl(argument)]
@@ -53,7 +53,7 @@ fn print_argument_unnamed() {
 }
 
 #[test]
-fn print_argument_raw_ident() {
+fn encode_argument_raw_ident() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument)]
@@ -73,7 +73,7 @@ fn print_argument_raw_ident() {
 }
 
 #[test]
-fn print_argument_default_named() {
+fn encode_argument_default_named() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument, default)]
@@ -89,7 +89,7 @@ fn print_argument_default_named() {
 }
 
 #[test]
-fn print_argument_default_unnamed() {
+fn encode_argument_default_unnamed() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Node(
         #[kfl(argument, default)]
@@ -107,7 +107,7 @@ fn print_argument_default_unnamed() {
 }
 
 #[test]
-fn print_argument_default_value_named() {
+fn encode_argument_default_value_named() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument, default = "unnamed".into())]
@@ -125,7 +125,7 @@ fn print_argument_default_value_named() {
 }
 
 #[test]
-fn print_argument_default_option_value_named() {
+fn encode_argument_default_option_value_named() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument, default = Some("unnamed".into()))]
@@ -143,7 +143,7 @@ fn print_argument_default_option_value_named() {
 }
 
 #[test]
-fn print_property_named() {
+fn encode_property_named() {
     #[derive(Decode, Encode, Debug, PartialEq, Default)]
     struct Node {
         #[kfl(property)]
@@ -161,7 +161,7 @@ fn print_property_named() {
 }
 
 #[test]
-fn print_property_unnamed() {
+fn encode_property_unnamed() {
     #[derive(Decode, Encode, Debug, PartialEq, Default)]
     struct Node(
         #[kfl(property(name = "name"))]
@@ -179,7 +179,7 @@ fn print_property_unnamed() {
 }
 
 #[test]
-fn print_property_raw_ident() {
+fn encode_property_raw_ident() {
     #[derive(Decode, Encode, Debug, PartialEq, Default)]
     struct Node {
         #[kfl(property)]
@@ -196,7 +196,7 @@ fn print_property_raw_ident() {
 }
 
 #[test]
-fn print_property_default() {
+fn encode_property_default() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Node {
         #[kfl(property, default)]
@@ -209,7 +209,7 @@ fn print_property_default() {
 }
 
 #[test]
-fn print_property_default_value() {
+fn encode_property_default_value() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Node {
         #[kfl(property, default="unknown".into())]
@@ -222,7 +222,7 @@ fn print_property_default_value() {
 }
 
 #[test]
-fn print_property_default_option_value() {
+fn encode_property_default_option_value() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Node {
         #[kfl(property, default = Some("unknown".into()))]
@@ -237,7 +237,7 @@ fn print_property_default_option_value() {
 }
 
 #[test]
-fn print_property_name() {
+fn encode_property_name() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Node {
         #[kfl(property(name = "x"))]
@@ -254,7 +254,7 @@ fn print_property_name() {
 }
 
 #[test]
-fn print_option_property() {
+fn encode_option_property() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Node {
         #[kfl(property, default)]  /* TODO test without default */
@@ -269,7 +269,7 @@ fn print_option_property() {
 }
 
 #[test]
-fn print_var_arguments() {
+fn encode_var_arguments() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Node {
         #[kfl(arguments)]
@@ -282,7 +282,7 @@ fn print_var_arguments() {
 }
 
 #[test]
-fn print_var_properties() {
+fn encode_var_properties() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Node {
         #[kfl(properties)]
@@ -298,7 +298,7 @@ fn print_var_properties() {
 }
 
 #[test]
-fn print_children() {
+fn encode_children() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Parent {
         #[kfl(children)]
@@ -330,7 +330,7 @@ fn print_children() {
 }
 
 // #[test]
-// fn print_filtered_children() {
+// fn encode_filtered_children() {
 //     #[derive(Decode, Encode, Debug, PartialEq)]
 //     struct Parent {
 //         #[kfl(children)]
@@ -392,7 +392,7 @@ fn print_children() {
 // }
 
 // #[test]
-// fn print_child() {
+// fn encode_child() {
 //     #[derive(Decode, Encode, Debug, PartialEq)]
 //     struct Parent {
 //         #[kfl(child)]
@@ -456,7 +456,7 @@ fn print_children() {
 // }
 
 #[test]
-fn print_child_default() {
+fn encode_child_default() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Parent {
         #[kfl(child, default)]
@@ -476,7 +476,7 @@ fn print_child_default() {
 }
 
 #[test]
-fn print_child_default_value() {
+fn encode_child_default_value() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Parent {
         #[kfl(child, default = Child { label: String::from("prop1") })]
@@ -495,7 +495,7 @@ fn print_child_default_value() {
 }
 
 #[test]
-fn print_enum_named() {
+fn encode_enum_named() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     enum Enum {
         Var0,
@@ -522,7 +522,7 @@ fn print_enum_named() {
 }
 
 #[test]
-fn print_enum_unnamed() {
+fn encode_enum_unnamed() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     enum Enum {
         Var0,
@@ -543,7 +543,7 @@ fn print_enum_unnamed() {
 }
 
 // #[test]
-// fn print_enum() {
+// fn encode_enum() {
 //     #[derive(Decode, Encode, Debug, PartialEq)]
 //     enum Variant {
 //         Arg1(Arg1),
@@ -571,7 +571,7 @@ fn print_enum_unnamed() {
 // }
 
 #[test]
-fn print_str() {
+fn encode_str() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument)]  /* str */
@@ -585,7 +585,7 @@ fn print_str() {
 }
 
 #[test]
-fn print_option_str() {
+fn encode_option_str() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Server {
         #[kfl(property, default)]  /* str */
@@ -601,7 +601,7 @@ fn print_option_str() {
 }
 
 // #[test]
-// fn print_bytes() {
+// fn encode_bytes() {
 //     #[derive(Decode, Encode, Debug, PartialEq)]
 //     struct Bytes {
 //         #[kfl(argument)]  /* bytes */
@@ -617,7 +617,7 @@ fn print_option_str() {
 // }
 
 // #[test]
-// fn print_option_bytes() {
+// fn encode_option_bytes() {
 //     #[derive(Decode, Encode, Debug, PartialEq)]
 //     struct Bytes {
 //         #[kfl(property)]  /* bytes */
@@ -635,7 +635,7 @@ fn print_option_str() {
 // }
 
 #[test]
-fn print_extra() {
+fn encode_extra() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Node {
         field: String,

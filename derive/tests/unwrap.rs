@@ -32,31 +32,31 @@
 // }
 
 // #[test]
-// fn parse_unwrap() {
+// fn decode_unwrap() {
 //     assert_eq!(parse::<Unwrap>(r#"node { label "hello"; }"#),
 //                Unwrap { label: "hello".into() } );
-//     assert_eq!(parse_err::<Unwrap>(r#"node label="hello""#),
+//     assert_eq!(decode_err::<Unwrap>(r#"node label="hello""#),
 //         "unexpected property `label`");
-//     assert_eq!(parse_err::<Unwrap>(r#"node"#),
+//     assert_eq!(decode_err::<Unwrap>(r#"node"#),
 //         "child node `label` is required");
-//     assert_eq!(parse_doc::<Unwrap>(r#"label "hello""#),
+//     assert_eq!(decode_doc::<Unwrap>(r#"label "hello""#),
 //                Unwrap { label: "hello".into() } );
 // }
 
 // #[test]
-// fn parse_unwrap_raw_ident() {
+// fn decode_unwrap_raw_ident() {
 //     assert_eq!(parse::<UnwrapRawIdent>(r#"node { type "hello"; }"#),
 //                UnwrapRawIdent { r#type: "hello".into() } );
-//     assert_eq!(parse_err::<UnwrapRawIdent>(r#"node type="hello""#),
+//     assert_eq!(decode_err::<UnwrapRawIdent>(r#"node type="hello""#),
 //                "unexpected property `type`");
-//     assert_eq!(parse_err::<UnwrapRawIdent>(r#"node"#),
+//     assert_eq!(decode_err::<UnwrapRawIdent>(r#"node"#),
 //                "child node `type` is required");
-//     assert_eq!(parse_doc::<UnwrapRawIdent>(r#"type "hello""#),
+//     assert_eq!(decode_doc::<UnwrapRawIdent>(r#"type "hello""#),
 //                UnwrapRawIdent { r#type: "hello".into() } );
 // }
 
 // #[test]
-// fn parse_unwrap_filtered_children() {
+// fn decode_unwrap_filtered_children() {
 //     assert_eq!(parse::<UnwrapFiltChildren>(
 //        r#"node { labels "hello" "world"; labels "oh" "my"; }"#),
 //        UnwrapFiltChildren { labels: vec![
@@ -67,7 +67,7 @@
 // }
 
 // #[test]
-// fn parse_unwrap_children() {
+// fn decode_unwrap_children() {
 //     assert_eq!(parse::<UnwrapChildren>(
 //        r#"node { some "hello" "world"; other "oh" "my"; }"#),
 //        UnwrapChildren { labels: vec![

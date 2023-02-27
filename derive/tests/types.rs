@@ -18,7 +18,7 @@ struct Scalars {
 }
 
 #[test]
-fn parse_enum() {
+fn decode_types() {
     assert_decode!(r#"
         scalars \
             "hello" \

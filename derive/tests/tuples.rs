@@ -3,7 +3,7 @@ mod common;
 use kfl::Decode;
 
 #[test]
-fn parse_unit() {
+fn decode_unit() {
     #[derive(Debug, Decode, PartialEq)]
     struct Node;
     assert_decode!(r#"node"#, Node);
@@ -13,7 +13,7 @@ fn parse_unit() {
 }
 
 #[test]
-fn parse_argument() {
+fn decode_argument() {
     #[derive(Debug, Decode, PartialEq)]
     struct Node(#[kfl(argument)] u32);
     assert_decode!(r#"node 123"#, Node(123));
@@ -23,7 +23,7 @@ fn parse_argument() {
 }
 
 #[test]
-fn parse_option_argument() {
+fn decode_option_argument() {
     #[derive(Debug, Decode, PartialEq)]
     struct Node(#[kfl(argument, default)] Option<u32>);
     assert_decode!(r#"node 123"#, Node(Some(123)));
@@ -34,7 +34,7 @@ fn parse_option_argument() {
 }
 
 #[test]
-fn parse_extra() {
+fn decode_extra() {
     #[derive(Debug, Decode, PartialEq)]
     struct Node(#[kfl(argument, default)] Option<String>, u32);
     assert_decode!(r#"node "123""#,
@@ -47,7 +47,7 @@ fn parse_extra() {
 }
 
 #[test]
-fn parse_enum() {
+fn decode_enum() {
     #[derive(Debug, Decode, PartialEq)]
     enum Enum {
         Unit,

@@ -8,7 +8,7 @@ use std::{
 use kfl::{Decode, DecodePartial};
 
 #[test]
-fn parse_argument_named() {
+fn decode_argument_named() {
     #[derive(Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument)]
@@ -29,7 +29,7 @@ fn parse_argument_named() {
 }
 
 #[test]
-fn parse_argument_unnamed() {
+fn decode_argument_unnamed() {
     #[derive(Decode, Debug, PartialEq)]
     struct Node(
         #[kfl(argument)]
@@ -50,7 +50,7 @@ fn parse_argument_unnamed() {
 }
 
 #[test]
-fn parse_argument_raw_ident() {
+fn decode_argument_raw_ident() {
     #[derive(Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument)]
@@ -70,7 +70,7 @@ fn parse_argument_raw_ident() {
 }
 
 #[test]
-fn parse_argument_default_named() {
+fn decode_argument_default_named() {
     #[derive(Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument, default)]
@@ -86,7 +86,7 @@ fn parse_argument_default_named() {
 }
 
 #[test]
-fn parse_argument_default_unnamed() {
+fn decode_argument_default_unnamed() {
     #[derive(Decode, Debug, PartialEq)]
     struct Node(
         #[kfl(argument, default)]
@@ -104,7 +104,7 @@ fn parse_argument_default_unnamed() {
 }
 
 #[test]
-fn parse_argument_default_value_named() {
+fn decode_argument_default_value_named() {
     #[derive(Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument, default = "unnamed".into())]
@@ -122,7 +122,7 @@ fn parse_argument_default_value_named() {
 }
 
 #[test]
-fn parse_argument_default_option_value_named() {
+fn decode_argument_default_option_value_named() {
     #[derive(Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument, default = Some("unnamed".into()))]
@@ -140,7 +140,7 @@ fn parse_argument_default_option_value_named() {
 }
 
 #[test]
-fn parse_property_named() {
+fn decode_property_named() {
     #[derive(Decode, Debug, PartialEq, Default)]
     struct Node {
         #[kfl(property)]
@@ -158,7 +158,7 @@ fn parse_property_named() {
 }
 
 #[test]
-fn parse_property_unnamed() {
+fn decode_property_unnamed() {
     #[derive(Decode, Debug, PartialEq, Default)]
     struct Node(
         #[kfl(property(name = "name"))]
@@ -176,7 +176,7 @@ fn parse_property_unnamed() {
 }
 
 #[test]
-fn parse_property_raw_ident() {
+fn decode_property_raw_ident() {
     #[derive(Decode, Debug, PartialEq, Default)]
     struct Node {
         #[kfl(property)]
@@ -193,7 +193,7 @@ fn parse_property_raw_ident() {
 }
 
 #[test]
-fn parse_property_default() {
+fn decode_property_default() {
     #[derive(Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(property, default)]
@@ -206,7 +206,7 @@ fn parse_property_default() {
 }
 
 #[test]
-fn parse_property_default_value() {
+fn decode_property_default_value() {
     #[derive(Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(property, default="unknown".into())]
@@ -219,7 +219,7 @@ fn parse_property_default_value() {
 }
 
 #[test]
-fn parse_property_default_option_value() {
+fn decode_property_default_option_value() {
     #[derive(Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(property, default = Some("unknown".into()))]
@@ -234,7 +234,7 @@ fn parse_property_default_option_value() {
 }
 
 #[test]
-fn parse_property_name() {
+fn decode_property_name() {
     #[derive(Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(property(name = "x"))]
@@ -251,7 +251,7 @@ fn parse_property_name() {
 }
 
 #[test]
-fn parse_option_property() {
+fn decode_option_property() {
     #[derive(Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(property, default)]  /* TODO test without default */
@@ -266,7 +266,7 @@ fn parse_option_property() {
 }
 
 #[test]
-fn parse_var_arguments() {
+fn decode_var_arguments() {
     #[derive(Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(arguments)]
@@ -279,7 +279,7 @@ fn parse_var_arguments() {
 }
 
 #[test]
-fn parse_var_properties() {
+fn decode_var_properties() {
     #[derive(Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(properties)]
@@ -295,7 +295,7 @@ fn parse_var_properties() {
 }
 
 #[test]
-fn parse_children() {
+fn decode_children() {
     #[derive(Decode, Debug, PartialEq)]
     struct Parent {
         #[kfl(children)]
@@ -317,17 +317,17 @@ fn parse_children() {
         r#"parent"#,
         Parent { children: vec![]});
 
-    // assert_eq!(parse_doc::<Parent>(r#"- "val1"; - "val2""#),
+    // assert_eq!(decode_doc::<Parent>(r#"- "val1"; - "val2""#),
     //            Parent { children: vec! [
     //                Child { name: "val1".into() },
     //                Child { name: "val2".into() },
     //            ]} );
-    // assert_eq!(parse_doc::<Parent>(r#""#),
+    // assert_eq!(decode_doc::<Parent>(r#""#),
     //            Parent { children: Vec::new() } );
 }
 
 #[test]
-fn parse_filtered_children() {
+fn decode_filtered_children() {
     #[derive(DecodePartial, Default, Debug, PartialEq)]
     struct Parent {
         #[kfl(children)]
@@ -389,7 +389,7 @@ fn parse_filtered_children() {
 }
 
 #[test]
-fn parse_child() {
+fn decode_child() {
     #[derive(Decode, Debug, PartialEq)]
     struct Parent {
         #[kfl(child)]
@@ -461,7 +461,7 @@ fn parse_child() {
 }
 
 #[test]
-fn parse_child_default() {
+fn decode_child_default() {
     #[derive(Decode, Debug, PartialEq)]
     struct Parent {
         #[kfl(child, default)]
@@ -481,7 +481,7 @@ fn parse_child_default() {
 }
 
 #[test]
-fn parse_child_default_value() {
+fn decode_child_default_value() {
     #[derive(Decode, Debug, PartialEq)]
     struct Parent {
         #[kfl(child, default = Child { label: String::from("prop1") })]
@@ -499,7 +499,7 @@ fn parse_child_default_value() {
 }
 
 #[test]
-fn parse_enum_named() {
+fn decode_enum_named() {
     #[derive(Decode, Debug, PartialEq)]
     enum Enum {
         Var0,
@@ -526,7 +526,7 @@ fn parse_enum_named() {
 }
 
 #[test]
-fn parse_enum_unnamed() {
+fn decode_enum_unnamed() {
     #[derive(Decode, Debug, PartialEq)]
     enum Enum {
         Var0,
@@ -547,7 +547,7 @@ fn parse_enum_unnamed() {
 }
 
 // #[test]
-// fn parse_enum() {
+// fn decode_enum() {
 //     #[derive(Decode, Debug, PartialEq)]
 //     enum Variant {
 //         Arg1(Arg1),
@@ -570,12 +570,12 @@ fn parse_enum_unnamed() {
 //                Variant::Arg1(Arg1 { name: "hello".into() }));
 //     assert_eq!(parse::<Variant>(r#"prop1 label="hello""#),
 //                Variant::Prop1(Prop1 { label: "hello".into() }));
-//     assert_eq!(parse_err::<Variant>(r#"something"#),
+//     assert_eq!(decode_err::<Variant>(r#"something"#),
 //         "expected one of `arg1`, `prop1`");
 // }
 
 #[test]
-fn parse_str() {
+fn decode_str() {
     #[derive(Decode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument)]  /* str */
@@ -589,7 +589,7 @@ fn parse_str() {
 }
 
 #[test]
-fn parse_option_str() {
+fn decode_option_str() {
     #[derive(Decode, Debug, PartialEq)]
     struct Server {
         #[kfl(property, default)]  /* str */
@@ -605,7 +605,7 @@ fn parse_option_str() {
 }
 
 #[test]
-fn parse_bytes() {
+fn decode_bytes() {
     #[derive(Decode, Debug, PartialEq)]
     struct Bytes {
         #[kfl(argument)]  /* bytes */
@@ -623,7 +623,7 @@ fn parse_bytes() {
 }
 
 #[test]
-fn parse_option_bytes() {
+fn decode_option_bytes() {
     #[derive(Decode, Debug, PartialEq)]
     struct Bytes {
         #[kfl(property)]  /* bytes */
@@ -641,7 +641,7 @@ fn parse_option_bytes() {
 }
 
 #[test]
-fn parse_extra() {
+fn decode_extra() {
     #[derive(Decode, Debug, PartialEq)]
     struct Node {
         field: String,

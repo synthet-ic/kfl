@@ -3,7 +3,7 @@ mod common;
 use kfl::{Decode, DecodePartial};
 
 #[test]
-fn parse_flatten() {
+fn decode_flatten() {
     #[derive(Decode, Debug, PartialEq)]
     struct Child1(#[kfl(argument)] String);
     #[derive(Decode, Debug, PartialEq)]
@@ -38,7 +38,7 @@ fn parse_flatten() {
 }
 
 #[test]
-fn parse_flatten_flatten() {
+fn decode_flatten_flatten() {
     #[derive(Decode, Debug, PartialEq)]
     struct Child3(#[kfl(argument)] String);
     #[derive(Decode, Debug, PartialEq)]

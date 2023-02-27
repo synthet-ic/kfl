@@ -3,7 +3,7 @@ mod common;
 use kfl::{Decode, DecodeScalar, Encode, EncodeScalar};
 
 // #[test]
-// fn print_struct_scalar_properties() {
+// fn encode_struct_scalar_properties() {
 //     #[derive(Decode, Debug, PartialEq)]
 //     struct Node {
 //         #[kfl(flatten)]
@@ -21,7 +21,7 @@ use kfl::{Decode, DecodeScalar, Encode, EncodeScalar};
 // }
 
 #[test]
-fn print_enum_scalar() {
+fn encode_enum_scalar() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument)]
@@ -42,7 +42,7 @@ fn print_enum_scalar() {
 }
 
 #[test]
-fn print_option_argument() {
+fn encode_option_argument() {
     #[derive(Decode, Encode, Debug, PartialEq)]
     struct Node {
         #[kfl(argument)]

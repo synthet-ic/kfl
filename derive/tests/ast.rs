@@ -1,7 +1,7 @@
 use kfl::Decode;
 
 #[test]
-fn parse_node_span() {
+fn decode_node_span() {
     #[derive(Decode, Debug)]
     struct Node {
         #[kfl(children)]

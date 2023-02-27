@@ -45,7 +45,6 @@ impl Context {
         self.spans.insert(format!("{:p}", pointer).into_boxed_str(), span);
         // println!("{:#?}", &self.spans);
     }
-    // TODO(rnarkk) do we need to store span for Box<str>?
     ///
     #[allow(unused_variables)]
     pub fn span<P: Pointer + Debug>(&self, pointer: &P) -> Span {

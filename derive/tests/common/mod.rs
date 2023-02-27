@@ -64,3 +64,13 @@ macro_rules! assert_encode {
 //         assert_eq!(err, $output);
 //     }
 // }
+
+#[macro_export]
+macro_rules! assert_encode_children {
+    ($input:expr, $output:literal) => {
+        let input = kfl::encode_children("<test>", &$input).unwrap();
+        let output = $output.to_owned();
+        // common::hint_same_type(&input, &output);
+        assert_eq!(input, output);
+    }
+}

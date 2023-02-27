@@ -14,7 +14,7 @@ use crate::{
     context::Context,
     errors::Error,
     grammar,
-    traits::{Decode, DecodePartial, Encode},
+    traits::{Decode, DecodePartial, Encode, EncodePartial},
 };
 
 /// Parse KDL text and return AST
@@ -116,6 +116,33 @@ pub fn encode<T>(file_name: &str, t: &T) -> Result<String, Error>
         }
     })?;
     print(&mut ctx, node)
+}
+
+/// Parse KDL text and decode Rust object
+pub fn encode_children<T>(file_name: &str, t: &T) -> Result<String, Error>
+    where T: EncodePartial + Debug,
+{
+    encode_with_context(file_name, t, |_| {})
+}
+
+/// Parse KDL text and decode Rust object providing extra context for the
+/// decoder
+pub fn encode_with_context<T, F>(file_name: &str, t: &T, set_ctx: F)
+    -> Result<String, Error>
+    where F: FnOnce(&mut Context),
+          T: EncodePartial + Debug,
+{
+    let mut ctx = Context::new();
+    // let nodes = print(&mut ctx, &t)?;
+    set_ctx(&mut ctx);
+    let mut node = Node::new("-");
+    t.encode_partial(&mut node, &mut ctx).map_err(|error| {
+        Error {
+            source_code: NamedSource::new(file_name, format!("{:?}", &t)),
+            errors: vec![error.into()],
+        }
+    })?;
+    Ok(print(&mut ctx, node)?)
 }
 
 #[test]

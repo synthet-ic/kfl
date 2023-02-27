@@ -194,7 +194,7 @@ pub(crate) enum TokenFormat {
     Eoi,
 }
 
-struct FormatUnexpected<'x>(&'x TokenFormat, &'x BTreeSet<TokenFormat>);
+struct FormatUnexpected<'a>(&'a TokenFormat, &'a BTreeSet<TokenFormat>);
 
 #[derive(Debug, Diagnostic, Error)]
 pub(crate) enum ParseError {
@@ -327,9 +327,8 @@ impl Display for FormatUnexpected<'_> {
 
 impl ParseError {
     pub(crate) fn with_expected_kind(mut self, token: &'static str) -> Self {
-        use ParseError::*;
         match &mut self {
-            Unexpected { ref mut expected, .. } => {
+            ParseError::Unexpected { ref mut expected, .. } => {
                 *expected = [TokenFormat::Kind(token)].into_iter().collect();
             }
             _ => {},
@@ -337,9 +336,8 @@ impl ParseError {
         self
     }
     pub(crate) fn with_no_expected(mut self) -> Self {
-        use ParseError::*;
         match &mut self {
-            Unexpected { ref mut expected, .. } => {
+            ParseError::Unexpected { ref mut expected, .. } => {
                 *expected = BTreeSet::new();
             }
             _ => {},

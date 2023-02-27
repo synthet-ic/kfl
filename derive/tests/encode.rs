@@ -5,7 +5,7 @@ use std::{
 //     default::Default,
     net::SocketAddr
 };
-use kfl::{Decode, Encode};
+use kfl::{Decode, DecodePartial, Encode, EncodePartial};
 
 #[test]
 fn encode_argument_named() {
@@ -113,15 +113,13 @@ fn encode_argument_default_value_named() {
         #[kfl(argument, default = "unnamed".into())]
         name: String,
     }
-    assert_encode!(
-        Node { name: "hello".into() },
-        r#"node "hello""#);
+    assert_encode!(Node { name: "hello".into() },
+                   r#"node "hello""#);
 //     assert_encode_error!(Node,
 //         r#"node "hello" "world""#,
 //         "unexpected argument");
-    assert_encode!(
-        Node { name: "unnamed".into() },
-        r#"node"#);
+    assert_encode!(Node { name: "unnamed".into() },
+                   r#"node"#);
 }
 
 #[test]
@@ -149,9 +147,8 @@ fn encode_property_named() {
         #[kfl(property)]
         name: String,
     }
-    assert_encode!(
-        Node { name: "hello".into() },
-        r#"node name="hello""#);
+    assert_encode!(Node { name: "hello".into() },
+                   r#"node name="hello""#);
 //     assert_encode_error!(Node,
 //         r#"node name="hello" y="world""#,
 //         "unexpected property `y`");
@@ -167,9 +164,8 @@ fn encode_property_unnamed() {
         #[kfl(property(name = "name"))]
         String,
     );
-    assert_encode!(
-        Node("hello".into()),
-        r#"node name="hello""#);
+    assert_encode!(Node("hello".into()),
+                   r#"node name="hello""#);
 //     assert_encode_error!(Node,
 //         r#"node name="hello" y="world""#,
 //         "unexpected property `y`");
@@ -316,9 +312,8 @@ fn encode_children() {
     //     ]},
     //     r#"parent { child "val1"; child "val2"; }"#
     // );
-    assert_encode!(
-        Parent { children: vec![]},
-        r#"parent"#);
+    assert_encode!(Parent { children: vec![]},
+                   r#"parent"#);
 
 //     // assert_eq!(parse_doc::<Parent>(r#"- "val1"; - "val2""#),
 //     //            Parent { children: vec! [
@@ -329,25 +324,25 @@ fn encode_children() {
 //     //            Parent { children: Vec::new() } );
 }
 
-// #[test]
-// fn encode_filtered_children() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Parent {
-//         #[kfl(children)]
-//         lefts: Vec<Left>,
-//         #[kfl(children)]
-//         rights: Vec<Right>,
-//     }
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Left {
-//         #[kfl(argument, default)]
-//         name: Option<String>,
-//     }
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Right {
-//         #[kfl(argument, default)]
-//         name: Option<String>,
-//     }
+#[test]
+fn encode_filtered_children() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Parent {
+        #[kfl(children)]
+        lefts: Vec<Left>,
+        #[kfl(children)]
+        rights: Vec<Right>,
+    }
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Left {
+        #[kfl(argument, default)]
+        name: Option<String>,
+    }
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Right {
+        #[kfl(argument, default)]
+        name: Option<String>,
+    }
 //     assert_encode!(
 //         r#"parent { left "v1"; right "v2"; left "v3"; }"#,
 //         Parent {
@@ -360,7 +355,7 @@ fn encode_children() {
 //             ]
 //         }
 //     );
-//     assert_decode_children!(
+//     assert_encode_children!(
 //         r#"left "v1"; right "v2"; left "v3""#,
 //         Parent {
 //             lefts: vec![
@@ -379,7 +374,7 @@ fn encode_children() {
 //             rights: vec![Right { name: None }]
 //         }
 //     );
-//     assert_decode_children!(
+//     assert_encode_children!(
 //         r#"right; left"#,
 //         Parent {
 //             lefts: vec![Left { name: None }],
@@ -389,42 +384,46 @@ fn encode_children() {
 //     assert_encode_error!(Parent,
 //         r#"some"#,
 //         "unexpected node `some`");
-// }
+}
 
-// #[test]
-// fn encode_child() {
-//     #[derive(Decode, Encode, Debug, PartialEq)]
-//     struct Parent {
-//         #[kfl(child)]
-//         child1: Child1,
-//         #[kfl(child, default)]
-//         child2: Option<Child2>,
-//     }
-//     #[derive(Decode, Encode, Debug, PartialEq, Default)]
-//     struct Child1 {
-//         #[kfl(property)]
-//         name: String,
-//     }
-//     #[derive(Decode, Encode, Debug, PartialEq, Default)]
-//     struct Child2 {
-//         #[kfl(property)]
-//         name: String,
-//     }
-//     assert_encode!(
-//         r#"parent { child1 name="val1"; }"#,
-//         Parent {
-//             child1: Child1 { name: "val1".into() },
-//             child2: None,
-//         });
-//     assert_encode!(
-//         r#"parent {
-//             child1 name="primary";
-//             child2 name="replica";
-//          }"#,
-//          Parent {
-//             child1: Child1 { name: "primary".into() },
-//             child2: Some(Child2 { name: "replica".into() }),
-//         });
+#[test]
+fn encode_child() {
+    #[derive(Decode, Encode, Debug, PartialEq)]
+    struct Parent {
+        #[kfl(child)]
+        child1: Child1,
+        #[kfl(child, default)]
+        child2: Option<Child2>,
+    }
+    #[derive(Decode, Encode, Debug, PartialEq, Default)]
+    struct Child1 {
+        #[kfl(property)]
+        name: String,
+    }
+    #[derive(Decode, Encode, Debug, PartialEq, Default)]
+    struct Child2 {
+        #[kfl(property)]
+        name: String,
+    }
+    #[derive(DecodePartial, EncodePartial, Default, Debug, PartialEq)]
+    struct ParentPartial {
+        #[kfl(child)]
+        child1: Option<Child1>,
+        #[kfl(child, default)]
+        child2: Option<Child2>,
+    }
+    // assert_encode!(
+    //     Parent {
+    //         child1: Child1 { name: "val1".into() },
+    //         child2: None,
+    //     },
+    //     r#"parent { child1 name="val1"; }"#);
+    // assert_encode!(
+    //     Parent {
+    //         child1: Child1 { name: "primary".into() },
+    //         child2: Some(Child2 { name: "replica".into() }),
+    //     },
+    //     r#"parent { child1 name="primary"; child2 name="replica"; }"#);
 //     // TODO(rnarkk)
 //     // assert_encode_error!(Parent,
 //     //     r#"parent { something; }"#,
@@ -433,27 +432,26 @@ fn encode_children() {
 //     assert_encode_error!(Parent,
 //         r#"parent"#,
 //         "child node for struct field `child1` is required");
-//     assert_decode_children!(
+//     assert_encode_children!(
 //         r#"child1 name="val1""#,
 //         Parent {
 //             child1: Child1 { name: "val1".into() },
 //             child2: None,
 //         });
-//     assert_decode_children!(
-//         r#"child1 name="primary"
-//         child2 name="replica""#,
-//         Parent {
-//             child1: Child1 { name: "primary".into() },
-//             child2: Some(Child2 { name: "replica".into() }),
-//         });
-//     assert_decode_children_error!(Parent,
+    // assert_encode_children!(
+    //     ParentPartial {
+    //         child1: Some(Child1 { name: "primary".into() }),
+    //         child2: Some(Child2 { name: "replica".into() }),
+    //     },
+    //     r#"child1 name="primary"; child2 name="replica""#);
+//     assert_encode_children_error!(Parent,
 //         r#"something"#,
 //         "unexpected node `something`\n\
 //         child node for struct field `child1` is required");
-//     assert_decode_children_error!(Parent,
+//     assert_encode_children_error!(Parent,
 //         r#""#,
 //         "child node for struct field `child1` is required");
-// }
+}
 
 #[test]
 fn encode_child_default() {
@@ -467,12 +465,10 @@ fn encode_child_default() {
         #[kfl(property)]
         name: String,
     }
-//     assert_encode!(
-//         r#"parent { child name="val1"; }"#,
-//         Parent { child: Child { name: "val1".into() } });
-    assert_encode!(
-        Parent { child: Child { name: "".into() } },
-        r#"parent"#);
+    // assert_encode!(Parent { child: Child { name: "val1".into() } },
+    //                r#"parent { child name="val1"; }"#);
+    assert_encode!(Parent { child: Child { name: "".into() } },
+                   r#"parent"#);
 }
 
 #[test]
@@ -487,11 +483,10 @@ fn encode_child_default_value() {
         #[kfl(property)]
         label: String,
     }
-//     assert_encode!(r#"parent { child label="val1"; }"#,
-//         Parent { main: Child { label: "val1".into() } });
-    assert_encode!(
-        Parent { main: Child { label: "prop1".into() } },
-        r#"parent"#);
+    // assert_encode!(Parent { main: Child { label: "val1".into() } },
+    //                r#"parent { child label="val1"; }"#);
+    assert_encode!(Parent { main: Child { label: "prop1".into() } },
+                   r#"parent"#);
 }
 
 #[test]
@@ -532,7 +527,8 @@ fn encode_enum_unnamed() {
         #[allow(dead_code)]
         Var3(u32),
     }
-    assert_encode!(Enum::Var0, r#"var0"#);
+    assert_encode!(Enum::Var0,
+                   r#"var0"#);
     assert_encode!(Enum::Var1("hello".into()),
                    r#"var1 "hello""#);
     assert_encode!(Enum::Var2("hello".into()),

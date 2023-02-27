@@ -190,7 +190,7 @@ macro_rules! impl_from_str {
 }
 
 #[cfg(feature = "std")]
-mod std {
+mod _std {
     extern crate std;
     use std::path::PathBuf;
     use std::net::SocketAddr;
@@ -204,7 +204,6 @@ mod std {
                 type_name: None,
                 literal: string.into_boxed_str()
             })
-            
         }
     }
 
@@ -221,7 +220,36 @@ mod std {
 }
 
 #[cfg(feature = "chrono")]
-impl_from_str!(chrono::NaiveDateTime);
+mod _chrono {
+    use chrono::NaiveDateTime;
+    use super::*;
+    impl_from_str!(NaiveDateTime);
+    impl EncodeScalar for NaiveDateTime {
+        fn encode(&self, _: &mut Context) -> Result<Scalar, EncodeError> {
+            let string = format!("{}", self);
+            Ok(Scalar {
+                type_name: None,
+                literal: string.into_boxed_str()
+            })
+        }
+    }
+}
+
+#[cfg(feature = "http")]
+mod _http {
+    use http::Uri;
+    use super::*;
+    impl_from_str!(Uri);
+    impl EncodeScalar for Uri {
+        fn encode(&self, _: &mut Context) -> Result<Scalar, EncodeError> {
+            let string = format!("{}", self);
+            Ok(Scalar {
+                type_name: None,
+                literal: string.into_boxed_str()
+            })
+        }
+    }
+}
 
 impl DecodeScalar for bool {
     fn decode(scalar: &Scalar, ctx: &mut Context) -> Result<Self, DecodeError> {

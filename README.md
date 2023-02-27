@@ -45,6 +45,8 @@ Most common usage of this library is using `derive` and [parse] function:
 
 ```rust
 use kfl::{Decode, DecodePartial, Encode};
+use std::path::PathBuf;
+use http::Uri;
 
 #[derive(DecodePartial, Default)]
 struct Document {
@@ -57,7 +59,7 @@ struct Document {
 #[derive(Decode, Encode)]
 struct Route {
     #[kfl(argument)]
-    path: String,
+    path: PathBuf,
     #[kfl(children)]
     subroutes: Vec<Route>,
 }
@@ -67,15 +69,15 @@ struct Plugin {
     #[kfl(argument)]
     name: String,
     #[kfl(property)]
-    url: String,
+    url: Uri,
 }
 
 # fn main() -> miette::Result<()> {
 let document = kfl::decode_children::<Document>("example.kdl", r#"
-    route "/api" {
-        route "/api/v1"
+    route /api {
+        route /api/v1
     }
-    plugin "http" url="https://example.org/http"
+    plugin "http" url=https://example.org/http
 "#)?;
 # Ok(())
 # }

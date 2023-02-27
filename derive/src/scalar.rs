@@ -150,7 +150,7 @@ pub fn emit_encode_enum(e: &Enum) -> syn::Result<TokenStream> {
     // };
     let match_branches = e.variants.iter()
         .map(|variant| {
-            let name = format!("{:?}", &variant.name);
+            let name = &variant.name;
             let ident = &variant.ident;
             quote! {
                 #e_name::#ident => Ok(::kfl::ast::Scalar {

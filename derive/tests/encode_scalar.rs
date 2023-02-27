@@ -33,9 +33,9 @@ fn print_enum_scalar() {
         AnotherOption,
     }
     assert_encode!(Node { value: SomeScalar::First },
-                   r#"node "first""#);
+                   r#"node first"#);
     assert_encode!(Node { value: SomeScalar::AnotherOption },
-                   r#"node "another-option""#);
+                   r#"node another-option"#);
     // assert_encode_error!(Node,
     //     r#"node "test""#,
     //     "expected one of `first`, `another-option`");

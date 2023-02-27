@@ -33,13 +33,13 @@ fn parse_enum_scalar() {
         AnotherOption,
     }
     assert_decode!(
-        r#"node "first""#,
+        r#"node first"#,
         Node { value: SomeScalar::First });
     assert_decode!(
-        r#"node "another-option""#,
+        r#"node another-option"#,
         Node { value: SomeScalar::AnotherOption });
     assert_decode_error!(Node,
-        r#"node "test""#,
+        r#"node test"#,
         "expected one of `first`, `another-option`");
 }
 

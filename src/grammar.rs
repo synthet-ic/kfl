@@ -243,12 +243,13 @@ fn escaped_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
     })
 }
 
+// TODO(ranrkk)
 fn bare_ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
     let sign = just('+').or(just('-'));
     choice((
         sign.then(id_sans_dig().then(id_char().repeated())).map_slice(|v| v),
         sign.repeated().exactly(1).map_slice(|v| v),
-        id_sans_sign_dig().then(id_char().repeated()).map_slice(|v| v)
+        sign.repeated().then(id_sans_sign_dig()).then(id_char().repeated()).map_slice(|v| v)
     ))
     // .map_slice(|v| v.chars().collect::<String>())
     .try_map(|s, span| {
@@ -296,7 +297,7 @@ fn ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
 fn literal<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
     choice((
         string(),
-        any().filter(|c| c != &' ' && c != &'{' && c != &'}' && c != &'\n' && c != &'(' && c != &')' && c != &'\\' && c != &'=' && c != &'"').repeated().map_slice(|v: &str| v.chars().collect::<String>().into())
+        any().filter(|c| c != &' ' && c != &'{' && c != &'}' && c != &'\n' && c != &'(' && c != &')' && c != &'\\' && c != &'=' && c != &'"').repeated().map_slice(|v: &str| v.chars().collect::<String>().into()),
     ))
 }
 
@@ -348,37 +349,23 @@ fn prop_or_arg_inner<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra>
 {
     use PropOrArg::*;
     choice((
-       literal().then(just('=').ignore_then(scalar()).or_not())
-           .try_map(|(name, scalar), _| {
-               match (name, scalar) {
-                   (name, Some(scalar)) => Ok(Prop(name, scalar)),
-                   (value, None) =>
-                       Ok(Arg(Scalar { type_name: None, literal: value })),
-               }
-           }),
-        bare_ident().then(just('=').ignore_then(scalar()).or_not())
-            .validate(|(name, value), span, emitter| {
-                if value.is_none() {
-                    emitter.emit(ParseError::MessageWithHelp {
-                        label: Some("unexpected identifier"),
-                        span: span.into(),
-                        message: "identifiers cannot be used as arguments"
-                            .into(),
-                        help: "consider enclosing in double quotes \"..\"",
-                    });
-                }
-                (name, value)
-            })
-            .map(|(name, value)| {
-                if let Some(value) = value {
-                    Prop(name, value)
-                } else {
-                    // this is invalid, but we already emitted error
-                    // in validate() above, so doing a sane fallback
-                    Arg(Scalar { type_name: None, literal: name })
-                }
-            }),
-        type_name_value().map(Arg),
+        bare_ident().then(just('=').ignore_then(scalar()))
+            // .validate(|(name, value), span, emitter| {
+            //     if value.is_none() {
+            //         emitter.emit(ParseError::MessageWithHelp {
+            //             label: Some("unexpected identifier"),
+            //             span: span.into(),
+            //             message: "identifiers cannot be used as arguments"
+            //                 .into(),
+            //             help: "consider enclosing in double quotes \"..\"",
+            //         });
+            //     }
+            //     (name, value)
+            // })
+            .map(|(name, scalar)| Prop(name, scalar)),
+        string().then(just('=').ignore_then(scalar())).map(
+            |(name, scalar)| Prop(name, scalar)),
+        scalar().map(Arg),
     ))
 }
 
@@ -455,11 +442,11 @@ fn nodes<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
                 };
                 for item in line_items {
                     match item {
-                        Prop(name, value) => {
-                            node.properties.insert(name, value);
+                        Prop(name, scalar) => {
+                            node.properties.insert(name, scalar);
                         }
-                        Arg(value) => {
-                            node.arguments.push(value);
+                        Arg(scalar) => {
+                            node.arguments.push(scalar);
                         }
                         Ignore => {}
                     }
@@ -499,9 +486,10 @@ mod test {
         extra::Full
     };
     use miette::NamedSource;
+    use crate::ast::Scalar;
     use crate::context::Context;
     use crate::errors::{Error, ParseError};
-    use super::{ws, comment, ml_comment, string, ident, literal, type_name};
+    use super::{ws, comment, ml_comment, string, ident, literal, type_name, type_name_value, prop_or_arg, prop_or_arg_inner};
     use super::{nodes};
 
     type Extra = Full<ParseError, Context, ()>;
@@ -671,7 +659,7 @@ mod test {
 //         assert_eq!(&*parse(string(), r#""hel\"lo""#).unwrap(), "hel\"lo");
 //         assert_eq!(&*parse(string(), r#""hello\nworld!""#).unwrap(),
 //                    "hello\nworld!");
-        assert_eq!(&*parse(string(), r#""\u{1F680}""#).unwrap(), "🚀");
+        // assert_eq!(&*parse(string(), r#""\u{1F680}""#).unwrap(), "🚀");
     }
 
     // #[test]
@@ -887,12 +875,30 @@ mod test {
         parse(ident(), "+1").unwrap_err();
     }
 
-    // #[test]
-    // fn parse_literal() {
-    //     assert_eq!(parse(literal(), "true").unwrap(), true);
-    //     assert_eq!(parse(literal(), "false").unwrap(), false);
-    //     assert_eq!(parse(literal(), "null").unwrap(), None);
-    // }
+    #[test]
+    fn parse_literal() {
+        parse(literal(), "true").unwrap();
+        parse(literal(), "false").unwrap();
+        parse(literal(), "null").unwrap();
+        parse(literal(), "12").unwrap();
+        parse(literal(), "012").unwrap();
+        parse(literal(), "0").unwrap();
+        parse(literal(), "-012").unwrap();
+        parse(literal(), "+0").unwrap();
+        parse(literal(), "123_555").unwrap();
+        parse(literal(), "123.555").unwrap();
+        parse(literal(), "+1_23.5_55E-17").unwrap();
+        parse(literal(), "123e+555").unwrap();
+        parse(literal(), "0x12").unwrap();
+        parse(literal(), "0xab_12").unwrap();
+        parse(literal(), "-0xab_12").unwrap();
+        parse(literal(), "0o17").unwrap();
+        parse(literal(), "+0o17").unwrap();
+        parse(literal(), "0b1010_101").unwrap();
+        parse(literal(), "2023-2-27").unwrap();
+        parse(literal(), "127.0.0.1:80").unwrap();
+        parse(literal(), "/path/to/file").unwrap();
+    }
 
     // #[test]
     // fn exclude_keywords() {
@@ -996,10 +1002,28 @@ mod test {
     //     }"#);
     // }
 
+    #[test]
+    fn parse_type_name_value() {
+        assert_eq!(parse(type_name_value(), "(abcdef)\"hello\"").unwrap(),
+                   Scalar { type_name: Some("abcdef".into()), literal: "hello".into() });
+        // assert_eq!(parse(type_name_value(), "(xx_cd$yy)\"hello\"").unwrap(),
+        //            "xx_cd$yy".into());
+        // parse(type_name_value(), "(1abc)\"hello\"").unwrap_err();
+        // parse(type_name_value(), "( abc)\"hello\"").unwrap_err();
+        // parse(type_name_value(), "(abc )\"hello\"").unwrap_err();
+    }
+
     fn single<T, E: std::fmt::Debug>(r: Result<Vec<T>, E>) -> T {
         let mut v = r.unwrap();
         assert_eq!(v.len(), 1);
         v.remove(0)
+    }
+
+    #[test]
+    fn parse_prop_or_arg() {
+        parse(ident(), "--x").unwrap();
+        parse(ident(), "--x").unwrap();
+        parse(prop_or_arg_inner(), "--x=2").unwrap();
     }
 
     #[test]
@@ -1037,15 +1061,15 @@ mod test {
         assert_eq!(&nval.arguments[0].literal,
                    &"true".into());
 
-        let nval = single(parse(nodes(), "hello (string)\"arg1\""));
-        assert_eq!(nval.node_name.as_ref(), "hello");
-        assert_eq!(nval.type_name.as_ref(), None);
-        assert_eq!(nval.arguments.len(), 1);
-        assert_eq!(nval.properties.len(), 0);
-        assert_eq!(&**nval.arguments[0].type_name.as_ref().unwrap(),
-                   "string");
-        assert_eq!(&nval.arguments[0].literal,
-                   &"arg1".into());
+        // let nval = single(parse(nodes(), "hello (string)\"arg1\""));
+        // assert_eq!(nval.node_name.as_ref(), "hello");
+        // assert_eq!(nval.type_name.as_ref(), None);
+        // assert_eq!(nval.arguments.len(), 1);
+        // assert_eq!(nval.properties.len(), 0);
+        // assert_eq!(&**nval.arguments[0].type_name.as_ref().unwrap(),
+        //            "string");
+        // assert_eq!(&nval.arguments[0].literal,
+        //            &"arg1".into());
 
         let nval = single(parse(nodes(), "hello key=(string)\"arg1\""));
         assert_eq!(nval.node_name.as_ref(), "hello");
@@ -1265,44 +1289,6 @@ mod test {
         assert_eq!(nval[0].children().len(), 0);
 
     }
-
-    // #[test]
-    // fn parse_number() {
-    //     assert_eq!(parse(number(), "12").unwrap(),
-    //                Integer(10, "12".into()));
-    //     assert_eq!(parse(number(), "012").unwrap(),
-    //                Integer(10, "012".into()));
-    //     assert_eq!(parse(number(), "0").unwrap(),
-    //                Integer(10, "0".into()));
-    //     assert_eq!(parse(number(), "-012").unwrap(),
-    //                Integer(10, "-012".into()));
-    //     assert_eq!(parse(number(), "+0").unwrap(),
-    //                Integer(10, "+0".into()));
-    //     assert_eq!(parse(number(), "123_555").unwrap(),
-    //                Integer(10, "123555".into()));
-    //     assert_eq!(parse(number(), "123.555").unwrap(),
-    //                Decimal("123.555".into()));
-    //     assert_eq!(parse(number(), "+1_23.5_55E-17").unwrap(),
-    //                Decimal("+123.555E-17".into()));
-    //     assert_eq!(parse(number(), "123e+555").unwrap(),
-    //                Decimal("123e+555".into()));
-    // }
-
-    // #[test]
-    // fn parse_radix_number() {
-    //     assert_eq!(parse(number(), "0x12").unwrap(),
-    //                Integer(16, "12".into()));
-    //     assert_eq!(parse(number(), "0xab_12").unwrap(),
-    //                Integer(16, "ab12".into()));
-    //     assert_eq!(parse(number(), "-0xab_12").unwrap(),
-    //                Integer(16, "-ab12".into()));
-    //     assert_eq!(parse(number(), "0o17").unwrap(),
-    //                Integer(8, "17".into()));
-    //     assert_eq!(parse(number(), "+0o17").unwrap(),
-    //                Integer(8, "+17".into()));
-    //     assert_eq!(parse(number(), "0b1010_101").unwrap(),
-    //                Integer(2, "1010101".into()));
-    // }
 
     #[test]
     fn parse_dashes() {

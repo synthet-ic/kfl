@@ -162,7 +162,8 @@ impl DecodeScalar for String {
 }
 impl EncodeScalar for String {
     fn encode(&self, _: &mut Context) -> Result<Scalar, EncodeError> {
-        Ok(Scalar { type_name: None, literal: self.clone().into() })
+        let literal = format!("{:?}", self);
+        Ok(Scalar { type_name: None, literal: literal.into() })
     }
 }
 

@@ -581,7 +581,7 @@ fn parse_str() {
         #[kfl(argument)]  /* str */
         listen: SocketAddr,
     }
-    assert_decode!(r#"node "127.0.0.1:8080""#,
+    assert_decode!(r#"node 127.0.0.1:8080"#,
                Node { listen: "127.0.0.1:8080".parse().unwrap() });
     assert_decode_error!(Node,
         r#"node "2/3""#,
@@ -595,7 +595,7 @@ fn parse_option_str() {
         #[kfl(property, default)]  /* str */
         listen: Option<SocketAddr>,
     }
-    assert_decode!(r#"server listen="127.0.0.1:8080""#,
+    assert_decode!(r#"server listen=127.0.0.1:8080"#,
                    Server { listen: Some("127.0.0.1:8080".parse().unwrap()) });
     assert_decode_error!(Server,
         r#"server listen="2/3""#,

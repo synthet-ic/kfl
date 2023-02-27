@@ -578,7 +578,7 @@ fn print_str() {
         listen: SocketAddr,
     }
     assert_encode!(Node { listen: "127.0.0.1:8080".parse().unwrap() },
-                   r#"node "127.0.0.1:8080""#);
+                   r#"node 127.0.0.1:8080"#);
     // assert_encode_error!(Node,
     //     r#"node "2/3""#,
     //     "invalid socket address syntax");
@@ -592,7 +592,7 @@ fn print_option_str() {
         listen: Option<SocketAddr>,
     }
     assert_encode!(Server { listen: Some("127.0.0.1:8080".parse().unwrap()) },
-                   r#"server listen="127.0.0.1:8080""#);
+                   r#"server listen=127.0.0.1:8080"#);
     // assert_encode_error!(Server,
     //     r#"server listen="2/3""#,
     //     "invalid socket address syntax");

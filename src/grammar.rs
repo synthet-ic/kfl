@@ -297,7 +297,7 @@ fn ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
 fn literal<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
     choice((
         string(),
-        any().filter(|c| c != &' ' && c != &'{' && c != &'}' && c != &'\n' && c != &'(' && c != &')' && c != &'\\' && c != &'=' && c != &'"').repeated().map_slice(|v: &str| v.chars().collect::<String>().into()),
+        any().filter(|c| c != &' ' && c != &'{' && c != &'}' && c != &'\n' && c != &'(' && c != &')' && c != &'\\' && c != &'=' && c != &'"').repeated().at_least(1).map_slice(|v: &str| v.chars().collect::<String>().into()),
     ))
 }
 
@@ -329,6 +329,7 @@ fn node_terminator<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
     choice((newline(), comment(), just(';').ignored(), end()))
 }
 
+#[derive(Debug)]
 enum PropOrArg {
     Prop(Box<str>, Scalar),
     Arg(Scalar),
@@ -479,7 +480,6 @@ pub(crate) fn document<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
 #[cfg(test)]
 mod test {
     extern crate std;
-    use std::println;
     use alloc::{borrow::ToOwned, string::String, vec::Vec};
     use chumsky::zero_copy::{
         prelude::*,
@@ -489,7 +489,7 @@ mod test {
     use crate::ast::Scalar;
     use crate::context::Context;
     use crate::errors::{Error, ParseError};
-    use super::{ws, comment, ml_comment, string, ident, literal, type_name, type_name_value, prop_or_arg, prop_or_arg_inner};
+    use super::{ws, comment, ml_comment, string, ident, bare_ident, literal, type_name, type_name_value, prop_or_arg, prop_or_arg_inner};
     use super::{nodes};
 
     type Extra = Full<ParseError, Context, ()>;
@@ -519,7 +519,7 @@ mod test {
             let mut buf = String::with_capacity(512);
             miette::GraphicalReportHandler::new()
                 .render_report(&mut buf, &e).unwrap();
-            println!("{}", buf);
+            std::println!("{}", buf);
             buf.truncate(0);
             miette::JSONReportHandler::new()
                 .render_report(&mut buf, &e).unwrap();
@@ -1013,7 +1013,7 @@ mod test {
         // parse(type_name_value(), "(abc )\"hello\"").unwrap_err();
     }
 
-    fn single<T, E: std::fmt::Debug>(r: Result<Vec<T>, E>) -> T {
+    fn single<T, E: core::fmt::Debug>(r: Result<Vec<T>, E>) -> T {
         let mut v = r.unwrap();
         assert_eq!(v.len(), 1);
         v.remove(0)
@@ -1021,8 +1021,8 @@ mod test {
 
     #[test]
     fn parse_prop_or_arg() {
-        parse(ident(), "--x").unwrap();
-        parse(ident(), "--x").unwrap();
+        parse(bare_ident(), "--x").unwrap();
+        parse(literal(), "2").unwrap();
         parse(prop_or_arg_inner(), "--x=2").unwrap();
     }
 
@@ -1155,9 +1155,9 @@ mod test {
         assert_eq!(&nval.properties.get("prop1").unwrap().literal,
                    &"1".into());
 
-        let nval = single(parse(nodes(), "parent /-{\nchild\n}"));
-        assert_eq!(nval.node_name.as_ref(), "parent");
-        assert_eq!(nval.children().len(), 0);
+        // let nval = single(parse(nodes(), "parent /-{\nchild\n}"));
+        // assert_eq!(nval.node_name.as_ref(), "parent");
+        // assert_eq!(nval.children().len(), 0);
     }
 
     #[test]

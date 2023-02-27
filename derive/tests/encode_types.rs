@@ -27,6 +27,6 @@ fn print_enum() {
             path: PathBuf::from("/hello/world"),
             boolean: true,
         },
-        r#"scalars "hello" 1234 1.234 "/hello/world" true"#
+        r#"scalars "hello" 1234 1.234 /hello/world true"#
     );
 }

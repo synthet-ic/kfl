@@ -4,7 +4,7 @@
 - Trait-Based
 - Two-Level
 - Decode-Encode Dual
-- Reflective
+- Literal
 
 ## KDL
 

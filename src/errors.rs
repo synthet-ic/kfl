@@ -211,7 +211,7 @@ pub(crate) enum ParseError {
     #[diagnostic()]
     Unclosed {
         label: &'static str,
-        #[label="opened here"]
+        #[label = "opened here"]
         opened_at: Span,
         opened: TokenFormat,
         #[label("expected {}", expected)]
@@ -326,16 +326,6 @@ impl Display for FormatUnexpected<'_> {
 }
 
 impl ParseError {
-    pub(crate) fn with_expected_token(mut self, token: &'static str) -> Self {
-        use ParseError::*;
-        match &mut self {
-            Unexpected { ref mut expected, .. } => {
-                *expected = [TokenFormat::Token(token)].into_iter().collect();
-            }
-            _ => {},
-        }
-        self
-    }
     pub(crate) fn with_expected_kind(mut self, token: &'static str) -> Self {
         use ParseError::*;
         match &mut self {
@@ -372,24 +362,13 @@ impl<'a> chumsky::zero_copy::error::Error<'a, &'a str> for ParseError {
             expected: expected.into_iter().map(Into::into).collect(),
         }
     }
-    // fn with_label(mut self, new_label: Self::Label) -> Self {
-    //     use ParseError::*;
-    //     match self {
-    //         Unexpected { ref mut label, .. } => *label = Some(new_label),
-    //         Unclosed { ref mut label, .. } => *label = new_label,
-    //         Message { ref mut label, .. } => *label = Some(new_label),
-    //         MessageWithHelp { ref mut label, .. } => *label = Some(new_label),
-    //     }
-    //     self
-    // }
     fn merge(mut self, other: Self) -> Self {
         use ParseError::*;
         match (&mut self, other) {
             (Unclosed { .. }, _) => self,
             (_, other@Unclosed { .. }) => other,
             (Unexpected { expected: ref mut dest, .. },
-             Unexpected { expected, .. })
-            => {
+             Unexpected { expected, .. }) => {
                 dest.extend(expected.into_iter());
                 self
             }

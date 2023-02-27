@@ -6,7 +6,6 @@
 - Trait-Based
 - Two-Level
 - Decode-Encode Dual
-- Reflective
 
 A [KDL](https://kdl.dev) file format parser with great error reporting and convenient derive macros.
 

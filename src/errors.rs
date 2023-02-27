@@ -227,15 +227,6 @@ pub(crate) enum ParseError {
         span: Span,
         message: String,
     },
-    #[error("{}", message)]
-    #[diagnostic(help("{}", help))]
-    MessageWithHelp {
-        label: Option<&'static str>,
-        #[label("{}", label.unwrap_or("unexpected token"))]
-        span: Span,
-        message: String,
-        help: &'static str,
-    },
 }
 
 ///

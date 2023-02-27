@@ -489,7 +489,7 @@ mod test {
     use crate::ast::Scalar;
     use crate::context::Context;
     use crate::errors::{Error, ParseError};
-    use super::{ws, comment, ml_comment, string, ident, bare_ident, literal, type_name, type_name_value, prop_or_arg, prop_or_arg_inner};
+    use super::{ws, comment, ml_comment, string, ident, bare_ident, literal, type_name, type_name_value, prop_or_arg_inner};
     use super::{nodes};
 
     type Extra = Full<ParseError, Context, ()>;

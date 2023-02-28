@@ -26,45 +26,41 @@ type Extra = Full<ParseError, Context, ()>;
 fn comment_begin<'a>(which: char)
     -> impl Parser<'a, I<'a>, (), Extra> + Clone
 {
-    ignore('/')
-    .map_err(|e: ParseError| e.with_no_expected())
-    & ignore(which)
+    ('/'.map_err(|e: ParseError| e.with_no_expected())
+    & which
+    ).map_slice(||)
 }
 
 fn newline<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
-    ignore('\r'?) & '\n'
+    ('\r'? & '\n'
     | '\r'  // Carriage return
     | '\x0C'  // Form feed
     | '\u{0085}'  // Next line
     | '\u{2028}'  // Line separator
     | '\u{2029}'  // Paragraph separator
-    .ignored()
+    ).map_slice(||)
     .map_err(|e: ParseError| e.with_expected_kind("newline"))
 }
 
 fn ws_char<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
-    !(
-        '\t' | ' ' | '\u{00a0}' | '\u{1680}' |
-        '\u{2000}'..'\u{200A}' |
-        '\u{202F}' | '\u{205F}' | '\u{3000}' |
-        '\u{FEFF}'
-    )
-    .ignored()
+    !('\t' | ' ' | '\u{00a0}' | '\u{1680}'
+    | '\u{2000}'..'\u{200A}'
+    | '\u{202F}' | '\u{205F}' | '\u{3000}'
+    | '\u{FEFF}'
+    ).map(|_|)
 }
 
 fn id_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
-    !(
-        '\u{0000}'..'\u{0021}'
-        | '\\' | '/' | '(' | ')' | '{' | '}' | '<' | '>' | ';' | '[' | ']'
-        | '=' | ',' | '"'
-        // whitespace, excluding 0x20
-        | '\u{00a0}' | '\u{1680}'
-        | '\u{2000}'..'\u{200A}'
-        | '\u{202F}' | '\u{205F}' | '\u{3000}'
-        // newline (excluding <= 0x20)
-        | '\u{0085}' | '\u{2028}' | '\u{2029}'
-    )
-    .map_err(|e: ParseError| e.with_expected_kind("letter"))
+    !('\u{0000}'..'\u{0021}'
+    | '\\' | '/' | '(' | ')' | '{' | '}' | '<' | '>' | ';' | '[' | ']'
+    | '=' | ',' | '"'
+    // whitespace, excluding 0x20
+    | '\u{00a0}' | '\u{1680}'
+    | '\u{2000}'..'\u{200A}'
+    | '\u{202F}' | '\u{205F}' | '\u{3000}'
+    // newline (excluding <= 0x20)
+    | '\u{0085}' | '\u{2028}' | '\u{2029}'
+    ).map_err(|e: ParseError| e.with_expected_kind("letter"))
 }
 
 fn id_sans_dig<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
@@ -78,23 +74,22 @@ fn id_sans_sign_dig<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
 }
 
 fn ws<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
-    (ignore(ws_char() * 1..) | ml_comment())
+    (ws_char() * (1..) | ml_comment())
     .map_err(|e| e.with_expected_kind("whitespace"))
 }
 
 fn comment<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
-    ignore(comment_begin('/') & take_until(newline() | end()))
+    (comment_begin('/') & take_until(newline() | end())).map(|_|)
 }
 
 fn ml_comment<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
     recursive(|comment| {
-        ignore(comment_begin('*'))
-        & ignore((
-            comment
-            | ignore(!'*')
-            | ignore('*' & ignore(none_of('/').rewind()))
-        ) * ..)
-        & ignore("*/")
+        comment_begin('*')
+        & (comment
+            | !'*'
+            | '*' & ignore((!'/').rewind())
+        ) * ..
+        & "*/"
     })
     .map_err_with_span(|err, span| {
         let span = Span::from(span);
@@ -118,11 +113,11 @@ fn ml_comment<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
 
 // TODO(rnarkk) `then_with` method has been removed. We have to compensate it with either `then_with_ctx`, `with_ctx`, `map_ctx`, `configure`, or combination of them. https://github.com/zesterer/chumsky/pull/269
 fn raw_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
-    ignore('r')
+    'r'
     & ('#' * (..)).map_slice(str::len)
-    & ignore('"')
+    & '"'
     .then_with(|sharp_num|
-        take_until(ignore('"') & ignore('#') * sharp_num)
+        take_until('"' & '#' * sharp_num)
         .map_slice(|s: &str| s.to_owned().into_boxed_str())
         .map_err_with_span(move |e: ParseError, span| {
             let span = Span::from(span);
@@ -200,11 +195,12 @@ fn esc_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
 }
 
 fn escaped_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
-    ignore('"')
-    & (
-        (!('"' | '\\') | ignore('\\') & esc_char()) * (..)
-        .map_slice(|v| v.to_owned().into_boxed_str())
-    ) & ignore('"')
+    (
+        '"'
+        & ((!('"' | '\\') | ignore('\\') & esc_char()) * ..)
+        & '"'
+    )
+    .map_slice(|(_, s, _)| s.to_owned().into_boxed_str())
     .map_err_with_span(|err: ParseError, span| {
         if matches!(&err, ParseError::Unexpected { found: TokenFormat::Eoi, .. })
         {
@@ -226,9 +222,9 @@ fn escaped_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
 fn bare_ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
     let sign = '+' | '-';
     (
-        sign & id_sans_dig() & repeat(id_char())
+        sign & id_sans_dig() & (id_char() * ..)
         | sign
-        | (repeat(sign) & id_sans_sign_dig() & repeated(id_char()))
+        | ((sign * ..) & id_sans_sign_dig() & (id_char() * ..))
     )
     .map_slice(|s| s.to_owned().into_boxed_str())
 }
@@ -244,7 +240,7 @@ fn literal<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
 }
 
 fn type_name<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
-    ignore('(') & ident() & ignore(')')
+    ('(' & ident() & ')').map_slice(|(_, s, _)| s)
 }
 
 fn spanned<'a, T, P>(p: P) -> impl Parser<'a, I<'a>, T, Extra>
@@ -258,7 +254,7 @@ fn spanned<'a, T, P>(p: P) -> impl Parser<'a, I<'a>, T, Extra>
 }
 
 fn esc_line<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
-    ignore('\\') & ignore(ws() * ..) & (comment() | newline())
+    '\\' & (ws() * ..) & (comment() | newline())
 }
 
 fn node_space<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
@@ -280,30 +276,26 @@ enum PropOrArg {
     Ignore,
 }
 
+use PropOrArg::*;
+
 fn type_name_value<'a>() -> impl Parser<'a, I<'a>, Scalar, Extra> {
-    (type_name() & literal())
-    .map(|(type_name, literal)| Scalar { type_name: Some(type_name), literal })
+    (type_name() & literal()).map(|(ty, lit)| Scalar::new(ty, lit))
 }
 
 fn scalar<'a>() -> impl Parser<'a, I<'a>, Scalar, Extra> {
-    type_name_value()
-    | literal().map(|literal| Scalar::from(literal))
+    type_name_value() | literal().map(|lit| Scalar::from(lit))
 }
 
 fn prop_or_arg_inner<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra>
 {
-    (bare_ident() & ignore('=') & scalar()).map(|(name, scalar)| PropOrArg::Prop(name, scalar))
-    | (string() & ignore('=') & scalar()).map(|(name, scalar)| PropOrArg::Prop(name, scalar))
-    | scalar().map(PropOrArg::Arg)
-    
+    (bare_ident() & '=' & scalar()).map(|(name, _, scalar)| Prop(name, scalar))
+    | (string() & '=' & scalar()).map(|(name, _, scalar)| Prop(name, scalar))
+    | scalar().map(Arg)
 }
 
 fn prop_or_arg<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra> {
-    (
-        ignore(comment_begin('-'))
-        & ignore(node_spaces())
-        & prop_or_arg_inner()
-    ).map(|_| PropOrArg::Ignore)
+    (comment_begin('-') & node_spaces() & prop_or_arg_inner())
+        .map(|_| PropOrArg::Ignore)
     | prop_or_arg_inner()
 }
 
@@ -315,31 +307,29 @@ fn nodes<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
     use PropOrArg::*;
     recursive(|nodes| {
         let braced_nodes =
-            ignore('{')
-            & (
-                (nodes & ignore('}'))
-                .map_err_with_span(|err, span| {
-                    let span = Span::from(span);
-                    if matches!(&err, ParseError::Unexpected {
-                        found: TokenFormat::Eoi, .. })
-                    {
-                        err.merge(ParseError::Unclosed {
-                            label: "curly braces",
-                            // we know it's `{` at the start of the span
-                            opened_at: span.before_start(1),
-                            opened: '{'.into(),
-                            expected_at: span.at_end(),
-                            expected: '}'.into(),
-                            found: None.into(),
-                        })
-                    } else {
-                        err
-                    }
-                }));
+            ('{' & nodes & '}')
+            .map_err_with_span(|err, span| {
+                let span = Span::from(span);
+                if matches!(&err, ParseError::Unexpected {
+                    found: TokenFormat::Eoi, .. })
+                {
+                    err.merge(ParseError::Unclosed {
+                        label: "curly braces",
+                        // we know it's `{` at the start of the span
+                        opened_at: span.before_start(1),
+                        opened: '{'.into(),
+                        expected_at: span.at_end(),
+                        expected: '}'.into(),
+                        found: None.into(),
+                    })
+                } else {
+                    err
+                }
+            }));
 
         let node
             // type_name
-            = (ignore('(') & ident() & ignore(')'))?
+            = ('(' & ident() & ')')?.map_slice(|(_, s, _)| s)
             // node_name
             & ident()
             // line_items
@@ -349,13 +339,10 @@ fn nodes<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
             )
             // opt_children
             & (
-                ignore(node_spaces())
-                & (
-                    comment_begin('-')
-                    & ignore(node_spaces())
-                )?
+                node_spaces()
+                & (comment_begin('-') & node_spaces())?
                 & braced_nodes  // spanned(braced_nodes)
-            )?
+            )?.map_slice(|(_, _, n)| n)
             & ignore(node_spaces() & node_terminator())
             .map(|(((type_name, node_name), line_items), opt_children)| {
                 let mut node = Node {

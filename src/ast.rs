@@ -73,6 +73,12 @@ impl Node {
     }
 }
 
+impl Scalar {
+    pub fn new(type_name: Box<str>, literal: Box<str>) -> Self {
+        Self { type_name: Some(type_name), literal }
+    }
+}
+
 impl From<Box<str>> for Scalar {
     fn from(value: Box<str>) -> Self {
         Scalar { type_name: None, literal: value }

@@ -46,6 +46,7 @@ Most common usage of this library is using `derive` and [parse] function:
 ```rust
 use kfl::{Decode, DecodePartial, Encode};
 use std::path::PathBuf;
+#[cfg(feature = "http")]
 use http::Uri;
 
 #[derive(DecodePartial, Default)]
@@ -68,6 +69,7 @@ struct Route {
 struct Plugin {
     #[kfl(argument)]
     name: String,
+    #[cfg(feature = "http")]
     #[kfl(property)]
     url: Uri,
 }

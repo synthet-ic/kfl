@@ -6,7 +6,7 @@ use alloc::{
     vec::Vec
 };
 use core::fmt::{Debug, Pointer};
-use repr;
+use repr::char::CharExt;
 use chumsky::zero_copy::{
     extra::Full,
     input::Input,
@@ -28,7 +28,7 @@ fn comment_begin<'a>(which: char)
 {
     ('/'.map_err(|e: ParseError| e.with_no_expected())
     & which
-    ).map_slice(||)
+    ).map_slice(|| ())
 }
 
 fn newline<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
@@ -38,7 +38,7 @@ fn newline<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
     | '\u{0085}'  // Next line
     | '\u{2028}'  // Line separator
     | '\u{2029}'  // Paragraph separator
-    ).map_slice(||)
+    ).map_slice(|| ())
     .map_err(|e: ParseError| e.with_expected_kind("newline"))
 }
 
@@ -47,7 +47,7 @@ fn ws_char<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
     | '\u{2000}'..'\u{200A}'
     | '\u{202F}' | '\u{205F}' | '\u{3000}'
     | '\u{FEFF}'
-    ).map(|_|)
+    ).map(|_| ())
 }
 
 fn id_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
@@ -61,10 +61,6 @@ fn id_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
     // newline (excluding <= 0x20)
     | '\u{0085}' | '\u{2028}' | '\u{2029}'
     ).map_err(|e: ParseError| e.with_expected_kind("letter"))
-}
-
-fn id_chars<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
-    id_char() * ..
 }
 
 fn id_sans_dig<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
@@ -83,16 +79,13 @@ fn ws<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
 }
 
 fn comment<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
-    (comment_begin('/') & take_until(newline() | end())).map(|_|)
+    (comment_begin('/') & take_until(newline() | end())).map(|_| ())
 }
 
 fn ml_comment<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
     recursive(|comment| {
         comment_begin('*')
-        & (comment
-            | !'*'
-            | '*' & ignore((!'/').rewind())
-        ) * ..
+        & [comment | !'*' | '*' & ignore((!'/').rewind())]
         & "*/"
     })
     .map_err_with_span(|err, span| {
@@ -118,7 +111,7 @@ fn ml_comment<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
 // TODO(rnarkk) `then_with` method has been removed. We have to compensate it with either `then_with_ctx`, `with_ctx`, `map_ctx`, `configure`, or combination of them. https://github.com/zesterer/chumsky/pull/269
 fn raw_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
     'r'
-    & ('#' * (..)).map_slice(str::len)
+    & ['#'].map_slice(str::len)
     & '"'
     .then_with(|sharp_num|
         take_until('"' & '#' * sharp_num)
@@ -201,7 +194,7 @@ fn esc_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
 fn escaped_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
     (
         '"'
-        & ((!('"' | '\\') | ignore('\\') & esc_char()) * ..)
+        & [!('"' | '\\') | ignore('\\') & esc_char()]
         & '"'
     )
     .map_slice(|(_, s, _)| s.to_owned().into_boxed_str())
@@ -225,12 +218,10 @@ fn escaped_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
 // TODO(ranrkk)
 fn bare_ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
     let sign = '+' | '-';
-    (
-        sign & id_sans_dig() & (id_char() * ..)
-        | sign
-        | ((sign * ..) & id_sans_sign_dig() & (id_char() * ..))
-    )
-    .map_slice(|s| s.to_owned().into_boxed_str())
+    (sign & id_sans_dig() & [id_char()]
+    | sign
+    | ([sign] & id_sans_sign_dig() & [id_char()])
+    ).map_slice(|s| s.to_owned().into_boxed_str())
 }
 
 fn ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
@@ -258,15 +249,11 @@ fn spanned<'a, T, P>(p: P) -> impl Parser<'a, I<'a>, T, Extra>
 }
 
 fn esc_line<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
-    '\\' & (ws() * ..) & (comment() | newline())
+    '\\' & [ws()] & (comment() | newline())
 }
 
 fn node_space<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
     ws() | esc_line()
-}
-
-fn node_spaces<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
-    node_space() * ..
 }
 
 fn node_terminator<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
@@ -298,8 +285,7 @@ fn prop_or_arg_inner<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra>
 }
 
 fn prop_or_arg<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra> {
-    (comment_begin('-') & node_spaces() & prop_or_arg_inner())
-        .map(|_| PropOrArg::Ignore)
+    (comment_begin('-') & [node_space()] & prop_or_arg_inner()).map(|_| Ignore)
     | prop_or_arg_inner()
 }
 
@@ -308,7 +294,6 @@ fn line_space<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
 }
 
 fn nodes<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
-    use PropOrArg::*;
     recursive(|nodes| {
         let braced_nodes =
             ('{' & nodes & '}')
@@ -329,7 +314,7 @@ fn nodes<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
                 } else {
                     err
                 }
-            }));
+            });
 
         let node
             // type_name
@@ -338,16 +323,16 @@ fn nodes<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
             & ident()
             // line_items
             & (
-                ((ignore(node_space() * 1..) & prop_or_arg()) * ..)
+                [(ignore(node_space() * 1..) & prop_or_arg())]
                 .collect::<Vec<PropOrArg>>()
             )
             // opt_children
             & (
-                node_spaces()
-                & (comment_begin('-') & node_spaces())?
+                [node_space()]
+                & (comment_begin('-') & [node_space()])?
                 & braced_nodes  // spanned(braced_nodes)
             )?.map_slice(|(_, _, n)| n)
-            & ignore(node_spaces() & node_terminator())
+            & ignore([node_space()] & node_terminator())
             .map(|(((type_name, node_name), line_items), opt_children)| {
                 let mut node = Node {
                     type_name,
@@ -375,10 +360,10 @@ fn nodes<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
             });
 
         // comment
-        (comment_begin('-') & ignore(node_spaces()))?
+        (comment_begin('-') & ignore([node_space()]))?
         // node
         .then(spanned(node))
-        .separated_by(line_space() * ..)
+        .separated_by([line_space()])
         .allow_leading().allow_trailing()
         .collect::<Vec<(Option<()>, Node)>>()
         .map(|vec| vec.into_iter().filter_map(|(comment, node)| {

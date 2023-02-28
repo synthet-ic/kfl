@@ -20,7 +20,7 @@ use alloc::{
 };
 use core::fmt::{self, Debug, Pointer};
 
-use crate::own::own;
+use crate::own;
 
 /// Single node of the KDL document
 #[derive(Debug, Clone)]

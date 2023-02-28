@@ -68,32 +68,12 @@ fn id_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
 }
 
 fn id_sans_dig<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
-    any().filter(|c| !matches!(c,
-        '0'..='9' |
-        '\u{0000}'..='\u{0020}' |
-        '\\'|'/'|'('|')'|'{'|'}'|'<'|'>'|';'|'['|']'|'='|','|'"' |
-        // whitespace, excluding 0x20
-        '\u{00a0}' | '\u{1680}' |
-        '\u{2000}'..='\u{200A}' |
-        '\u{202F}' | '\u{205F}' | '\u{3000}' |
-        // newline (excluding <= 0x20)
-        '\u{0085}' | '\u{2028}' | '\u{2029}'
-    ))
+    (id_char() - ('0'..'9'))
     .map_err(|e: ParseError| e.with_expected_kind("letter"))
 }
 
 fn id_sans_sign_dig<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
-    any().filter(|c| !matches!(c,
-        '-'| '+' | '0'..='9' |
-        '\u{0000}'..='\u{0020}' |
-        '\\'|'/'|'('|')'|'{'|'}'|'<'|'>'|';'|'['|']'|'='|','|'"' |
-        // whitespace, excluding 0x20
-        '\u{00a0}' | '\u{1680}' |
-        '\u{2000}'..='\u{200A}' |
-        '\u{202F}' | '\u{205F}' | '\u{3000}' |
-        // newline (excluding <= 0x20)
-        '\u{0085}' | '\u{2028}' | '\u{2029}'
-    ))
+    (id_sans_dig() - ('-' | '+'))
     .map_err(|e: ParseError| e.with_expected_kind("letter"))
 }
 
@@ -143,7 +123,7 @@ fn raw_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
     & ignore('"')
     .then_with(|sharp_num|
         take_until(ignore('"') & ignore('#') * sharp_num)
-        .map_slice(|v: &str| v.chars().collect::<String>().into())
+        .map_slice(|s: &str| s.to_owned().into_boxed_str())
         .map_err_with_span(move |e: ParseError, span| {
             let span = Span::from(span);
             if matches!(&e, ParseError::Unexpected { found: TokenFormat::Eoi, .. }) {
@@ -174,7 +154,7 @@ fn expected_kind(s: &'static str) -> BTreeSet<TokenFormat> {
 
 fn esc_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
     any().try_map(|c, span: <I as Input>::Span| match c {
-        '"'|'\\'|'/' => Ok(c),
+        '"' | '\\' | '/' => Ok(c),
         'b' => Ok('\u{0008}'),
         'f' => Ok('\u{000C}'),
         'n' => Ok('\n'),
@@ -191,8 +171,8 @@ fn esc_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
     .or(
         ignore('u')
         & (
-            any()
-            .try_map(|c: char, span: <I as Input>::Span|
+            ignore('{')
+            & any().try_map(|c: char, span: <I as Input>::Span|
                 c.is_digit(16).then(|| c)
                 .ok_or_else(|| {
                     ParseError::Unexpected {
@@ -202,7 +182,7 @@ fn esc_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
                     expected: expected_kind("hexadecimal digit"),
                 }}))
             * (1..6)
-            .delimited_by(just('{'), just('}'))
+            & ignore('}')
             .map_slice(|v: &str| v)
             .try_map(|hex_chars, span: <I as Input>::Span| {
                 let s = hex_chars.chars().collect::<String>();

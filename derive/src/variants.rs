@@ -70,10 +70,10 @@ fn decode(e: &Common, node: &syn::Ident) -> syn::Result<TokenStream> {
             VariantKind::Unit => {
                 branches.push(quote! {
                     #name => {
-                        for argument in &#node.arguments {
+                        for scalar in &#node.arguments {
                             return Err(
                                 ::kfl::errors::DecodeError::unexpected(
-                                    #ctx.span(&argument.literal), "argument",
+                                    #ctx.span(&scalar), "argument",
                                     "unexpected argument"));
                         }
                         for (name, _) in &#node.properties {

@@ -186,9 +186,9 @@ pub(crate) fn decode_arguments(s: &Struct, node: &syn::Ident, ctx: &syn::Ident)
         });
     } else {
         decoder.push(quote! {
-            if let Some(val) = #iter_args.next() {
+            if let Some(scalar) = #iter_args.next() {
                 return Err(::kfl::errors::DecodeError::unexpected(
-                        #ctx.span(&val.literal), "argument",
+                        #ctx.span(&scalar), "argument",
                         "unexpected argument"));
             }
         });
@@ -674,7 +674,7 @@ pub(crate) fn encode_arguments(s: &Common, node: &syn::Ident, variant: bool)
         // encoder.push(quote! {
         //     if let Some(scalar) = #field.into_iter().next() {
         //         return Err(::kfl::errors::EncodeError::unexpected(
-        //                 #ctx.span(&scalar.literal), "argument",
+        //                 #ctx.span(&scalar), "argument",
         //                 "unexpected argument"));
         //     }
         // });

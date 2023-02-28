@@ -121,7 +121,7 @@ pub fn emit_decode_enum(e: &Enum) -> syn::Result<TokenStream> {
                 match scalar.literal.as_ref() {
                     #(#match_branches,)*
                     _ => Err(::kfl::errors::DecodeError::conversion(
-                             ctx.span(&scalar.literal), #value_err))
+                             ctx.span(&scalar), #value_err))
                 }
             }
         }

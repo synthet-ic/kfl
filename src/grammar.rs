@@ -6,7 +6,7 @@ use alloc::{
     vec::Vec
 };
 use core::fmt::{Debug, Pointer};
-use repr::char::CharExt;
+use repr::{Pat, char::CharExt};
 use chumsky::zero_copy::{
     extra::Full,
     input::Input,

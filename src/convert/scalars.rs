@@ -18,28 +18,34 @@ use crate::{
 };
 
 fn digit<'a>(radix: u32) -> Pat {
-    Pat::from(move |c: &char| c.is_digit(radix))
+    match radix {
+        2 => p!(0..1),
+        8 => p!(0..7),
+        10 => p!(0..9),
+        16 => p!(0..9|A..F|a..f),
+        _ => panic!()
+    }
 }
 
 fn digits<'a>(radix: u32) -> Pat {
-    [ignore('_') | digit()].into()
+    repeat!(i!(_) | digit())
 }
 
 fn decimal_number<'a>() -> Pat {
-    ('-' | '+')?
+    p!(-|+)?
     & digit(10) & digits(10)
-    & ('.' & digit(10) & digits(10))?
-    & (('e' | 'E') & ('-' | '+')? & digits(10))?
+    & (p!(.) & digit(10) & digits(10))?
+    & (p!(e|E) & p!(-|+)? & digits(10))?
     .map_slice(|s| (10, s.to_owned().into_boxed_str()))
 }
 
 fn radix_number<'a>() -> Pat {
     // sign
-    ('-' | '+')?
-    & ignore('0')
-    & (ignore('b') & (digit(2) & digits(2)).map(|s| (2, s))
-    | ignore('o') & (digit(8) & digits(8)).map(|s| (10, s))
-    | ignore('x') & (digit(16) & digits(16)).map(|s| (16, s))
+    p!(-|+)?
+    & ignore!(0)
+    & (ignore!(b) & (digit(2) & digits(2)).map(|s| (2, s))
+    | ignore!(o) & (digit(8) & digits(8)).map(|s| (10, s))
+    | ignore!(x) & (digit(16) & digits(16)).map(|s| (16, s))
     ).map(|(sign, (radix, value))| {
         let mut s = String::with_capacity(value.len() + sign.map_or(0, |_| 1));
         sign.map(|c| s.push(c));

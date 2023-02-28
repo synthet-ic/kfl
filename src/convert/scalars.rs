@@ -7,14 +7,8 @@ use alloc::{
 };
 use core::str::FromStr;
 
-use repr;
-use chumsky::zero_copy::{
-    extra::Full,
-    prelude::*,
-};
-
-type I<'a> = &'a str;
-type Extra = Full<ParseError, Context, ()>;
+use repr::{Pat, char::CharExt};
+use chumsky::zero_copy::prelude::*;
 
 use crate::{
     ast::Scalar,
@@ -23,44 +17,38 @@ use crate::{
     traits::{DecodeScalar, EncodeScalar}
 };
 
-fn digit<'a>(radix: u32) -> impl Parser<'a, I<'a>, char, Extra> {
-    any().filter(move |c: &char| c.is_digit(radix))
+fn digit<'a>(radix: u32) -> Pat {
+    Pat::from(move |c: &char| c.is_digit(radix))
 }
 
-fn digits<'a>(radix: u32) -> impl Parser<'a, I<'a>, &'a str, Extra> {
-    any().filter(move |c: &char| c == &'_' || c.is_digit(radix)).repeated().map_slice(|x| x)
+fn digits<'a>(radix: u32) -> Pat {
+    [ignore('_') | digit()].into()
 }
 
-fn decimal_number<'a>() -> impl Parser<'a, I<'a>, (u32, Box<str>), Extra> {
+fn decimal_number<'a>() -> Pat {
     ('-' | '+')?
     & digit(10) & digits(10)
     & ('.' & digit(10) & digits(10))?
-    & ('e' | 'E' & ('-' | '+')? & digits(10))?
-    .map_slice(|v|
-        (10, v.chars().filter(|c| c != &'_').collect::<String>().into()))
+    & (('e' | 'E') & ('-' | '+')? & digits(10))?
+    .map_slice(|s| (10, s.to_owned().into_boxed_str()))
 }
 
-fn radix_number<'a>() -> impl Parser<'a, I<'a>, (u32, Box<str>), Extra> {
+fn radix_number<'a>() -> Pat {
     // sign
     ('-' | '+')?
-    .then_ignore(just('0'))
-    .then(choice((
-        just('b').ignore_then(
-            digit(2).then(digits(2)).map_slice(|s| (2, s))),
-        just('o').ignore_then(
-            digit(8).then(digits(8)).map_slice(|s| (10, s))),
-        just('x').ignore_then(
-            digit(16).then(digits(16)).map_slice(|s| (16, s))),
-    )))
-    .map(|(sign, (radix, value))| {
+    & ignore('0')
+    & (ignore('b') & (digit(2) & digits(2)).map(|s| (2, s))
+    | ignore('o') & (digit(8) & digits(8)).map(|s| (10, s))
+    | ignore('x') & (digit(16) & digits(16)).map(|s| (16, s))
+    ).map(|(sign, (radix, value))| {
         let mut s = String::with_capacity(value.len() + sign.map_or(0, |_| 1));
         sign.map(|c| s.push(c));
-        s.extend(value.chars().filter(|&c| c != '_'));
+        s.extend(value);
         (radix, s.into())
     })
 }
 
-fn number<'a>() -> impl Parser<'a, I<'a>, (u32, Box<str>), Extra> {
+fn number<'a>() -> Pat {
     radix_number() | decimal_number()
 }
 

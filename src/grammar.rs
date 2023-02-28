@@ -115,7 +115,7 @@ fn raw_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
     & '"'
     .then_with(|sharp_num|
         take_until('"' & '#' * sharp_num)
-        .map_slice(|s: &str| s.to_owned().into_boxed_str())
+        .map_slice(|s| own!(s))
         .map_err_with_span(move |e: ParseError, span| {
             let span = Span::from(span);
             if matches!(&e, ParseError::Unexpected { found: TokenFormat::Eoi, .. }) {
@@ -197,7 +197,7 @@ fn escaped_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
         & [!('"' | '\\') | ignore('\\') & esc_char()]
         & '"'
     )
-    .map_slice(|(_, s, _)| s.to_owned().into_boxed_str())
+    .map_slice(|(_, s, _)| own!(s))
     .map_err_with_span(|err: ParseError, span| {
         if matches!(&err, ParseError::Unexpected { found: TokenFormat::Eoi, .. })
         {
@@ -221,7 +221,7 @@ fn bare_ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
     (sign & id_sans_dig() & [id_char()]
     | sign
     | ([sign] & id_sans_sign_dig() & [id_char()])
-    ).map_slice(|s| s.to_owned().into_boxed_str())
+    ).map_slice(|s| own!(s))
 }
 
 fn ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
@@ -231,7 +231,7 @@ fn ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
 fn literal<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
     string()
     | (!(' ' | '{' | '}' | '\n' | '(' | ')' | '\\' | '=' | '"') * (1..))
-        .map_slice(|s| s.to_owned().into_boxed_str())
+        .map_slice(|s| own!(s))
 }
 
 fn type_name<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {

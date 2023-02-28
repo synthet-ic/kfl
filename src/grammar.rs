@@ -23,7 +23,7 @@ use crate::{
 type I<'a> = &'a str;
 type Extra = Full<ParseError, Context, ()>;
 
-fn begin_comment<'a>(which: char)
+fn comment_begin<'a>(which: char)
     -> impl Parser<'a, I<'a>, (), Extra> + Clone
 {
     ignore('/')
@@ -98,24 +98,23 @@ fn id_sans_sign_dig<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
 }
 
 fn ws<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
-    ignore(ws_char() * (1..))
-    | ml_comment()
+    (ignore(ws_char() * 1..) | ml_comment())
     .map_err(|e| e.with_expected_kind("whitespace"))
 }
 
 fn comment<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
-    begin_comment('/')
-    .then(take_until(newline().or(end()))).ignored()
+    ignore(comment_begin('/') & take_until(newline() | end()))
 }
 
 fn ml_comment<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
     recursive(|comment| {
-        choice((
-            comment,
-            none_of('*').ignored(),
-            just('*').then_ignore(none_of('/').rewind()).ignored(),
-        )).repeated().ignored()
-        .delimited_by(begin_comment('*'), just("*/"))
+        ignore(comment_begin('*'))
+        & ignore((
+            comment
+            | ignore(!'*')
+            | ignore('*' & ignore(none_of('/').rewind()))
+        ) * ..)
+        & ignore("*/")
     })
     .map_err_with_span(|err, span| {
         let span = Span::from(span);
@@ -279,13 +278,15 @@ fn spanned<'a, T, P>(p: P) -> impl Parser<'a, I<'a>, T, Extra>
 }
 
 fn esc_line<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
-    ignore('\\')
-    & ignore(ws() * ..)
-    & (comment() | newline())
+    ignore('\\') & ignore(ws() * ..) & (comment() | newline())
 }
 
 fn node_space<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
     ws() | esc_line()
+}
+
+fn node_spaces<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
+    node_space() * ..
 }
 
 fn node_terminator<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
@@ -319,8 +320,8 @@ fn prop_or_arg_inner<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra>
 
 fn prop_or_arg<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra> {
     (
-        ignore(begin_comment('-'))
-        & ignore(node_space() * ..)
+        ignore(comment_begin('-'))
+        & ignore(node_spaces())
         & prop_or_arg_inner()
     ).map(|_| PropOrArg::Ignore)
     | prop_or_arg_inner()
@@ -357,21 +358,25 @@ fn nodes<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
                 }));
 
         let node
-            = (ignore('(') & ident() & ignore(')'))?  // type_name
-            & ident()  // node_name
+            // type_name
+            = (ignore('(') & ident() & ignore(')'))?
+            // node_name
+            & ident()
+            // line_items
             & (
                 ((ignore(node_space() * 1..) & prop_or_arg()) * ..)
                 .collect::<Vec<PropOrArg>>()
-            )  // line_items
+            )
+            // opt_children
             & (
-                ignore(node_space() * ..)
+                ignore(node_spaces())
                 & (
-                    begin_comment('-')
-                    & ignore(node_space() * ..)
+                    comment_begin('-')
+                    & ignore(node_spaces())
                 )?
                 & braced_nodes  // spanned(braced_nodes)
-            )?  // opt_children
-            & ignore(node_space().repeated() & node_terminator())
+            )?
+            & ignore(node_spaces() & node_terminator())
             .map(|(((type_name, node_name), line_items), opt_children)| {
                 let mut node = Node {
                     type_name,
@@ -399,10 +404,10 @@ fn nodes<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
             });
 
         // comment
-        (begin_comment('-') & ignore(node_space() * ..))?
+        (comment_begin('-') & ignore(node_spaces()))?
         // node
         .then(spanned(node))
-            .separated_by(line_space().repeated())
+            .separated_by(line_space() * ..)
             .allow_leading().allow_trailing()
             .collect::<Vec<(Option<()>, Node)>>()
             .map(|vec| vec.into_iter().filter_map(|(comment, node)| {

@@ -5,6 +5,7 @@ edition = "2021"
 description = "A derive implementation for kfl KDL parser"
 license = "MIT/Apache-2.0"
 keywords = ["kdl", "configuration"]
+categories = ["no-std"]
 homepage = "https://github.com/synthet-ic/kfl"
 documentation = "https://docs.rs/kfl-derive"
 readme = "README.md"

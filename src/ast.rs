@@ -20,6 +20,8 @@ use alloc::{
 };
 use core::fmt::{self, Debug, Pointer};
 
+use crate::own::own;
+
 /// Single node of the KDL document
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "minicbor", derive(minicbor::Encode, minicbor::Decode))]
@@ -58,7 +60,7 @@ impl Node {
     pub fn new(name: &str) -> Self {
         Self {
             type_name: None,
-            node_name: name.to_owned().into_boxed_str(),
+            node_name: own!(name),
             arguments: Vec::new(),
             properties: BTreeMap::new(),
             children: None,

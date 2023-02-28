@@ -63,6 +63,10 @@ fn id_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
     ).map_err(|e: ParseError| e.with_expected_kind("letter"))
 }
 
+fn id_chars<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
+    id_char() * ..
+}
+
 fn id_sans_dig<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
     (id_char() - ('0'..'9'))
     .map_err(|e: ParseError| e.with_expected_kind("letter"))
@@ -374,21 +378,21 @@ fn nodes<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
         (comment_begin('-') & ignore(node_spaces()))?
         // node
         .then(spanned(node))
-            .separated_by(line_space() * ..)
-            .allow_leading().allow_trailing()
-            .collect::<Vec<(Option<()>, Node)>>()
-            .map(|vec| vec.into_iter().filter_map(|(comment, node)| {
-                if comment.is_none() {
-                    Some(node)
-                } else {
-                    None
-                }
-            }).collect())
+        .separated_by(line_space() * ..)
+        .allow_leading().allow_trailing()
+        .collect::<Vec<(Option<()>, Node)>>()
+        .map(|vec| vec.into_iter().filter_map(|(comment, node)| {
+            if comment.is_none() {
+                Some(node)
+            } else {
+                None
+            }
+        }).collect())
     })
 }
 
 pub(crate) fn document<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
-    nodes() & ignore(end())
+    nodes() & end()
 }
 
 // TODO(rnarkk) tests which need span info are comment-outed

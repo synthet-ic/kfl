@@ -7,6 +7,7 @@ use alloc::{
 };
 use core::str::FromStr;
 
+use repr;
 use chumsky::zero_copy::{
     extra::Full,
     prelude::*,
@@ -31,19 +32,17 @@ fn digits<'a>(radix: u32) -> impl Parser<'a, I<'a>, &'a str, Extra> {
 }
 
 fn decimal_number<'a>() -> impl Parser<'a, I<'a>, (u32, Box<str>), Extra> {
-    just('-').or(just('+')).or_not()
-    .then(digit(10)).then(digits(10))
-    .then(just('.').then(digit(10)).then(digits(10)).or_not())
-    .then(just('e').or(just('E'))
-           .then(just('-').or(just('+')).or_not())
-           .then(digits(10)).or_not())
+    ('-' | '+')?
+    & digit(10) & digits(10)
+    & ('.' & digit(10) & digits(10))?
+    & ('e' | 'E' & ('-' | '+')? & digits(10))?
     .map_slice(|v|
         (10, v.chars().filter(|c| c != &'_').collect::<String>().into()))
 }
 
 fn radix_number<'a>() -> impl Parser<'a, I<'a>, (u32, Box<str>), Extra> {
     // sign
-    just('-').or(just('+')).or_not()
+    ('-' | '+')?
     .then_ignore(just('0'))
     .then(choice((
         just('b').ignore_then(
@@ -62,7 +61,7 @@ fn radix_number<'a>() -> impl Parser<'a, I<'a>, (u32, Box<str>), Extra> {
 }
 
 fn number<'a>() -> impl Parser<'a, I<'a>, (u32, Box<str>), Extra> {
-    radix_number().or(decimal_number())
+    radix_number() | decimal_number()
 }
 
 macro_rules! impl_integer {

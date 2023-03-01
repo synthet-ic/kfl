@@ -2,6 +2,7 @@ use alloc::{
     borrow::ToOwned,
     boxed::Box,
     collections::{BTreeSet, BTreeMap},
+    format,
     string::{String, ToString},
     vec::Vec
 };

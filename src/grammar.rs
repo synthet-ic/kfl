@@ -7,50 +7,40 @@ use alloc::{
 };
 use core::fmt::{Debug, Pointer};
 use repr::{Pat, char::CharExt};
-use chumsky::zero_copy::{
-    extra::Full,
-    input::Input,
-    prelude::*,
-};
 
 use crate::{
     ast::{Node, Scalar},
     context::Context,
     errors::{ParseError, TokenFormat},
+    own,
     span::Span
 };
 
-type I<'a> = &'a str;
-type Extra = Full<ParseError, Context, ()>;
-
-fn comment_begin<'a>(which: char)
-    -> impl Parser<'a, I<'a>, (), Extra> + Clone
-{
-    ('/'.map_err(|e: ParseError| e.with_no_expected())
+fn comment_begin<'a>(which: char) -> Pat {
+    (p!(/).map_err(|e: ParseError| e.with_no_expected())
     & which
     ).map_slice(|| ())
 }
 
-fn newline<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
-    ('\r'? & '\n'
+fn newline<'a>() -> Pat {
+    (p!(\r?\n)
     | '\r'  // Carriage return
     | '\x0C'  // Form feed
     | '\u{0085}'  // Next line
     | '\u{2028}'  // Line separator
     | '\u{2029}'  // Paragraph separator
-    ).map_slice(|| ())
-    .map_err(|e: ParseError| e.with_expected_kind("newline"))
+    ).map_err(|e: ParseError| e.with_expected_kind("newline"))
 }
 
-fn ws_char<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
-    !('\t' | ' ' | '\u{00a0}' | '\u{1680}'
+fn ws_char<'a>() -> Pat {
+    !p!('\t' | ' ' | '\u{00a0}' | '\u{1680}'
     | '\u{2000}'..'\u{200A}'
     | '\u{202F}' | '\u{205F}' | '\u{3000}'
     | '\u{FEFF}'
-    ).map(|_| ())
+    )
 }
 
-fn id_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
+fn id_char<'a>() -> Pat {
     !('\u{0000}'..'\u{0021}'
     | '\\' | '/' | '(' | ')' | '{' | '}' | '<' | '>' | ';' | '[' | ']'
     | '=' | ',' | '"'
@@ -63,29 +53,29 @@ fn id_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
     ).map_err(|e: ParseError| e.with_expected_kind("letter"))
 }
 
-fn id_sans_dig<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
-    (id_char() - ('0'..'9'))
+fn id_sans_dig<'a>() -> Pat {
+    (id_char() - p!(0..9))
     .map_err(|e: ParseError| e.with_expected_kind("letter"))
 }
 
-fn id_sans_sign_dig<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
-    (id_sans_dig() - ('-' | '+'))
+fn id_sans_sign_dig<'a>() -> Pat {
+    (id_sans_dig() - p!(-|+))
     .map_err(|e: ParseError| e.with_expected_kind("letter"))
 }
 
-fn ws<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
+fn ws<'a>() -> Pat {
     (ws_char() * (1..) | ml_comment())
     .map_err(|e| e.with_expected_kind("whitespace"))
 }
 
-fn comment<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
-    (comment_begin('/') & take_until(newline() | end())).map(|_| ())
+fn comment<'a>() -> Pat {
+    comment_begin('/') & [any()] & (newline() | end())
 }
 
-fn ml_comment<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
+fn ml_comment<'a>() -> Pat {
     recursive(|comment| {
         comment_begin('*')
-        & [comment | !'*' | '*' & ignore((!'/').rewind())]
+        & [comment | !p!(*) | p!(*) & ignore((!p!(/)).rewind())]
         & "*/"
     })
     .map_err_with_span(|err, span| {
@@ -109,12 +99,12 @@ fn ml_comment<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
 }
 
 // TODO(rnarkk) `then_with` method has been removed. We have to compensate it with either `then_with_ctx`, `with_ctx`, `map_ctx`, `configure`, or combination of them. https://github.com/zesterer/chumsky/pull/269
-fn raw_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
-    'r'
+fn raw_string<'a>() -> Pat {
+    p!(r)
     & ['#'].map_slice(str::len)
     & '"'
     .then_with(|sharp_num|
-        take_until('"' & '#' * sharp_num)
+        take_until(p!('"') & p!(#) * sharp_num)
         .map_slice(|s| own!(s))
         .map_err_with_span(move |e: ParseError, span| {
             let span = Span::from(span);
@@ -134,7 +124,7 @@ fn raw_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
     )
 }
 
-fn string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
+fn string<'a>() -> Pat {
     // TODO(rnarkk) recover this
     // raw_string().or(escaped_string())
     escaped_string()
@@ -144,8 +134,8 @@ fn expected_kind(s: &'static str) -> BTreeSet<TokenFormat> {
     [TokenFormat::Kind(s)].into_iter().collect()
 }
 
-fn esc_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
-    any().try_map(|c, span: <I as Input>::Span| match c {
+fn esc_char<'a>() -> Pat {
+    any().try_map(|c, span| match c {
         '"' | '\\' | '/' => Ok(c),
         'b' => Ok('\u{0008}'),
         'f' => Ok('\u{000C}'),
@@ -164,7 +154,7 @@ fn esc_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
         ignore('u')
         & (
             ignore('{')
-            & any().try_map(|c: char, span: <I as Input>::Span|
+            & any().try_map(|c: char, span|
                 c.is_digit(16).then(|| c)
                 .ok_or_else(|| {
                     ParseError::Unexpected {
@@ -176,7 +166,7 @@ fn esc_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
             * (1..6)
             & ignore('}')
             .map_slice(|v: &str| v)
-            .try_map(|hex_chars, span: <I as Input>::Span| {
+            .try_map(|hex_chars, span| {
                 let s = hex_chars.chars().collect::<String>();
                 let c =
                     u32::from_str_radix(&s, 16).map_err(|e| e.to_string())
@@ -188,13 +178,13 @@ fn esc_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
                     })?;
                 Ok(c)
             })
-            .recover_with(skip_until(('}' | '"' | '\\').map(|_| '\0')))))
+            .recover_with(skip_until((p!('}') | '"' | '\\').map(|_| '\0')))))
 }
 
-fn escaped_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
+fn escaped_string<'a>() -> Pat {
     (
-        '"'
-        & [!('"' | '\\') | ignore('\\') & esc_char()]
+        p!('"')
+        & [!(p!('"') | '\\') | ignore('\\') & esc_char()]
         & '"'
     )
     .map_slice(|(_, s, _)| own!(s))
@@ -216,31 +206,30 @@ fn escaped_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
 }
 
 // TODO(ranrkk)
-fn bare_ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
-    let sign = '+' | '-';
+fn bare_ident<'a>() -> Pat {
+    let sign = p!(+|-);
     (sign & id_sans_dig() & [id_char()]
     | sign
     | ([sign] & id_sans_sign_dig() & [id_char()])
     ).map_slice(|s| own!(s))
 }
 
-fn ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
+fn ident<'a>() -> Pat {
     bare_ident() | string()
 }
 
-fn literal<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
+fn literal<'a>() -> Pat {
     string()
-    | (!(' ' | '{' | '}' | '\n' | '(' | ')' | '\\' | '=' | '"') * (1..))
+    | (!p(' ' | '{' | '}' | '\n' | '(' | ')' | '\\' | '=' | '"') * (1..))
         .map_slice(|s| own!(s))
 }
 
-fn type_name<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
-    ('(' & ident() & ')').map_slice(|(_, s, _)| s)
+fn type_name<'a>() -> Pat {
+    (p!('(') & ident() & ')').map_slice(|(_, s, _)| s)
 }
 
-fn spanned<'a, T, P>(p: P) -> impl Parser<'a, I<'a>, T, Extra>
+fn spanned<'a, T>(p: Pat) -> Pat
     where T: Pointer + Debug,
-          P: Parser<'a, I<'a>, T, Extra>,
 {
     p.map_with_state(|value, span, ctx| {
         ctx.set_span(&value, span.into());
@@ -248,15 +237,15 @@ fn spanned<'a, T, P>(p: P) -> impl Parser<'a, I<'a>, T, Extra>
     })
 }
 
-fn esc_line<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
-    '\\' & [ws()] & (comment() | newline())
+fn esc_line<'a>() -> Pat {
+    p!('\\') & [ws()] & (comment() | newline())
 }
 
-fn node_space<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
+fn node_space<'a>() -> Pat {
     ws() | esc_line()
 }
 
-fn node_terminator<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
+fn node_terminator<'a>() -> Pat {
     newline() | comment() | ignore(';') | end()
 }
 
@@ -269,34 +258,33 @@ enum PropOrArg {
 
 use PropOrArg::*;
 
-fn type_name_value<'a>() -> impl Parser<'a, I<'a>, Scalar, Extra> {
+fn type_name_value<'a>() -> Pat {
     (type_name() & literal()).map(|(ty, lit)| Scalar::new(ty, lit))
 }
 
-fn scalar<'a>() -> impl Parser<'a, I<'a>, Scalar, Extra> {
+fn scalar<'a>() -> Pat {
     type_name_value() | literal().map(|lit| Scalar::from(lit))
 }
 
-fn prop_or_arg_inner<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra>
-{
+fn prop_or_arg_inner<'a>() -> Pat {
     (bare_ident() & '=' & scalar()).map(|(name, _, scalar)| Prop(name, scalar))
     | (string() & '=' & scalar()).map(|(name, _, scalar)| Prop(name, scalar))
     | scalar().map(Arg)
 }
 
-fn prop_or_arg<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra> {
+fn prop_or_arg<'a>() -> Pat {
     (comment_begin('-') & [node_space()] & prop_or_arg_inner()).map(|_| Ignore)
     | prop_or_arg_inner()
 }
 
-fn line_space<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
+fn line_space<'a>() -> Pat {
     newline() | ws() | comment()
 }
 
-fn nodes<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
+fn nodes<'a>() -> Pat {
     recursive(|nodes| {
         let braced_nodes =
-            ('{' & nodes & '}')
+            (p!('{') & nodes & '}')
             .map_err_with_span(|err, span| {
                 let span = Span::from(span);
                 if matches!(&err, ParseError::Unexpected {
@@ -318,7 +306,7 @@ fn nodes<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
 
         let node
             // type_name
-            = ('(' & ident() & ')')?.map_slice(|(_, s, _)| s)
+            = (p!('(') & ident() & ')')?.map_slice(|(_, s, _)| s)
             // node_name
             & ident()
             // line_items
@@ -376,7 +364,7 @@ fn nodes<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
     })
 }
 
-pub(crate) fn document<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
+pub(crate) fn document<'a>() -> Pat {
     nodes() & end()
 }
 
@@ -385,18 +373,13 @@ pub(crate) fn document<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
 mod test {
     extern crate std;
     use alloc::{borrow::ToOwned, string::String, vec::Vec};
-    use chumsky::zero_copy::{
-        prelude::*,
-        extra::Full
-    };
     use miette::NamedSource;
+    use repr::Pat;
     use crate::ast::Scalar;
     use crate::context::Context;
     use crate::errors::{Error, ParseError};
     use super::{ws, comment, ml_comment, string, ident, bare_ident, literal, type_name, type_name_value, prop_or_arg_inner};
     use super::{nodes};
-
-    type Extra = Full<ParseError, Context, ()>;
 
     macro_rules! err_eq {
         ($left:expr, $right:expr) => {
@@ -410,8 +393,7 @@ mod test {
         }
     }
 
-    fn parse<'a, P, T>(p: P, input: &'a str) -> Result<T, String>
-        where P: Parser<'a, &'a str, T, Extra>
+    fn parse<'a, T>(p: Pat, input: &'a str) -> Result<T, String>
     {
         p.then_ignore(end())
         .parse(input).into_result().map_err(|errors| {

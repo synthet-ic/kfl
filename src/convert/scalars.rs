@@ -8,7 +8,6 @@ use alloc::{
 use core::str::FromStr;
 
 use repr::{Pat, char::CharExt};
-use chumsky::zero_copy::prelude::*;
 
 use crate::{
     ast::Scalar,

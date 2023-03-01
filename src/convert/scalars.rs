@@ -1,7 +1,7 @@
 //! Convert built-in scalar types.
 
 use alloc::{
-    boxed::Box,
+    // boxed::Box,
     format,
     string::String
 };
@@ -41,10 +41,10 @@ fn decimal_number<'a>() -> Pat {
 fn radix_number<'a>() -> Pat {
     // sign
     p!(-|+)?
-    & ignore!(0)
-    & (ignore!(b) & (digit(2) & digits(2)).map(|s| (2, s))
-    | ignore!(o) & (digit(8) & digits(8)).map(|s| (10, s))
-    | ignore!(x) & (digit(16) & digits(16)).map(|s| (16, s))
+    & i!(0)
+    & (i!(b) & (digit(2) & digits(2)).map(|s| (2, s))
+    | i!(o) & (digit(8) & digits(8)).map(|s| (10, s))
+    | i!(x) & (digit(16) & digits(16)).map(|s| (16, s))
     ).map(|(sign, (radix, value))| {
         let mut s = String::with_capacity(value.len() + sign.map_or(0, |_| 1));
         sign.map(|c| s.push(c));

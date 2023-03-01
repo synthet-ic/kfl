@@ -76,7 +76,7 @@ fn comment<'a>() -> Pat {
 fn ml_comment<'a>() -> Pat {
     recursive(|comment| {
         comment_begin('*')
-        & [comment | !p!(*) | p!(*) & ignore((!p!(/)).rewind())]
+        & [comment | !p!('*') | p!('*') & ignore((!p!('/')).rewind())]
         & "*/"
     })
     .map_err_with_span(|err, span| {
@@ -101,7 +101,7 @@ fn ml_comment<'a>() -> Pat {
 
 // TODO(rnarkk) `then_with` method has been removed. We have to compensate it with either `then_with_ctx`, `with_ctx`, `map_ctx`, `configure`, or combination of them. https://github.com/zesterer/chumsky/pull/269
 fn raw_string<'a>() -> Pat {
-    p!(r)
+    e!(r)
     & ['#'].map_slice(str::len)
     & '"'
     .then_with(|sharp_num|

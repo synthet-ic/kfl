@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "derive"]
+members = [".", "derive", "repr"]
 
 [package]
 name = "kfl"

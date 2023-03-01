@@ -2,7 +2,7 @@ use std::sync::LazyLock;
 use crate::pat::Pat;
 
 /// `\t`
-pub const TAB: LazyLock<Pat> = LazyLock::new(|| u!(0009));
+pub const HT: LazyLock<Pat> = LazyLock::new(|| u!(0009));
 /// `\n`
 pub const LF: LazyLock<Pat> = LazyLock::new(|| u!(000A));
 /// `\r`

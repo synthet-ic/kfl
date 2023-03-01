@@ -346,50 +346,48 @@ impl ParseError {
     }
 }
 
-use chumsky::zero_copy::input::Input;
-
-impl<'a> chumsky::zero_copy::error::Error<'a, &'a str> for ParseError {
-    fn expected_found<E>(expected: E, found: Option<char>, span: <&'a str as Input<'a>>::Span)
-        -> Self
-        where E: IntoIterator<Item = Option<char>>
-    {
-        ParseError::Unexpected {
-            label: None,
-            span: span.into(),
-            found: found.into(),
-            expected: expected.into_iter().map(Into::into).collect(),
-        }
-    }
-    fn merge(mut self, other: Self) -> Self {
-        use ParseError::*;
-        match (&mut self, other) {
-            (Unclosed { .. }, _) => self,
-            (_, other@Unclosed { .. }) => other,
-            (Unexpected { expected: ref mut dest, .. },
-             Unexpected { expected, .. }) => {
-                dest.extend(expected.into_iter());
-                self
-            }
-            (_, other) => todo!("{} -> {}", self, other),
-        }
-    }
-    // fn unclosed_delimiter(
-    //     unclosed_span: Self::Span,
-    //     unclosed: char,
-    //     span: Self::Span,
-    //     expected: char,
-    //     found: Option<char>
-    // ) -> Self {
-    //     ParseError::Unclosed {
-    //         label: "delimited",
-    //         opened_at: unclosed_span,
-    //         opened: unclosed.into(),
-    //         expected_at: span,
-    //         expected: expected.into(),
-    //         found: found.into(),
-    //     }
-    // }
-}
+// impl<'a> chumsky::zero_copy::error::Error<'a, &'a str> for ParseError {
+//     fn expected_found<E>(expected: E, found: Option<char>, span: <&'a str as Input<'a>>::Span)
+//         -> Self
+//         where E: IntoIterator<Item = Option<char>>
+//     {
+//         ParseError::Unexpected {
+//             label: None,
+//             span: span.into(),
+//             found: found.into(),
+//             expected: expected.into_iter().map(Into::into).collect(),
+//         }
+//     }
+//     fn merge(mut self, other: Self) -> Self {
+//         use ParseError::*;
+//         match (&mut self, other) {
+//             (Unclosed { .. }, _) => self,
+//             (_, other@Unclosed { .. }) => other,
+//             (Unexpected { expected: ref mut dest, .. },
+//              Unexpected { expected, .. }) => {
+//                 dest.extend(expected.into_iter());
+//                 self
+//             }
+//             (_, other) => todo!("{} -> {}", self, other),
+//         }
+//     }
+//     // fn unclosed_delimiter(
+//     //     unclosed_span: Self::Span,
+//     //     unclosed: char,
+//     //     span: Self::Span,
+//     //     expected: char,
+//     //     found: Option<char>
+//     // ) -> Self {
+//     //     ParseError::Unclosed {
+//     //         label: "delimited",
+//     //         opened_at: unclosed_span,
+//     //         opened: unclosed.into(),
+//     //         expected_at: span,
+//     //         expected: expected.into(),
+//     //         found: found.into(),
+//     //     }
+//     // }
+// }
 
 impl DecodeError {
     /// Construct [`DecodeError::Conversion`] error

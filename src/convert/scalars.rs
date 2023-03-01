@@ -7,7 +7,7 @@ use alloc::{
 };
 use core::str::FromStr;
 
-use repr::{Pat, char::CharExt};
+use repr::{p, i, Pat, char::CharExt};
 
 use crate::{
     ast::Scalar,

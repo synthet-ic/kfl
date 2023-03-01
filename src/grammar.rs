@@ -6,7 +6,7 @@ use alloc::{
     vec::Vec
 };
 use core::fmt::{Debug, Pointer};
-use repr::{Pat, char::CharExt};
+use repr::{Pat, p, e, u, i, char::CharExt};
 
 use crate::{
     ast::{Node, Scalar},
@@ -23,33 +23,33 @@ fn comment_begin<'a>(which: char) -> Pat {
 }
 
 fn newline<'a>() -> Pat {
-    (p!(\r?\n)
-    | '\r'  // Carriage return
+    (e!(r)? & e!(n)
+    | e!(r)  // Carriage return
     | '\x0C'  // Form feed
-    | '\u{0085}'  // Next line
-    | '\u{2028}'  // Line separator
-    | '\u{2029}'  // Paragraph separator
+    | u!(0085)  // Next line
+    | u!(2028)  // Line separator
+    | u!(2029)  // Paragraph separator
     ).map_err(|e: ParseError| e.with_expected_kind("newline"))
 }
 
 fn ws_char<'a>() -> Pat {
-    !p!('\t' | ' ' | '\u{00a0}' | '\u{1680}'
-    | '\u{2000}'..'\u{200A}'
-    | '\u{202F}' | '\u{205F}' | '\u{3000}'
-    | '\u{FEFF}'
+    !(e!(t) | ' ' | u!(00a0) | u!(1680)
+    | u!(2000)..u!(200A)
+    | u!(202F) | u!(205F) | u!(3000)
+    | u!(FEFF)
     )
 }
 
 fn id_char<'a>() -> Pat {
-    !('\u{0000}'..'\u{0021}'
+    !(u!(0000)..u!(0021)
     | '\\' | '/' | '(' | ')' | '{' | '}' | '<' | '>' | ';' | '[' | ']'
     | '=' | ',' | '"'
     // whitespace, excluding 0x20
-    | '\u{00a0}' | '\u{1680}'
-    | '\u{2000}'..'\u{200A}'
-    | '\u{202F}' | '\u{205F}' | '\u{3000}'
+    | u!(00a0) | u!(1680)
+    | u!(2000)..u!(200A)
+    | u!(202F) | u!(205F) | u!(3000)
     // newline (excluding <= 0x20)
-    | '\u{0085}' | '\u{2028}' | '\u{2029}'
+    | u!(0085) | u!(2028) | u!(2029)
     ).map_err(|e: ParseError| e.with_expected_kind("letter"))
 }
 
@@ -137,8 +137,8 @@ fn expected_kind(s: &'static str) -> BTreeSet<TokenFormat> {
 fn esc_char<'a>() -> Pat {
     any().try_map(|c, span| match c {
         '"' | '\\' | '/' => Ok(c),
-        'b' => Ok('\u{0008}'),
-        'f' => Ok('\u{000C}'),
+        'b' => Ok(u!(0008)),
+        'f' => Ok(u!(000C)),
         'n' => Ok('\n'),
         'r' => Ok('\r'),
         't' => Ok('\t'),

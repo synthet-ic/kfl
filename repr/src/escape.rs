@@ -1,4 +1,4 @@
-pub fn escape(c: char) -> char {
+pub const fn escape(c: char) -> char {
     match c {
         'b' => '\u{0008}',  // Backspace
         'f' => '\u{000C}',  // Form feed

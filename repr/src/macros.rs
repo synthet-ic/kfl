@@ -1,14 +1,21 @@
 //! Macro definitions.
 
-use crate::pat::Pat;
-
 /// Pattern
 #[macro_export]
 macro_rules! p {
     ($lhs:tt | $rhs:tt) => {
-        Pat::from(stringify!($lhs)) | stringify!($rhs);
+        Pat::from(stringify!($lhs)) | stringify!($rhs)
     };
     ($lhs:tt .. $rhs:tt) => {
+        Pat::from(stringify!($lhs).chars().nth(0).unwrap()..stringify!($rhs).chars().nth(0).unwrap())
+    };
+}
+
+/// Pattern from a char
+#[macro_export]
+macro_rules! c {
+    ($tt:literal) => {
+        Pat::from($tt)
     };
 }
 
@@ -16,7 +23,7 @@ macro_rules! p {
 #[macro_export]
 macro_rules! u {
     ($tt:tt) => {
-        Pat::from(char::from_u32(u32::from_str_radix(stringify!($tt), 16).unwrap()).unwrap());
+        Pat::from(char::from_u32(u32::from_str_radix(stringify!($tt), 16).unwrap()).unwrap())
     }
 }
 
@@ -35,3 +42,25 @@ macro_rules! i {
         
     }
 }
+
+/// Delimit pattern by 
+#[macro_export]
+macro_rules! delimit {
+    ($tt:expr) => {
+        Pat::new(r"\(") & $tt & Pat::new(r"\)")
+    };
+    {$tt:expr} => {
+        Pat::new(r"\{") & $tt & Pat::new(r"\}")
+    };
+    [$tt:expr] => {
+        Pat::new(r"\[") & $tt & Pat::new(r"\]")
+    };
+}
+
+// #[test]
+// fn test() {
+//     use crate::pat::Pat;
+//     use super::{c, delimit};
+//     assert_eq!(delimit!(c!('a')), Pat::from(r"\(a\)"));
+//     assert_eq!(delimit!(c!{'a'}), Pat::from(r"\{a\}"));
+// }

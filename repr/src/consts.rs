@@ -1,5 +1,8 @@
 use std::sync::LazyLock;
-use crate::pat::Pat;
+use crate::{
+    p, u,
+    pat::Pat
+};
 
 /// `\0`
 pub const NUL: LazyLock<Pat> = LazyLock::new(|| u!(0000));

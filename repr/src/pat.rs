@@ -15,7 +15,7 @@ use regex_syntax::{
     }
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Pat(Hir);
 
 impl Pat {

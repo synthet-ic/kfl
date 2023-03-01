@@ -29,6 +29,7 @@ let re = (wh | ".") * 1.. & "@" & (wh * 1.. & ".") * 1.. & wh * 2..4;
 
 pub mod char;
 pub mod consts;
+pub mod escape;
 pub mod macros;
 pub mod pat;
 

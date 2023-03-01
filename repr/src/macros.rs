@@ -16,7 +16,7 @@ macro_rules! p {
 #[macro_export]
 macro_rules! u {
     ($tt:tt) => {
-        Pat::from(char::from_u32(u32::from_str_radix(stringify!($tt), 16)).unwrap());
+        Pat::from(char::from_u32(u32::from_str_radix(stringify!($tt), 16).unwrap()).unwrap());
     }
 }
 

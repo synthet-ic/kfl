@@ -17,6 +17,7 @@ pub enum Repr<I> {
     Xor(Box<Repr<I>>, Box<Repr<I>>),
     Add(Box<Repr<I>>, Interval<I>),
     Sub(Box<Repr<I>>, Interval<I>),
+    Mul(Box<Repr<I>>, Range<u32>),
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>))
 }
 
@@ -47,6 +48,10 @@ impl<I> for Repr<I> {
     
     pub const fn sub(self, range: I) -> Self {
         Self::Sub(box self, range)
+    }
+    
+    pub const fn mul(self, range: I) -> Self {
+        Self::Mul(box self, range)
     }
 }
 

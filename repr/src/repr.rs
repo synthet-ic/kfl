@@ -10,13 +10,13 @@ use core::{
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Repr<I> {
     Empty,
-    Range(I),  // Or(Empty, I)?
+    Range(Range<I>),  // Or(Empty, I)?
     Not(Box<Repr<I>>),
     Or(Box<Repr<I>>, Box<Repr<I>>),
     And(Box<Repr<I>>, Box<Repr<I>>),
     Xor(Box<Repr<I>>, Box<Repr<I>>),
-    Add(Box<Repr<I>>, I),
-    Sub(Box<Repr<I>>, I),
+    Add(Box<Repr<I>>, Range<I>),
+    Sub(Box<Repr<I>>, Range<I>),
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>))
 }
 

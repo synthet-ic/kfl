@@ -28,13 +28,13 @@ impl<I> for Repr<I> {
     pub const fn not(self) -> Self {
         Self::Not(box self)
     }
-
-    pub const fn or(self, other: Self) -> Self {
-        Self::Or(box self, box other)
-    }
-
+    
     pub const fn and(self, other: Self) -> Self {
         Self::And(box self, box other)
+    }
+    
+    pub const fn or(self, other: Self) -> Self {
+        Self::Or(box self, box other)
     }
     
     pub const fn xor(self, other: Self) -> Self {

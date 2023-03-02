@@ -27,6 +27,8 @@ let re = (wh | ".") * 1.. & "@" & (wh * 1.. & ".") * 1.. & wh * 2..4;
 #![feature(box_syntax)]
 #![feature(try_trait_v2)]
 
+extern crate alloc;
+
 pub mod char;
 pub mod consts;
 pub mod escape;

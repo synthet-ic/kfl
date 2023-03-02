@@ -47,6 +47,19 @@ impl<I> for Repr<I> {
     }
 }
 
+impl<const N: usize> const Into<[I; N]> for Repr<I> {
+    fn into(self) -> T {
+        use Self::*;
+        match self {
+            Empty => [],
+            Not(repr) => {
+                
+            }
+            Xor(lhs, rhs) => lhs.clone().or(rhs).sub(lhs.and(rhs)),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct ReprIter<'a, I>(Vec<I>);
 
@@ -68,3 +81,7 @@ impl const IntoIterator for Repr<I> {
         }
     }
 }
+
+#[derive(Clone + Copy + Debug + Default + Eq + PartialEq + PartialOrd + Ord)]
+pub struct Interval(usize, usize);
+

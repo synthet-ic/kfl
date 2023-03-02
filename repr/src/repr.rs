@@ -23,7 +23,7 @@ pub enum Repr<I> {
     Add(Box<Repr<I>>, Interval<I>),
     Sub(Box<Repr<I>>, Interval<I>),
     Mul(Box<Repr<I>>, Range<u32>),
-    // Map(Box<Repr<I>>, Fn(Box<Repr<I>>))
+    // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
 }
 
 impl<I> for Repr<I> {

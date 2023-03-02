@@ -83,5 +83,62 @@ impl const IntoIterator for Repr<I> {
 }
 
 #[derive(Clone + Copy + Debug + Default + Eq + PartialEq + PartialOrd + Ord)]
-pub struct Range(pub usize, pub usize);
+pub struct Range<Bound: Bound>(pub Bound, pub Bound);
 
+impl<Bound: Bound> Range<Bound> {
+    fn new(start: Bound, end: Bound) -> Self {
+        let mut output = Self::default();
+        if start <= end {
+            output.0 = start;
+            output.1 = end;
+        } else {
+            output.0 = end;
+            output.1 = start;
+        }
+        output
+    }
+}
+
+pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {
+    const MIN: Bound;
+    const MAX: Bound;
+    fn as_u32(self) -> u32;
+    fn increment(self) -> Self;
+    fn decrement(self) -> Self;
+}
+
+impl Bound for u8 {
+    const MIN = u8::MIN;
+    const MAX = u8::MAX;
+    fn as_u32(self) -> u32 {
+        self as u32
+    }
+    fn increment(self) -> Self {
+        self.checked_add(1).unwrap()
+    }
+    fn decrement(self) -> Self {
+        self.checked_sub(1).unwrap()
+    }
+}
+
+impl Bound for char {
+    const MIN = '\x00';
+    const MAX = '\u{10FFFF}'
+    fn as_u32(self) -> u32 {
+        self as u32
+    }
+
+    fn increment(self) -> Self {
+        match self {
+            '\u{D7FF}' => '\u{E000}',
+            c => char::from_u32((c as u32).checked_add(1).unwrap()).unwrap(),
+        }
+    }
+
+    fn decrement(self) -> Self {
+        match self {
+            '\u{E000}' => '\u{D7FF}',
+            c => char::from_u32((c as u32).checked_sub(1).unwrap()).unwrap(),
+        }
+    }
+}

@@ -32,9 +32,11 @@ pub mod consts;
 pub mod escape;
 pub mod macros;
 pub mod pat;
+pub mod repr;
 
 pub use consts::{DIGIT, SPACE, WORD};
 pub use pat::Pat;
+pub use repr::Repr;
 
 // #[test]
 // fn datetime() {

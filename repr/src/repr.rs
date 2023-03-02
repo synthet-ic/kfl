@@ -1,4 +1,5 @@
 use alloc::boxed::Box;
+use core::slice::Iter;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Repr<I> {
@@ -14,21 +15,42 @@ pub enum Repr<I> {
 }
 
 impl<I> for Repr<I> {
-    pub fn empty() -> Self {
+    pub const fn empty() -> Self {
         Self::Empty
     }
+    
+    pub const fn not(self) -> Self {
+        Self::Not(box self)
+    }
 
-    pub fn or(self, other: Self) -> Self {
+    pub const fn or(self, other: Self) -> Self {
         Self::Or(box self, box other)
     }
 
-    pub fn and(self, other: Self) -> Self {
-        let hir = Hir::concat(vec![self.0, pat.into().0]);
+    pub const fn and(self, other: Self) -> Self {
         Self::And(box self, box other)
     }
     
-    pub fn xor(self, other: Self) -> Self {
-        let hir = Hir::concat(vec![self.0, pat.into().0]);
+    pub const fn xor(self, other: Self) -> Self {
         Self::Xor(box self, box other)
+    }
+    
+    pub const fn add(self, range: I) -> Self {
+        Self::Add(box self, range)
+    }
+    
+    pub const fn sub(self, range: I) -> Self {
+        Self::Sub(box self, range)
+    }
+}
+
+#[derive(Debug)]
+pub struct ReprIter<'a, I>(Iter<'a, I>);
+
+impl<'a, I> const Iterator for ReprIter<'a, I> {
+    type Item = &'a I;
+
+    fn next(&mut self) -> Option<&'a I> {
+        self.0.next()
     }
 }

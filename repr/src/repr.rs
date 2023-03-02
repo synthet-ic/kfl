@@ -12,3 +12,23 @@ pub enum Repr<I> {
     Sub(Box<Repr<I>>, I),
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>))
 }
+
+impl<I> for Repr<I> {
+    pub fn empty() -> Self {
+        Self::Empty
+    }
+
+    pub fn or(self, other: Self) -> Self {
+        Self::Or(box self, box other)
+    }
+
+    pub fn and(self, other: Self) -> Self {
+        let hir = Hir::concat(vec![self.0, pat.into().0]);
+        Self::And(box self, box other)
+    }
+    
+    pub fn xor(self, other: Self) -> Self {
+        let hir = Hir::concat(vec![self.0, pat.into().0]);
+        Self::Xor(box self, box other)
+    }
+}

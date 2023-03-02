@@ -9,5 +9,6 @@ pub enum Repr<I> {
     And(Box<Repr<I>>, Box<Repr<I>>),
     Xor(Box<Repr<I>>, Box<Repr<I>>),
     Add(Box<Repr<I>>, I),
-    Sub(Box<Repr<I>>, I)
+    Sub(Box<Repr<I>>, I),
+    // Map(Box<Repr<I>>, Fn(Box<Repr<I>>))
 }

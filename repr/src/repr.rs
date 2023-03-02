@@ -10,6 +10,7 @@ use core::{
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Repr<I> {
     Empty,
+    One(I),
     Range(Interval<I>),  // Or(Empty, I)?
     Not(Box<Repr<I>>),
     Or(Box<Repr<I>>, Box<Repr<I>>),

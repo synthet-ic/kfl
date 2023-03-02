@@ -83,5 +83,5 @@ impl const IntoIterator for Repr<I> {
 }
 
 #[derive(Clone + Copy + Debug + Default + Eq + PartialEq + PartialOrd + Ord)]
-pub struct Interval(usize, usize);
+pub struct Range(usize, usize);
 

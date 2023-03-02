@@ -10,13 +10,13 @@ use core::{
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Repr<I> {
     Empty,
-    Range(Range<I>),  // Or(Empty, I)?
+    Range(Interval<I>),  // Or(Empty, I)?
     Not(Box<Repr<I>>),
     Or(Box<Repr<I>>, Box<Repr<I>>),
     And(Box<Repr<I>>, Box<Repr<I>>),
     Xor(Box<Repr<I>>, Box<Repr<I>>),
-    Add(Box<Repr<I>>, Range<I>),
-    Sub(Box<Repr<I>>, Range<I>),
+    Add(Box<Repr<I>>, Interval<I>),
+    Sub(Box<Repr<I>>, Interval<I>),
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>))
 }
 
@@ -86,9 +86,9 @@ impl const IntoIterator for Repr<I> {
 }
 
 #[derive(Clone + Copy + Debug + Default + Eq + PartialEq + PartialOrd + Ord)]
-pub struct Range<Bound: Bound>(pub Bound, pub Bound);
+pub struct Interval<Bound: Bound>(pub Bound, pub Bound);
 
-impl<Bound: Bound> Range<Bound> {
+impl<Bound: Bound> Interval<Bound> {
     pub const fn new(start: Bound, end: Bound) -> Self {
         let mut output = Self::default();
         if start <= end {

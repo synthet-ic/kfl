@@ -38,7 +38,7 @@ pub mod repr;
 
 pub use consts::{DIGIT, SPACE, WORD};
 pub use pat::Pat;
-pub use repr::Repr;
+pub use repr::{Repr, ReprIter};
 
 // #[test]
 // fn datetime() {

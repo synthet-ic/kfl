@@ -2,7 +2,10 @@ use alloc::{
     boxed::Box,
     vec::Vec
 };
-use core::slice::Iter;
+use core::{
+    cmp,
+    slice::Iter
+};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Repr<I> {
@@ -86,7 +89,7 @@ impl const IntoIterator for Repr<I> {
 pub struct Range<Bound: Bound>(pub Bound, pub Bound);
 
 impl<Bound: Bound> Range<Bound> {
-    fn new(start: Bound, end: Bound) -> Self {
+    pub const fn new(start: Bound, end: Bound) -> Self {
         let mut output = Self::default();
         if start <= end {
             output.0 = start;
@@ -97,14 +100,53 @@ impl<Bound: Bound> Range<Bound> {
         }
         output
     }
+    
+    /// Intersect this range with the given range and return the result.
+    ///
+    /// If the intersection is empty, then this returns `None`.
+    pub const fn and(&self, other: &Self) -> Option<Self> {
+        let start = cmp::max(self.0, other.0);
+        let end = cmp::min(self.1, other.1);
+        if start <= end {
+            Some(Self::new(start, end))
+        } else {
+            None
+        }
+    }
+    
+    /// Union the given overlapping range into this range.
+    ///
+    /// If the two ranges aren't contiguous, then this returns `None`.
+    pub const fn or(&self, other: &Self) -> Option<Self> {
+        if !self.is_contiguous(other) {
+            return None;
+        }
+        let start = cmp::max(self.0, other.0);
+        let end = cmp::min(self.1, other.1);
+        Some(Self::create(start, end))
+    }
+    
+    /// Compute the symmetric difference the given range from this range. This
+    /// returns the union of the two ranges minus its intersection.
+    pub const fn xor(&self, other: &Self) -> (Option<Self>, Option<Self>) {
+        let or = match self.or(other) {
+            None => return (Some(self.clone()), Some(other.clone())),
+            Some(or) => or,
+        };
+        let and = match self.and(other) {
+            None => return (Some(self.clone()), Some(other.clone())),
+            Some(and) => and,
+        };
+        or.sub(&and)
+    }
 }
 
 pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {
-    const MIN: Bound;
-    const MAX: Bound;
-    fn as_u32(self) -> u32;
-    fn increment(self) -> Self;
-    fn decrement(self) -> Self;
+    pub const MIN: Bound;
+    pub const MAX: Bound;
+    pub const fn as_u32(self) -> u32;
+    pub const fn increment(self) -> Self;
+    pub const fn decrement(self) -> Self;
 }
 
 impl Bound for u8 {

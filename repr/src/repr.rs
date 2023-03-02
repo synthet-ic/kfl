@@ -1,4 +1,7 @@
-use alloc::boxed::Box;
+use alloc::{
+    boxed::Box,
+    vec::Vec
+};
 use core::slice::Iter;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -45,12 +48,23 @@ impl<I> for Repr<I> {
 }
 
 #[derive(Debug)]
-pub struct ReprIter<'a, I>(Iter<'a, I>);
+pub struct ReprIter<'a, I>(Vec<I>);
 
 impl<'a, I> const Iterator for ReprIter<'a, I> {
     type Item = &'a I;
 
     fn next(&mut self) -> Option<&'a I> {
-        self.0.next()
+        self.0.pop()
+    }
+}
+
+impl const IntoIterator for Repr<I> {
+    type Item = I;
+    type IntoIter: ReprIter<'a, I>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let mut iter = Vec::new();
+        match self {
+        }
     }
 }

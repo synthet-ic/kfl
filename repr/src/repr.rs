@@ -9,7 +9,7 @@ use core::{
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Repr<I> {
-    Empty,
+    Zero,  // TODO(rnarkk) let it hold word boundary
     /// A single character, where a character is either
     /// defined by a Unicode scalar value or an arbitrary byte. Unicode characters
     /// are preferred whenever possible. In particular, a `Byte` variant is only

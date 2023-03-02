@@ -1,6 +1,6 @@
 use alloc::boxed::Box;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Repr<I> {
     Empty,
     Range(I),  // Or(Empty, I)?

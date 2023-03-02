@@ -145,8 +145,8 @@ pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {
     pub const MIN: Bound;
     pub const MAX: Bound;
     pub const fn as_u32(self) -> u32;
-    pub const fn increment(self) -> Self;
-    pub const fn decrement(self) -> Self;
+    pub const fn suc(self) -> Self;
+    pub const fn pred(self) -> Self;
 }
 
 impl Bound for u8 {
@@ -155,10 +155,10 @@ impl Bound for u8 {
     fn as_u32(self) -> u32 {
         self as u32
     }
-    fn increment(self) -> Self {
+    fn suc(self) -> Self {
         self.checked_add(1).unwrap()
     }
-    fn decrement(self) -> Self {
+    fn pred(self) -> Self {
         self.checked_sub(1).unwrap()
     }
 }
@@ -170,14 +170,14 @@ impl Bound for char {
         self as u32
     }
 
-    fn increment(self) -> Self {
+    fn suc(self) -> Self {
         match self {
             '\u{D7FF}' => '\u{E000}',
             c => char::from_u32((c as u32).checked_add(1).unwrap()).unwrap(),
         }
     }
 
-    fn decrement(self) -> Self {
+    fn pred(self) -> Self {
         match self {
             '\u{E000}' => '\u{D7FF}',
             c => char::from_u32((c as u32).checked_sub(1).unwrap()).unwrap(),

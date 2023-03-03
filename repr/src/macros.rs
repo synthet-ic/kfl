@@ -42,14 +42,22 @@ macro_rules! xor {
     }
 }
 
+/// Seq
+#[macro_export]
+macro_rules! p {
+    ($lhs:tt .. $rhs:tt) => {
+        Repr::from(stringify!($lhs).chars().nth(0).unwrap()..stringify!($rhs).chars().nth(0).unwrap())
+    };
+}
+
 /// Pattern
 #[macro_export]
 macro_rules! p {
     ($lhs:tt | $rhs:tt) => {
-        Pat::from(stringify!($lhs)) | stringify!($rhs)
+        Repr::from(stringify!($lhs)) | stringify!($rhs)
     };
     ($lhs:tt .. $rhs:tt) => {
-        Pat::from(stringify!($lhs).chars().nth(0).unwrap()..stringify!($rhs).chars().nth(0).unwrap())
+        Repr::from(stringify!($lhs).chars().nth(0).unwrap()..stringify!($rhs).chars().nth(0).unwrap())
     };
 }
 
@@ -57,7 +65,7 @@ macro_rules! p {
 #[macro_export]
 macro_rules! c {
     ($tt:literal) => {
-        Pat::from($tt)
+        Repr::from($tt)
     };
 }
 
@@ -65,7 +73,7 @@ macro_rules! c {
 #[macro_export]
 macro_rules! u {
     ($tt:tt) => {
-        Pat::from(char::from_u32(u32::from_str_radix(stringify!($tt), 16).unwrap()).unwrap())
+        Repr::from(char::from_u32(u32::from_str_radix(stringify!($tt), 16).unwrap()).unwrap())
     }
 }
 
@@ -73,7 +81,7 @@ macro_rules! u {
 #[macro_export]
 macro_rules! e {
     ($tt:tt) => {
-        Pat::from(format!(r"\{}", stringify!($tt)));
+        Repr::from(format!(r"\{}", stringify!($tt)));
     }
 }
 
@@ -89,20 +97,20 @@ macro_rules! i {
 #[macro_export]
 macro_rules! delimit {
     ($tt:expr) => {
-        Pat::new(r"\(") & $tt & Pat::new(r"\)")
+        Repr::new(r"\(") & $tt & Repr::new(r"\)")
     };
     {$tt:expr} => {
-        Pat::new(r"\{") & $tt & Pat::new(r"\}")
+        Repr::new(r"\{") & $tt & Repr::new(r"\}")
     };
     [$tt:expr] => {
-        Pat::new(r"\[") & $tt & Pat::new(r"\]")
+        Repr::new(r"\[") & $tt & Repr::new(r"\]")
     };
 }
 
 // #[test]
 // fn test() {
-//     use crate::pat::Pat;
+//     use crate::pat::Repr<char>;
 //     use super::{c, delimit};
-//     assert_eq!(delimit!(c!('a')), Pat::from(r"\(a\)"));
-//     assert_eq!(delimit!(c!{'a'}), Pat::from(r"\{a\}"));
+//     assert_eq!(delimit!(c!('a')), Repr::from(r"\(a\)"));
+//     assert_eq!(delimit!(c!{'a'}), Repr::from(r"\{a\}"));
 // }

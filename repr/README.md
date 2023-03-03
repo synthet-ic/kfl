@@ -31,6 +31,24 @@
 **Targets**
 
 ```rust
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum AssertionKind {
+    /// `^`
+    StartLine,
+    /// `$`
+    EndLine,
+    /// `\A`
+    StartText,
+    /// `\z`
+    EndText,
+    /// `\b`
+    WordBoundary,
+    /// `\B`
+    NotWordBoundary,
+}
+```
+
+```rust
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Flag {
     /// `i`

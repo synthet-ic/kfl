@@ -4,29 +4,30 @@ use alloc::{
 };
 use core::{
     cmp,
+    fmt::Debug,
     slice::Iter
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Repr<I> {
+pub enum Repr<I: Bound> {
     Zero,  // TODO(rnarkk) let it hold word boundary
     /// A single character, where a character is either
     /// defined by a Unicode scalar value or an arbitrary byte. Unicode characters
     /// are preferred whenever possible. In particular, a `Byte` variant is only
     /// ever produced when it could match invalid UTF-8.
     One(I),
-    Range(Interval<I>),  // Or(Empty, I)?
+    Range(Range<I>),  // Or(Empty, I)?
     Not(Box<Repr<I>>),
     Or(Box<Repr<I>>, Box<Repr<I>>),
     And(Box<Repr<I>>, Box<Repr<I>>),
     Xor(Box<Repr<I>>, Box<Repr<I>>),
-    Add(Box<Repr<I>>, Interval<I>),
-    Sub(Box<Repr<I>>, Interval<I>),
+    Add(Box<Repr<I>>, Range<I>),
+    Sub(Box<Repr<I>>, Range<I>),
     Mul(Box<Repr<I>>, Range<u32>),
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
 }
 
-impl<I> for Repr<I> {
+impl<I: Bound> Repr<I> {
     pub const fn empty() -> Self {
         Self::Empty
     }
@@ -60,21 +61,20 @@ impl<I> for Repr<I> {
     }
 }
 
-impl<const N: usize> const Into<[I; N]> for Repr<I> {
-    fn into(self) -> T {
-        use Self::*;
+impl<const N: usize, T: Bound> const Into<[T; N]> for Repr<T> {
+    fn into(self) -> [T; N] {
         match self {
-            Empty => [],
-            Not(repr) => {
+            Repr::Empty => [],
+            Repr::Not(repr) => {
                 
             }
-            Xor(lhs, rhs) => lhs.clone().or(rhs).sub(lhs.and(rhs)),
+            Repr::Xor(lhs, rhs) => lhs.clone().or(rhs).sub(lhs.and(rhs)),
         }
     }
 }
 
 #[derive(Debug)]
-pub struct ReprIter<'a, I>(Vec<I>);
+pub struct ReprIter<'a, I>(Iter<'a, I>);
 
 impl<'a, I> const Iterator for ReprIter<'a, I> {
     type Item = &'a I;
@@ -84,22 +84,22 @@ impl<'a, I> const Iterator for ReprIter<'a, I> {
     }
 }
 
-impl const IntoIterator for Repr<I> {
-    type Item = I;
-    type IntoIter: ReprIter<'a, I>;
+// impl<T> const IntoIterator for Repr<T> {
+//     type Item = T;
+//     type IntoIter: ReprIter<'a, T>;
 
-    fn into_iter(self) -> Self::IntoIter {
-        let mut iter = Vec::new();
-        match self {
-        }
-    }
-}
+//     fn into_iter(self) -> Self::IntoIter {
+//         let mut iter = Vec::new();
+//         match self {
+//         }
+//     }
+// }
 
-#[derive(Clone + Copy + Debug + Default + Eq + PartialEq + PartialOrd + Ord)]
-pub struct Interval<Bound: Bound>(pub Bound, pub Bound);
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, PartialOrd, Ord)]
+pub struct Range<T: Bound>(pub T, pub T);
 
-impl<Bound: Bound> Interval<Bound> {
-    pub const fn new(start: Bound, end: Bound) -> Self {
+impl<T: Bound> Range<T> {
+    pub const fn new(start: T, end: T) -> Self {
         let mut output = Self::default();
         if start <= end {
             output.0 = start;
@@ -151,17 +151,18 @@ impl<Bound: Bound> Interval<Bound> {
     }
 }
 
+#[const_trait]
 pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {
-    pub const MIN: Bound;
-    pub const MAX: Bound;
-    pub const fn as_u32(self) -> u32;
-    pub const fn suc(self) -> Self;
-    pub const fn pred(self) -> Self;
+    const MIN: Self;
+    const MAX: Self;
+    fn as_u32(self) -> u32;
+    fn suc(self) -> Self;
+    fn pred(self) -> Self;
 }
 
-impl Bound for u8 {
-    const MIN = u8::MIN;
-    const MAX = u8::MAX;
+impl const Bound for u8 {
+    const MIN: Self = u8::MIN;
+    const MAX: Self = u8::MAX;
     fn as_u32(self) -> u32 {
         self as u32
     }
@@ -173,9 +174,9 @@ impl Bound for u8 {
     }
 }
 
-impl Bound for char {
-    const MIN = '\x00';
-    const MAX = '\u{10FFFF}'
+impl const Bound for char {
+    const MIN: Self = '\x00';
+    const MAX: Self = '\u{10FFFF}';
     fn as_u32(self) -> u32 {
         self as u32
     }

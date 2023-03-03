@@ -171,7 +171,7 @@ impl<I: ~const Integral> const Seq<I> {
         if self.le(other) {
             return (None, None);
         }
-        if self.is_intersection_empty(other) {
+        if self.and(other).is_none() {
             return (Some(self.clone()), None);
         }
         let add_lower = other.0 > self.0;
@@ -182,11 +182,11 @@ impl<I: ~const Integral> const Seq<I> {
         let mut ret = (None, None);
         if add_lower {
             let upper = other.0.decrement();
-            ret.0 = Some(Self::create(self.0, upper));
+            ret.0 = Some(Self::new(self.0, upper));
         }
         if add_upper {
             let lower = other.1.increment();
-            let range = Self::create(lower, self.1);
+            let range = Self::new(lower, self.1);
             if ret.0.is_none() {
                 ret.0 = Some(range);
             } else {
@@ -203,14 +203,6 @@ impl<I: ~const Integral> const Seq<I> {
         let lower2 = other.0.as_u32();
         let upper2 = other.1.as_u32();
         max(lower1, lower2) <= min(upper1, upper2).saturating_add(1)
-    }
-
-    /// If the intersection of this range and the
-    /// other range is empty.
-    pub const fn is_intersection_empty(&self, other: &Self) -> bool {
-        let (lower1, upper1) = (self.0, self.1);
-        let (lower2, upper2) = (other.0, other.1);
-        max(lower1, lower2) > min(upper1, upper2)
     }
 
     /// Returns true if and only if this range is a subset of the other range.

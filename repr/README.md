@@ -67,6 +67,7 @@ pub enum Flag {
 ```
 
 ```rust
+/// An anchor assertion. An anchor assertion match always has zero length.
 /// The high-level intermediate representation for an anchor assertion.
 ///
 /// A matching anchor assertion is always zero-length.
@@ -88,6 +89,8 @@ pub enum Anchor {
     EndText,
 }
 
+/// A word boundary assertion, which may or may not be Unicode aware. A
+/// word boundary assertion match always has zero length.
 /// The high-level intermediate representation for a word-boundary assertion.
 ///
 /// A matching word boundary assertion is always zero-length.

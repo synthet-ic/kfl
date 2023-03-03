@@ -9,27 +9,27 @@ use core::{
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Repr<I: Bound> {
+pub enum Repr<I: Integral> {
     Zero,  // TODO(rnarkk) let it hold word boundary
     /// A single character, where a character is either
     /// defined by a Unicode scalar value or an arbitrary byte. Unicode characters
     /// are preferred whenever possible. In particular, a `Byte` variant is only
     /// ever produced when it could match invalid UTF-8.
     One(I),
-    Range(Range<I>),  // Or(Empty, I)?
+    Seq(Seq<I>),
     Not(Box<Repr<I>>),
     Or(Box<Repr<I>>, Box<Repr<I>>),
     And(Box<Repr<I>>, Box<Repr<I>>),
     Xor(Box<Repr<I>>, Box<Repr<I>>),
-    Add(Box<Repr<I>>, Range<I>),
-    Sub(Box<Repr<I>>, Range<I>),
-    Mul(Box<Repr<I>>, Range<u32>),
+    Add(Box<Repr<I>>, Seq<I>),
+    Sub(Box<Repr<I>>, Seq<I>),
+    Mul(Box<Repr<I>>, Range),
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
 }
 
-impl<I: Bound> Repr<I> {
+impl<I: Integral> Repr<I> {
     pub const fn empty() -> Self {
-        Self::Empty
+        Self::Zero
     }
     
     pub const fn not(self) -> Self {
@@ -61,8 +61,8 @@ impl<I: Bound> Repr<I> {
     }
 }
 
-impl<const N: usize, T: Bound> const Into<[T; N]> for Repr<T> {
-    fn into(self) -> [T; N] {
+impl<const N: usize, I: Integral> const Into<[I; N]> for Repr<I> {
+    fn into(self) -> [I; N] {
         match self {
             Repr::Empty => [],
             Repr::Not(repr) => {
@@ -95,30 +95,27 @@ impl<'a, I> const Iterator for ReprIter<'a, I> {
 //     }
 // }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, PartialOrd, Ord)]
-pub struct Range<T: Bound>(pub T, pub T);
+#[derive(Copy, Debug, Eq)]
+#[derive_const(Clone, Default, PartialEq, PartialOrd, Ord)]
+pub struct Seq<I: Integral>(pub I, pub I);
 
-impl<T: Bound> Range<T> {
-    pub const fn new(start: T, end: T) -> Self {
-        let mut output = Self::default();
-        if start <= end {
-            output.0 = start;
-            output.1 = end;
+impl<I: Integral> Seq<I> {
+    pub const fn new(from: I, to: I) -> Self {
+        if from <= to {
+            Seq(from, to)
         } else {
-            output.0 = end;
-            output.1 = start;
+            Seq(to, from)
         }
-        output
     }
     
     /// Intersect this range with the given range and return the result.
     ///
     /// If the intersection is empty, then this returns `None`.
     pub const fn and(&self, other: &Self) -> Option<Self> {
-        let start = cmp::max(self.0, other.0);
-        let end = cmp::min(self.1, other.1);
-        if start <= end {
-            Some(Self::new(start, end))
+        let from = cmp::max(self.0, other.0);
+        let to = cmp::min(self.1, other.1);
+        if from <= to {
+            Some(Self::new(from, to))
         } else {
             None
         }
@@ -131,9 +128,9 @@ impl<T: Bound> Range<T> {
         if !self.is_contiguous(other) {
             return None;
         }
-        let start = cmp::max(self.0, other.0);
-        let end = cmp::min(self.1, other.1);
-        Some(Self::create(start, end))
+        let from = cmp::max(self.0, other.0);
+        let to = cmp::min(self.1, other.1);
+        Some(Self::new(from, to))
     }
     
     /// Compute the symmetric difference the given range from this range. This
@@ -152,7 +149,7 @@ impl<T: Bound> Range<T> {
 }
 
 #[const_trait]
-pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {
+pub trait Integral: Copy + Clone + Debug + Eq + ~const PartialEq + ~const  PartialOrd + Ord {
     const MIN: Self;
     const MAX: Self;
     fn as_u32(self) -> u32;
@@ -160,7 +157,7 @@ pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {
     fn pred(self) -> Self;
 }
 
-impl const Bound for u8 {
+impl const Integral for u8 {
     const MIN: Self = u8::MIN;
     const MAX: Self = u8::MAX;
     fn as_u32(self) -> u32 {
@@ -174,7 +171,7 @@ impl const Bound for u8 {
     }
 }
 
-impl const Bound for char {
+impl const Integral for char {
     const MIN: Self = '\x00';
     const MAX: Self = '\u{10FFFF}';
     fn as_u32(self) -> u32 {
@@ -194,4 +191,12 @@ impl const Bound for char {
             c => char::from_u32((c as u32).checked_sub(1).unwrap()).unwrap(),
         }
     }
+}
+
+// 24bit
+pub enum Range {
+    Empty,
+    From(usize),
+    To(usize),
+    Full(usize, usize),
 }

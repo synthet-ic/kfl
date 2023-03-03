@@ -26,6 +26,7 @@ let re = (wh | ".") * 1.. & "@" & (wh * 1.. & ".") * 1.. & wh * 2..4;
 #![feature(const_trait_impl)]
 #![feature(box_syntax)]
 #![feature(try_trait_v2)]
+#![feature(derive_const)]
 
 extern crate alloc;
 
@@ -38,7 +39,7 @@ pub mod repr;
 
 pub use consts::{DIGIT, SPACE, WORD};
 pub use pat::Pat;
-pub use repr::{Repr, ReprIter, Range};
+pub use repr::{Repr, Seq, Range};
 
 // #[test]
 // fn datetime() {

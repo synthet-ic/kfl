@@ -65,3 +65,45 @@ pub enum Flag {
     IgnoreWhitespace,
 }
 ```
+
+```rust
+/// The high-level intermediate representation for an anchor assertion.
+///
+/// A matching anchor assertion is always zero-length.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Anchor {
+    /// Match the beginning of a line or the beginning of text. Specifically,
+    /// this matches at the starting position of the input, or at the position
+    /// immediately following a `\n` character.
+    StartLine,
+    /// Match the end of a line or the end of text. Specifically,
+    /// this matches at the end position of the input, or at the position
+    /// immediately preceding a `\n` character.
+    EndLine,
+    /// Match the beginning of text. Specifically, this matches at the starting
+    /// position of the input.
+    StartText,
+    /// Match the end of text. Specifically, this matches at the ending
+    /// position of the input.
+    EndText,
+}
+
+/// The high-level intermediate representation for a word-boundary assertion.
+///
+/// A matching word boundary assertion is always zero-length.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum WordBoundary {
+    /// Match a Unicode-aware word boundary. That is, this matches a position
+    /// where the left adjacent character and right adjacent character
+    /// correspond to a word and non-word or a non-word and word character.
+    Unicode,
+    /// Match a Unicode-aware negation of a word boundary.
+    UnicodeNegate,
+    /// Match an ASCII-only word boundary. That is, this matches a position
+    /// where the left adjacent character and right adjacent character
+    /// correspond to a word and non-word or a non-word and word character.
+    Ascii,
+    /// Match an ASCII-only negation of a word boundary.
+    AsciiNegate,
+}
+```

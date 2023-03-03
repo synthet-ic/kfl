@@ -3,7 +3,7 @@ use alloc::{
     vec::Vec
 };
 use core::{
-    cmp,
+    cmp::{max, min},
     fmt::{Debug, Display},
     marker::Destruct,
     slice::Iter
@@ -127,8 +127,8 @@ impl<I: ~const Integral> const Seq<I> {
     ///
     /// If the intersection is empty, then this returns `None`.
     pub const fn and(&self, other: &Self) -> Option<Self> {
-        let from = cmp::max(self.0, other.0);
-        let to = cmp::min(self.1, other.1);
+        let from = max(self.0, other.0);
+        let to = min(self.1, other.1);
         if from <= to {
             Some(Self::new(from, to))
         } else {
@@ -143,8 +143,8 @@ impl<I: ~const Integral> const Seq<I> {
         if !self.is_contiguous(other) {
             return None;
         }
-        let from = cmp::max(self.0, other.0);
-        let to = cmp::min(self.1, other.1);
+        let from = max(self.0, other.0);
+        let to = min(self.1, other.1);
         Some(Self::new(from, to))
     }
     
@@ -202,7 +202,7 @@ impl<I: ~const Integral> const Seq<I> {
         let upper1 = self.1.as_u32();
         let lower2 = other.0.as_u32();
         let upper2 = other.1.as_u32();
-        cmp::max(lower1, lower2) <= cmp::min(upper1, upper2).saturating_add(1)
+        max(lower1, lower2) <= min(upper1, upper2).saturating_add(1)
     }
 
     /// If the intersection of this range and the
@@ -210,7 +210,7 @@ impl<I: ~const Integral> const Seq<I> {
     pub const fn is_intersection_empty(&self, other: &Self) -> bool {
         let (lower1, upper1) = (self.0, self.1);
         let (lower2, upper2) = (other.0, other.1);
-        cmp::max(lower1, lower2) > cmp::min(upper1, upper2)
+        max(lower1, lower2) > min(upper1, upper2)
     }
 
     /// Returns true if and only if this range is a subset of the other range.
@@ -355,13 +355,13 @@ impl const Seq<u8> {
         ranges: &mut Vec<ClassBytesRange>,
     ) -> Result<(), unicode::CaseFoldError> {
         if !ClassBytesRange::new(b'a', b'z').is_intersection_empty(self) {
-            let lower = cmp::max(self.start, b'a');
-            let upper = cmp::min(self.end, b'z');
+            let lower = max(self.start, b'a');
+            let upper = min(self.end, b'z');
             ranges.push(ClassBytesRange::new(lower - 32, upper - 32));
         }
         if !ClassBytesRange::new(b'A', b'Z').is_intersection_empty(self) {
-            let lower = cmp::max(self.start, b'A');
-            let upper = cmp::min(self.end, b'Z');
+            let lower = max(self.start, b'A');
+            let upper = min(self.end, b'Z');
             ranges.push(ClassBytesRange::new(lower + 32, upper + 32));
         }
         Ok(())
@@ -423,7 +423,7 @@ pub trait Integral:
     const MIN: Self;
     const MAX: Self;
     fn as_u32(self) -> u32;
-    fn suc(self) -> Self;
+    fn succ(self) -> Self;
     fn pred(self) -> Self;
 }
 
@@ -435,7 +435,7 @@ impl const Integral for char {
         self as u32
     }
 
-    fn suc(self) -> Self {
+    fn succ(self) -> Self {
         match self {
             '\u{D7FF}' => '\u{E000}',
             c => char::from_u32((c as u32).checked_add(1).unwrap()).unwrap(),
@@ -457,7 +457,7 @@ impl const Integral for u8 {
     fn as_u32(self) -> u32 {
         self as u32
     }
-    fn suc(self) -> Self {
+    fn succ(self) -> Self {
         self.checked_add(1).unwrap()
     }
     fn pred(self) -> Self {

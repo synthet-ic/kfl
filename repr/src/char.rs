@@ -4,14 +4,14 @@
 //         ControlFlow, FromResidual, RangeFull
 //     },
 // };
-use crate::pat::Pat;
+use crate::repr::Repr;
 
-pub trait CharExt: Into<Pat> {
-    fn and(self, rhs: Self) -> Pat {
+pub trait CharExt: Into<Repr<char>> {
+    fn and(self, rhs: Self) -> Repr<char> {
         self.into() & rhs.into()
     }
 
-    fn or(self, rhs: Self) -> Pat {
+    fn or(self, rhs: Self) -> Repr<char> {
         self.into() | rhs.into()
     }
 }
@@ -19,7 +19,7 @@ pub trait CharExt: Into<Pat> {
 impl CharExt for char {}
 
 // impl<T: CharExt> BitAnd<T> for T {
-//     type Output = Pat;
+//     type Output = Repr<char>;
 
 //     fn bitand(self, rhs: T) -> Self::Output {
 //         self.and(rhs)
@@ -27,7 +27,7 @@ impl CharExt for char {}
 // }
 
 // impl<T: CharExt> BitOr<T> for T {
-//     type Output = Pat;
+//     type Output = Repr<char>;
     
 //     fn bitor(self, rhs: T) -> Self::Output {
 //         self.or(rhs)

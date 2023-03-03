@@ -21,7 +21,7 @@ impl BitAnd<&str> for Repr<char> {
     }
 }
 
-impl BitAnd<Repr> for &str {
+impl BitAnd<Repr<char>> for &str {
     type Output = Repr<char>;
 
     fn bitand(self, rhs: Repr<char>) -> Repr<char> {
@@ -29,7 +29,7 @@ impl BitAnd<Repr> for &str {
     }
 }
 
-impl BitAnd<Repr> for Repr<char> {
+impl BitAnd<Repr<char>> for Repr<char> {
     type Output = Repr<char>;
 
     fn bitand(self, rhs: Self) -> Repr<char> {
@@ -53,7 +53,7 @@ impl BitAnd<Range<char>> for Repr<char> {
     }
 }
 
-impl<T: Into<Repr>> BitAnd<[T; 1]> for Repr<char> {
+impl<T: Into<Repr<char>>> BitAnd<[T; 1]> for Repr<char> {
     type Output = Repr<char>;
 
     fn bitand(self, rhs: [T; 1]) -> Repr<char> {
@@ -77,7 +77,7 @@ impl BitOr<&str> for Repr<char> {
     }
 }
 
-impl BitOr<Repr> for &str {
+impl BitOr<Repr<char>> for &str {
     type Output = Repr<char>;
 
     fn bitor(self, rhs: Repr<char>) -> Repr<char> {
@@ -85,7 +85,7 @@ impl BitOr<Repr> for &str {
     }
 }
 
-impl BitOr<Repr> for Repr<char> {
+impl BitOr<Repr<char>> for Repr<char> {
     type Output = Repr<char>;
 
     fn bitor(self, rhs: Self) -> Repr<char> {
@@ -101,7 +101,7 @@ impl BitOr<Range<char>> for Repr<char> {
     }
 }
 
-impl<T: Into<Repr>> BitOr<[T; 1]> for Repr<char> {
+impl<T: Into<Repr<char>>> BitOr<[T; 1]> for Repr<char> {
     type Output = Repr<char>;
 
     fn bitor(self, rhs: [T; 1]) -> Repr<char> {
@@ -176,13 +176,13 @@ impl Mul<RangeTo<u32>> for Repr<char> {
 
 impl Try for Repr<char> {
     type Output = Repr<char>;
-    type Residual = Repr;
+    type Residual = Repr<char>;
 
-    fn from_output(output: Repr) -> Self {
+    fn from_output(output: Repr<char>) -> Self {
         output * (0..1)
     }
 
-    fn branch(self) -> ControlFlow<Self::Residual, Repr> {
+    fn branch(self) -> ControlFlow<Self::Residual, Repr<char>> {
         match self.0.kind() {
             HirKind::Repetition(rep) => {
                 let rep = Repetition {

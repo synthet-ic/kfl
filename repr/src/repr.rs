@@ -75,9 +75,9 @@ impl<const N: usize, I: ~const Integral> const Into<[I; N]> for Repr<I> {
     }
 }
 
-impl<T> const IntoIterator for Repr<T> {
-    type Item = T;
-    type IntoIter: Iter<'a, T>;
+impl<I: ~const Integral> const IntoIterator for Repr<I> {
+    type Item = I;
+    type IntoIter: Iter<'a, I>;
 
     fn into_iter(self) -> Self::IntoIter {
         let mut iter = Vec::new();

@@ -27,3 +27,23 @@
 | repetition | `a{n,m}` | `a * (n..m)` | `rep n m { a }` |
 | class | `[a-z]` | `'a'..'z'` | `range a z` |
 | negation | `[^a-z]` | `not { range { a z } }` |
+
+**Targets**
+
+```rust
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Flag {
+    /// `i`
+    CaseInsensitive,
+    /// `m`
+    MultiLine,
+    /// `s`
+    DotMatchesNewLine,
+    /// `U`
+    SwapGreed,
+    /// `u`
+    Unicode,
+    /// `x`
+    IgnoreWhitespace,
+}
+```

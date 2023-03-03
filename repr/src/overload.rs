@@ -5,114 +5,114 @@ use core::ops::{
 
 use crate::repr::Repr;
 
-impl BitAnd<char> for Repr {
-    type Output = Repr;
+impl BitAnd<char> for Repr<char> {
+    type Output = Repr<char>;
 
-    fn bitand(self, rhs: char) -> Repr {
+    fn bitand(self, rhs: char) -> Repr<char> {
         self.and(rhs)
     }
 }
 
-impl BitAnd<&str> for Repr {
-    type Output = Repr;
+impl BitAnd<&str> for Repr<char> {
+    type Output = Repr<char>;
 
-    fn bitand(self, rhs: &str) -> Repr {
+    fn bitand(self, rhs: &str) -> Repr<char> {
         self.and(rhs)
     }
 }
 
 impl BitAnd<Repr> for &str {
-    type Output = Repr;
+    type Output = Repr<char>;
 
-    fn bitand(self, rhs: Repr) -> Repr {
+    fn bitand(self, rhs: Repr<char>) -> Repr<char> {
         rhs.clone().and(self)
     }
 }
 
-impl BitAnd<Repr> for Repr {
-    type Output = Repr;
+impl BitAnd<Repr> for Repr<char> {
+    type Output = Repr<char>;
 
-    fn bitand(self, rhs: Self) -> Repr {
+    fn bitand(self, rhs: Self) -> Repr<char> {
         self.and(rhs)
     }
 }
 
-// impl BitAnd<Range<u8>> for Repr {
+// impl BitAnd<Range<u8>> for Repr<char> {
 //     type Output = Self;
 
-//     fn bitand(self, rhs: Range<u8>) -> Repr {
+//     fn bitand(self, rhs: Range<u8>) -> Repr<char> {
 //         self.and(rhs)
 //     }
 // }
 
-impl BitAnd<Range<char>> for Repr {
-    type Output = Repr;
+impl BitAnd<Range<char>> for Repr<char> {
+    type Output = Repr<char>;
 
-    fn bitand(self, rhs: Range<char>) -> Repr {
+    fn bitand(self, rhs: Range<char>) -> Repr<char> {
         self.and(rhs)
     }
 }
 
-impl<T: Into<Repr>> BitAnd<[T; 1]> for Repr {
-    type Output = Repr;
+impl<T: Into<Repr>> BitAnd<[T; 1]> for Repr<char> {
+    type Output = Repr<char>;
 
-    fn bitand(self, rhs: [T; 1]) -> Repr {
+    fn bitand(self, rhs: [T; 1]) -> Repr<char> {
         self.and(Repr::from(rhs) * ..)
     }
 }
 
-impl BitOr<char> for Repr {
-    type Output = Repr;
+impl BitOr<char> for Repr<char> {
+    type Output = Repr<char>;
     
-    fn bitor(self, rhs: char) -> Repr {
+    fn bitor(self, rhs: char) -> Repr<char> {
         self.or(rhs)
     }
 }
 
-impl BitOr<&str> for Repr {
-    type Output = Repr;
+impl BitOr<&str> for Repr<char> {
+    type Output = Repr<char>;
 
-    fn bitor(self, rhs: &str) -> Repr {
+    fn bitor(self, rhs: &str) -> Repr<char> {
         self.or(rhs)
     }
 }
 
 impl BitOr<Repr> for &str {
-    type Output = Repr;
+    type Output = Repr<char>;
 
-    fn bitor(self, rhs: Repr) -> Repr {
+    fn bitor(self, rhs: Repr<char>) -> Repr<char> {
         rhs.or(self)
     }
 }
 
-impl BitOr<Repr> for Repr {
-    type Output = Repr;
+impl BitOr<Repr> for Repr<char> {
+    type Output = Repr<char>;
 
-    fn bitor(self, rhs: Self) -> Repr {
+    fn bitor(self, rhs: Self) -> Repr<char> {
         self.or(rhs)
     }
 }
 
-impl BitOr<Range<char>> for Repr {
-    type Output = Repr;
+impl BitOr<Range<char>> for Repr<char> {
+    type Output = Repr<char>;
 
-    fn bitor(self, rhs: Range<char>) -> Repr {
+    fn bitor(self, rhs: Range<char>) -> Repr<char> {
         self.or(rhs)
     }
 }
 
-impl<T: Into<Repr>> BitOr<[T; 1]> for Repr {
-    type Output = Repr;
+impl<T: Into<Repr>> BitOr<[T; 1]> for Repr<char> {
+    type Output = Repr<char>;
 
-    fn bitor(self, rhs: [T; 1]) -> Repr {
+    fn bitor(self, rhs: [T; 1]) -> Repr<char> {
         self.or(Repr::from(rhs) * ..)
     }
 }
 
-impl Mul<u32> for Repr {
-    type Output = Repr;
+impl Mul<u32> for Repr<char> {
+    type Output = Repr<char>;
 
-    fn mul(self, rhs: u32) -> Repr {
+    fn mul(self, rhs: u32) -> Repr<char> {
         let rep = Repetition {
             kind: RepetitionKind::Range(RepetitionRange::Exactly(rhs)),
             greedy: true,
@@ -122,10 +122,10 @@ impl Mul<u32> for Repr {
     }
 }
 
-impl Mul<RangeFull> for Repr {
-    type Output = Repr;
+impl Mul<RangeFull> for Repr<char> {
+    type Output = Repr<char>;
 
-    fn mul(self, _: RangeFull) -> Repr {
+    fn mul(self, _: RangeFull) -> Repr<char> {
         let rep = Repetition {
             kind: RepetitionKind::Range(RepetitionRange::AtLeast(0)),
             greedy: true,
@@ -135,10 +135,10 @@ impl Mul<RangeFull> for Repr {
     }
 }
 
-impl Mul<Range<u32>> for Repr {
-    type Output = Repr;
+impl Mul<Range<u32>> for Repr<char> {
+    type Output = Repr<char>;
 
-    fn mul(self, rhs: Range<u32>) -> Repr {
+    fn mul(self, rhs: Range<u32>) -> Repr<char> {
         let rep = Repetition {
             kind: RepetitionKind::Range(RepetitionRange::Bounded(rhs.start, rhs.end)),
             greedy: true,
@@ -148,10 +148,10 @@ impl Mul<Range<u32>> for Repr {
     }
 }
 
-impl Mul<RangeFrom<u32>> for Repr {
-    type Output = Repr;
+impl Mul<RangeFrom<u32>> for Repr<char> {
+    type Output = Repr<char>;
 
-    fn mul(self, rhs: RangeFrom<u32>) -> Repr {
+    fn mul(self, rhs: RangeFrom<u32>) -> Repr<char> {
         let rep = Repetition {
             kind: RepetitionKind::Range(RepetitionRange::AtLeast(rhs.start)),
             greedy: true,
@@ -161,10 +161,10 @@ impl Mul<RangeFrom<u32>> for Repr {
     }
 }
 
-impl Mul<RangeTo<u32>> for Repr {
-    type Output = Repr;
+impl Mul<RangeTo<u32>> for Repr<char> {
+    type Output = Repr<char>;
 
-    fn mul(self, rhs: RangeTo<u32>) -> Repr {
+    fn mul(self, rhs: RangeTo<u32>) -> Repr<char> {
         let rep = Repetition {
             kind: RepetitionKind::Range(RepetitionRange::Bounded(0, rhs.end)),
             greedy: true,
@@ -174,8 +174,8 @@ impl Mul<RangeTo<u32>> for Repr {
     }
 }
 
-impl Try for Repr {
-    type Output = Repr;
+impl Try for Repr<char> {
+    type Output = Repr<char>;
     type Residual = Repr;
 
     fn from_output(output: Repr) -> Self {
@@ -197,7 +197,7 @@ impl Try for Repr {
     }
 }
 
-impl FromResidual for Repr {
+impl FromResidual for Repr<char> {
     fn from_residual(residual: <Self as Try>::Residual) -> Self {
         residual
     }

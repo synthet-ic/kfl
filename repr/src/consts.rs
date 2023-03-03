@@ -4,18 +4,18 @@ use crate::{
 };
 
 /// `\0`
-pub const NUL: Repr = u!(0000);
+pub const NUL: Repr<char> = u!(0000);
 /// `\t`
-pub const HT: Repr = u!(0009);
+pub const HT: Repr<char> = u!(0009);
 /// `\n`
-pub const LF: Repr = u!(000A);
+pub const LF: Repr<char> = u!(000A);
 /// `\v`
-pub const VT: Repr = u!(000B);
+pub const VT: Repr<char> = u!(000B);
 /// `\r`
-pub const CR: Repr = u!(000D);
+pub const CR: Repr<char> = u!(000D);
 /// ` `
-pub const SP: Repr = u!(0020);
+pub const SP: Repr<char> = u!(0020);
 
-pub const DIGIT: Repr = p!(0..9);
-pub const SPACE: Repr = Repr::empty() & ' ';
-pub const WORD: Repr = Repr::empty() & p!(A..Z) | p!(a..z);
+pub const DIGIT: Repr<char> = p!(0..9);
+pub const SPACE: Repr<char> = SP;
+pub const WORD: Repr<char> = p!(A..Z) | p!(a..z);

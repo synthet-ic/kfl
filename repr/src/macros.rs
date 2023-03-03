@@ -56,9 +56,6 @@ macro_rules! p {
     ($lhs:tt | $rhs:tt) => {
         Repr::from(stringify!($lhs)) | stringify!($rhs)
     };
-    ($lhs:tt .. $rhs:tt) => {
-        Repr::from(stringify!($lhs).chars().nth(0).unwrap()..stringify!($rhs).chars().nth(0).unwrap())
-    };
 }
 
 /// Pattern from a char

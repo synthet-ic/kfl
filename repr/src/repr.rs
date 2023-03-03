@@ -19,7 +19,7 @@ pub enum Repr<I: ~const Integral> {
     Or(Box<Repr<I>>, Box<Repr<I>>),
     And(Box<Repr<I>>, Box<Repr<I>>),
     Xor(Box<Repr<I>>, Box<Repr<I>>),
-    Add(Box<Repr<I>>, Seq<I>),
+    Add(Box<Repr<I>>, Box<Repr<I>>),
     Sub(Box<Repr<I>>, Seq<I>),
     Mul(Box<Repr<I>>, Range),
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
@@ -46,8 +46,8 @@ impl<I: ~const Integral> Repr<I> {
         Self::Xor(box self, box other)
     }
     
-    pub const fn add(self, seq: Seq<I>) -> Self {
-        Self::Add(box self, seq)
+    pub const fn add(self, other: Self) -> Self {
+        Self::Add(box self, box other)
     }
     
     pub const fn sub(self, seq: Seq<I>) -> Self {

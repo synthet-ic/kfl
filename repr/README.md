@@ -24,9 +24,9 @@
 | alternation | `a\|b` | `a \| b` | `or { a b }` |
 | kleen star | `a*` | `[a]` | `star { a }`
 | optional | `a?` | `a?` | `opt { a }` |
-| repetition | `a{n,m}` | `a * (n..m)` | `rep n m { a }` |
-| class | `[a-z]` | `'a'..'z'` | `range a z` |
-| negation | `[^a-z]` | `not { range { a z } }` |
+| repetition | `a{n,m}` | `a * (n..m)` | `mul n m { a }` |
+| class | `[a-z]` | `'a'..'z'` | `seq a z` |
+| negation | `[^a-z]` | !`'a'..'z'` | `not { seq { a z } }` |
 
 **Targets**
 

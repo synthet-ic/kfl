@@ -3,24 +3,42 @@
 /// Pi
 #[macro_export]
 macro_rules! and {
-    [$($repr:expr),*] => {
-
+    [$one:expr] => {
+        ::repr::Repr::from($one)
+    };
+    [$one:expr, $two:expr] => {
+        ::repr::Repr::from($one) & ::repr::Repr::from($two)
+    };
+    [$one:expr, $($repr:expr),*] => {
+        ::repr::Repr::from($one) & and![$($repr:expr),*]
     }
 }
 
 /// Sigma
 #[macro_export]
 macro_rules! or {
-    [$($repr:expr),*] => {
-        
+    [$one:expr] => {
+        ::repr::Repr::from($one)
+    };
+    [$one:expr, $two:expr] => {
+        ::repr::Repr::from($one) | ::repr::Repr::from($two)
+    };
+    [$one:expr, $($repr:expr),*] => {
+        ::repr::Repr::from($one) | or![$($repr:expr),*]
     }
 }
 
 /// Delta
 #[macro_export]
 macro_rules! xor {
-    [$($repr:expr),*] => {
-        
+    [$one:expr] => {
+        ::repr::Repr::from($one)
+    };
+    [$one:expr, $two:expr] => {
+        ::repr::Repr::from($one) ^ ::repr::Repr::from($two)
+    };
+    [$one:expr, $($repr:expr),*] => {
+        ::repr::Repr::from($one) ^ xor![$($repr:expr),*]
     }
 }
 

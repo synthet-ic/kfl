@@ -74,3 +74,16 @@ impl HexLiteralKind {
         }
     }
 }
+
+impl LiteralKind {
+    /// If this literal was written as a `\x` hex escape, then this returns
+    /// the corresponding byte value. Otherwise, this returns `None`.
+    pub fn byte(&self, c: char) -> Option<u8> {
+        let short_hex = LiteralKind::HexFixed(HexLiteralKind::X);
+        if c as u32 <= 255 && self == short_hex {
+            Some(c as u8)
+        } else {
+            None
+        }
+    }
+}

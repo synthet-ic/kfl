@@ -1,0 +1,76 @@
+/// The kind of a single literal expression.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum LiteralKind {
+    /// The literal is written verbatim, e.g., `a` or `☃`.
+    Verbatim,
+    /// The literal is written as an escape because it is punctuation, e.g.,
+    /// `\*` or `\[`.
+    Punctuation,
+    /// The literal is written as an octal escape, e.g., `\141`.
+    Octal,
+    /// The literal is written as a hex code with a fixed number of digits
+    /// depending on the type of the escape, e.g., `\x61` or or `\u0061` or
+    /// `\U00000061`.
+    HexFixed(HexLiteralKind),
+    /// The literal is written as a hex code with a bracketed number of
+    /// digits. The only restriction is that the bracketed hex code must refer
+    /// to a valid Unicode scalar value.
+    HexBrace(HexLiteralKind),
+    /// The literal is written as a specially recognized escape, e.g., `\f`
+    /// or `\n`.
+    Special(SpecialLiteralKind),
+}
+
+/// The type of a special literal.
+///
+/// A special literal is a special escape sequence recognized by the regex
+/// parser, e.g., `\f` or `\n`.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum SpecialLiteralKind {
+    /// Bell, spelled `\a` (`\x07`).
+    Bell,
+    /// Form feed, spelled `\f` (`\x0C`).
+    FormFeed,
+    /// Tab, spelled `\t` (`\x09`).
+    Tab,
+    /// Line feed, spelled `\n` (`\x0A`).
+    LineFeed,
+    /// Carriage return, spelled `\r` (`\x0D`).
+    CarriageReturn,
+    /// Vertical tab, spelled `\v` (`\x0B`).
+    VerticalTab,
+    /// Space, spelled `\ ` (`\x20`). Note that this can only appear when
+    /// parsing in verbose mode.
+    Space,
+}
+
+/// The type of a Unicode hex literal.
+///
+/// Note that all variants behave the same when used with brackets. They only
+/// differ when used without brackets in the number of hex digits that must
+/// follow.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum HexLiteralKind {
+    /// A `\x` prefix. When used without brackets, this form is limited to
+    /// two digits.
+    X,
+    /// A `\u` prefix. When used without brackets, this form is limited to
+    /// four digits.
+    UnicodeShort,
+    /// A `\U` prefix. When used without brackets, this form is limited to
+    /// eight digits.
+    UnicodeLong,
+}
+
+impl HexLiteralKind {
+    /// The number of digits that must be used with this literal form when
+    /// used without brackets. When used with brackets, there is no
+    /// restriction on the number of digits.
+    pub fn digits(&self) -> u32 {
+        match *self {
+            HexLiteralKind::X => 2,
+            HexLiteralKind::UnicodeShort => 4,
+            HexLiteralKind::UnicodeLong => 8,
+        }
+    }
+}

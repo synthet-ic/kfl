@@ -162,6 +162,65 @@ impl<I: ~const Integral> const Seq<I> {
         or.sub(&and)
     }
     
+    /// Subtract the given Seq from this Seq and return the resulting
+    /// Seqs.
+    ///
+    /// If subtraction would result in an empty Seq, then no Seqs are
+    /// returned.
+    fn sub(&self, other: &Self) -> (Option<Self>, Option<Self>) {
+        if self.le(other) {
+            return (None, None);
+        }
+        if self.is_intersection_empty(other) {
+            return (Some(self.clone()), None);
+        }
+        let add_lower = other.0 > self.0;
+        let add_upper = other.1 < self.1;
+        // We know this because !self.le(other) and the ranges have
+        // a non-empty intersection.
+        assert!(add_lower || add_upper);
+        let mut ret = (None, None);
+        if add_lower {
+            let upper = other.0.decrement();
+            ret.0 = Some(Self::create(self.0, upper));
+        }
+        if add_upper {
+            let lower = other.1.increment();
+            let range = Self::create(lower, self.1);
+            if ret.0.is_none() {
+                ret.0 = Some(range);
+            } else {
+                ret.1 = Some(range);
+            }
+        }
+        ret
+    }
+    
+    /// If Seqs are either overlapping or adjacent.
+    pub const fn is_contiguous(&self, other: &Self) -> bool {
+        let lower1 = self.0.as_u32();
+        let upper1 = self.1.as_u32();
+        let lower2 = other.0.as_u32();
+        let upper2 = other.1.as_u32();
+        cmp::max(lower1, lower2) <= cmp::min(upper1, upper2).saturating_add(1)
+    }
+
+    /// If the intersection of this range and the
+    /// other range is empty.
+    pub const fn is_intersection_empty(&self, other: &Self) -> bool {
+        let (lower1, upper1) = (self.0, self.1);
+        let (lower2, upper2) = (other.0, other.1);
+        cmp::max(lower1, lower2) > cmp::min(upper1, upper2)
+    }
+
+    /// Returns true if and only if this range is a subset of the other range.
+    pub const fn le(&self, other: &Self) -> bool {
+        let (lower1, upper1) = (self.0, self.1);
+        let (lower2, upper2) = (other.0, other.1);
+        (lower2 <= lower1 && lower1 <= upper2)
+        && (lower2 <= upper1 && upper1 <= upper2)
+    }
+    
 //     /// Apply Unicode simple case folding to this character class, in place.
 //     /// The character class will be expanded to include all simple case folded
 //     /// character variants.
@@ -169,24 +228,6 @@ impl<I: ~const Integral> const Seq<I> {
 //     /// If this is a byte oriented character class, then this will be limited
 //     /// to the ASCII ranges `A-Z` and `a-z`.
 //     pub fn case_fold_simple(&mut self);
-    
-    /// Returns true if and only if this character class will only ever match
-    /// valid UTF-8.
-    ///
-    /// A character class can match invalid UTF-8 only when the following
-    /// conditions are met:
-    ///
-    /// 1. The translator was configured to permit generating an expression
-    ///    that can match invalid UTF-8. (By default, this is disabled.)
-    /// 2. Unicode mode (via the `u` flag) was disabled either in the concrete
-    ///    syntax or in the parser builder. By default, Unicode mode is
-    ///    enabled.
-    pub const fn is_always_utf8(&self) -> bool {
-        match *self {
-            Class::Unicode(_) => true,
-            Class::Bytes(ref x) => x.is_all_ascii(),
-        }
-    }
 }
 
 impl const Seq<char> {
@@ -251,6 +292,21 @@ impl const Seq<char> {
     ) -> result::Result<(), CaseFoldError> {
         self.0.case_fold_simple()
     }
+    
+    /// Returns true if and only if this character class will only ever match
+    /// valid UTF-8.
+    ///
+    /// A character class can match invalid UTF-8 only when the following
+    /// conditions are met:
+    ///
+    /// 1. The translator was configured to permit generating an expression
+    ///    that can match invalid UTF-8. (By default, this is disabled.)
+    /// 2. Unicode mode (via the `u` flag) was disabled either in the concrete
+    ///    syntax or in the parser builder. By default, Unicode mode is
+    ///    enabled.
+    pub const fn is_always_utf8(&self) -> bool {
+        true
+    }
 
     /// Returns true if and only if this character class will either match
     /// nothing or only ASCII bytes. Stated differently, this returns false
@@ -310,15 +366,15 @@ impl const Seq<u8> {
         }
         Ok(())
     }
+    
+    pub const fn is_always_utf8(&self) -> bool {
+        self.is_all_ascii()
+    }
 
-    /// Returns true if and only if this character class will either match
-    /// nothing or only ASCII bytes. Stated differently, this returns false
-    /// if and only if this class contains a non-ASCII byte.
+    /// If this character class will either match
+    /// nothing or only ASCII bytes. Or this class contains a non-ASCII byte.
     pub const fn is_all_ascii(&self) -> bool {
-        match self.0.intervals().last() {
-            None => true,
-            Some(r) => r.end <= 0x7F
-        }
+        self.1 <= 0x7F
     }
 }
 

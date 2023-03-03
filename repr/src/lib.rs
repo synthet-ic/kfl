@@ -37,6 +37,7 @@ mod wrappers;
 pub mod char;
 pub mod consts;
 pub mod escape;
+pub mod literal;
 pub mod macros;
 pub mod repr;
 

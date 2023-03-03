@@ -1,5 +1,5 @@
 use crate::{
-    p, u,
+    u, seq,
     repr::Repr
 };
 
@@ -16,6 +16,6 @@ pub const CR: Repr<char> = u!(000D);
 /// ` `
 pub const SP: Repr<char> = u!(0020);
 
-pub const DIGIT: Repr<char> = p!(0..9);
+pub const DIGIT: Repr<char> = seq!(0..9);
 pub const SPACE: Repr<char> = SP;
-pub const WORD: Repr<char> = p!(A..Z) | p!(a..z);
+pub const WORD: Repr<char> = seq!(A..Z) | seq!(a..z);

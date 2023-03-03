@@ -9,7 +9,11 @@
 
 - Capturing/grouping
 
-**Overview**
+**`Zero`**
+
+- `Zero` acts as both an additive and multiplicative unit?
+
+**Comparisons**
 
 | name | regex | op | kfl (exp.) |
 | - | - | - | - |

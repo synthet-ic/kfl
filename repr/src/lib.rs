@@ -31,7 +31,7 @@ let re = (wh | ".") * 1.. & "@" & (wh * 1.. & ".") * 1.. & wh * 2..4;
 extern crate alloc;
 
 mod convert;
-mod overload;
+mod operators;
 mod wrappers;
 
 pub mod char;

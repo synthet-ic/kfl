@@ -22,7 +22,7 @@ let re = (wh | ".") * 1.. & "@" & (wh * 1.. & ".") * 1.. & wh * 2..4;
 */
 
 #![feature(pattern)]
-#![feature(once_cell)]
+// #![feature(once_cell)]
 #![feature(const_trait_impl)]
 #![feature(box_syntax)]
 #![feature(try_trait_v2)]
@@ -32,6 +32,7 @@ extern crate alloc;
 
 mod convert;
 mod overload;
+mod wrappers;
 
 pub mod char;
 pub mod consts;

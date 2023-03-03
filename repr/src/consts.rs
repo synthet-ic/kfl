@@ -1,23 +1,21 @@
-use std::sync::LazyLock;
 use crate::{
     p, u,
-    pat::Pat
+    repr::Repr
 };
 
 /// `\0`
-pub const NUL: LazyLock<Pat> = LazyLock::new(|| u!(0000));
+pub const NUL: Repr = u!(0000);
 /// `\t`
-pub const HT: LazyLock<Pat> = LazyLock::new(|| u!(0009));
+pub const HT: Repr = u!(0009);
 /// `\n`
-pub const LF: LazyLock<Pat> = LazyLock::new(|| u!(000A));
+pub const LF: Repr = u!(000A);
 /// `\v`
-pub const VT: LazyLock<Pat> = LazyLock::new(|| u!(000B));
+pub const VT: Repr = u!(000B);
 /// `\r`
-pub const CR: LazyLock<Pat> = LazyLock::new(|| u!(000D));
+pub const CR: Repr = u!(000D);
 /// ` `
-pub const SP: LazyLock<Pat> = LazyLock::new(|| u!(0020));
+pub const SP: Repr = u!(0020);
 
-pub const EMPTY: LazyLock<Pat> = LazyLock::new(|| Pat::empty());
-pub const DIGIT: LazyLock<Pat> = LazyLock::new(|| p!(0..9));
-pub const SPACE: LazyLock<Pat> = LazyLock::new(|| Pat::empty() & ' ');
-pub const WORD: LazyLock<Pat> = LazyLock::new(|| Pat::empty() & p!(A..Z) | p!(a..z));
+pub const DIGIT: Repr = p!(0..9);
+pub const SPACE: Repr = Repr::empty() & ' ';
+pub const WORD: Repr = Repr::empty() & p!(A..Z) | p!(a..z);

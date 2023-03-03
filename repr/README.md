@@ -5,6 +5,10 @@
 - Can flags, infos and assertions be represented by Map?
 - Derivatives and lookaheads
 
+**`Map`**
+
+- Capturing/grouping
+
 **Overview**
 
 | name | regex | op | kfl (exp.) |

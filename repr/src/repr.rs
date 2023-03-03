@@ -5,18 +5,19 @@ use alloc::{
 use core::{
     cmp,
     fmt::Debug,
+    marker::Destruct,
     slice::Iter
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Repr<I: Integral> {
+pub enum Repr<I: ~const Integral> {
     Zero,  // TODO(rnarkk) let it hold word boundary
     /// A single character, where a character is either
     /// defined by a Unicode scalar value or an arbitrary byte. Unicode characters
     /// are preferred whenever possible. In particular, a `Byte` variant is only
     /// ever produced when it could match invalid UTF-8.
-    One(I),
-    Seq(Seq<I>),
+    One(I),  // TODO(rnarkk)  Seq(I, I)
+    Seq(Seq<I>),  // TODO(rnarkk)
     Not(Box<Repr<I>>),
     Or(Box<Repr<I>>, Box<Repr<I>>),
     And(Box<Repr<I>>, Box<Repr<I>>),
@@ -27,7 +28,7 @@ pub enum Repr<I: Integral> {
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
 }
 
-impl<I: Integral> Repr<I> {
+impl<I: ~const Integral> Repr<I> {
     pub const fn empty() -> Self {
         Self::Zero
     }
@@ -48,23 +49,23 @@ impl<I: Integral> Repr<I> {
         Self::Xor(box self, box other)
     }
     
-    pub const fn add(self, range: I) -> Self {
-        Self::Add(box self, range)
+    pub const fn add(self, seq: Seq<I>) -> Self {
+        Self::Add(box self, seq)
     }
     
-    pub const fn sub(self, range: I) -> Self {
-        Self::Sub(box self, range)
+    pub const fn sub(self, seq: Seq<I>) -> Self {
+        Self::Sub(box self, seq)
     }
     
-    pub const fn mul(self, range: I) -> Self {
+    pub const fn mul(self, range: Range) -> Self {
         Self::Mul(box self, range)
     }
 }
 
-impl<const N: usize, I: Integral> const Into<[I; N]> for Repr<I> {
+impl<const N: usize, I: ~const Integral> const Into<[I; N]> for Repr<I> {
     fn into(self) -> [I; N] {
         match self {
-            Repr::Empty => [],
+            Repr::Zero => [],
             Repr::Not(repr) => {
                 
             }
@@ -97,9 +98,9 @@ impl<'a, I> const Iterator for ReprIter<'a, I> {
 
 #[derive(Copy, Debug, Eq)]
 #[derive_const(Clone, Default, PartialEq, PartialOrd, Ord)]
-pub struct Seq<I: Integral>(pub I, pub I);
+pub struct Seq<I: ~const Integral>(pub I, pub I);
 
-impl<I: Integral> Seq<I> {
+impl<I: ~const Integral> Seq<I> {
     pub const fn new(from: I, to: I) -> Self {
         if from <= to {
             Seq(from, to)
@@ -149,7 +150,11 @@ impl<I: Integral> Seq<I> {
 }
 
 #[const_trait]
-pub trait Integral: Copy + Clone + Debug + Eq + ~const PartialEq + ~const  PartialOrd + Ord {
+pub trait Integral:
+    Copy + ~const Clone + Debug + Eq + ~const PartialEq + ~const  PartialOrd
+    + ~const Ord
+    + ~const Destruct
+{
     const MIN: Self;
     const MAX: Self;
     fn as_u32(self) -> u32;
@@ -194,6 +199,8 @@ impl const Integral for char {
 }
 
 // 24bit
+#[derive_const(Clone, PartialEq, PartialOrd, Ord)]
+#[derive(Copy, Debug, Eq)]
 pub enum Range {
     Empty,
     From(usize),

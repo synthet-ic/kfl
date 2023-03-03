@@ -1,6 +1,5 @@
 **TODO**
 
-- Div (quotient) for Repr
 - Can `ignore` be represented by Map?
 - Can flags, infos and assertions be represented by Map?
 - Derivatives and lookaheads
@@ -12,6 +11,10 @@
 **`Zero`**
 
 - `Zero` acts as both an additive and multiplicative unit?
+
+**`Div`** (quotients)
+
+- Case insensitivity
 
 **Comparisons**
 

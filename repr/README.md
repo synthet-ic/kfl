@@ -3,6 +3,7 @@
 - Div (quotient) for Repr
 - Can `ignore` be represented by Map?
 - Can flags, infos and assertions be represented by Map?
+- Derivatives and lookaheads
 
 **Overview**
 

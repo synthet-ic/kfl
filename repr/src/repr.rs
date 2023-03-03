@@ -9,6 +9,7 @@ use core::{
     slice::Iter
 };
 
+// TODO(rnarkk) Seq (class) as `or` for char, &str as `and` for char?
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Repr<I: ~const Integral> {
     Zero,  // TODO(rnarkk) let it hold word boundary?

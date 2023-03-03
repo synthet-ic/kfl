@@ -18,7 +18,7 @@ impl From<&str> for Repr<char> {
 
 impl From<ops::Range<char>> for Repr<char> {
     fn from(value: ops::Range<char>) -> Self {
-        Self::range(value)
+        Self::seq(value)
     }
 }
 

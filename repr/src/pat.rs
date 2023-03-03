@@ -1,8 +1,4 @@
 use core::{
-    ops::{
-        BitOr, BitAnd, Range, RangeFrom, RangeTo, Mul, RangeBounds, Bound, Try,
-        ControlFlow, FromResidual, RangeFull
-    },
     str::pattern::{Pattern, Searcher, SearchStep}
 };
 use regex::{Regex, Matches};
@@ -62,52 +58,6 @@ impl Pat {
                 panic!("In regex-ext, m..n is interpreted as m..=n.");
             }
         }
-    }
-}
-
-impl From<char> for Pat {
-    fn from(value: char) -> Self {
-        Self::new(&value.to_string())
-    }
-}   
-
-impl From<&str> for Pat {
-    fn from(value: &str) -> Self {
-        Self::new(value)
-    }
-}
-
-impl From<&Hir> for Pat {
-    fn from(value: &Hir) -> Self {
-        Self(value.clone())
-    }
-}
-
-impl From<Range<char>> for Pat {
-    fn from(value: Range<char>) -> Self {
-        Self::range(value)
-    }
-}
-
-impl<T: Into<Pat>> From<[T; 1]> for Pat {
-    fn from(value: [T; 1]) -> Self {
-        value.into_iter().nth(0).unwrap().into() * ..
-    }
-}
-
-// impl Deref for Pat {
-//     type Target = *mut Self;
-
-//     fn deref(&self) -> &Self::Target {
-//         &(*self * ..)
-//     }
-// }
-
-impl Into<Regex> for Pat {
-    fn into(self) -> Regex {
-        let mut pat = String::new();
-        Printer::new().print(&self.0, &mut pat).unwrap();
-        Regex::new(&pat).unwrap()
     }
 }
 

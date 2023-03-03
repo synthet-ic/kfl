@@ -33,17 +33,17 @@
 ```rust
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AssertionKind {
-    /// `^`
+    /// `^`,  `(?m:^)`
     StartLine,
-    /// `$`
+    /// `$`, `(?m:$)`
     EndLine,
     /// `\A`
     StartText,
     /// `\z`
     EndText,
-    /// `\b`
+    /// `\b`, `(?-u:\b)`
     WordBoundary,
-    /// `\B`
+    /// `\B`, `(?-u:\B)`
     NotWordBoundary,
 }
 ```

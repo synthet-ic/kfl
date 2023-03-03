@@ -4,7 +4,7 @@ use alloc::{
 };
 use core::{
     cmp,
-    fmt::Debug,
+    fmt::{Debug, Display},
     marker::Destruct,
     slice::Iter
 };
@@ -13,10 +13,6 @@ use core::{
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Repr<I: ~const Integral> {
     Zero,  // TODO(rnarkk) let it hold word boundary?
-    /// A single character, where a character is either
-    /// defined by a Unicode scalar value or an arbitrary byte. Unicode characters
-    /// are preferred whenever possible. In particular, a `Byte` variant is only
-    /// ever produced when it could match invalid UTF-8.
     One(I),  // TODO(rnarkk)  Seq(I, I)
     Seq(Seq<I>),  // TODO(rnarkk)
     Not(Box<Repr<I>>),
@@ -63,6 +59,32 @@ impl<I: ~const Integral> Repr<I> {
     }
 }
 
+impl const Repr<char> {
+    /// `.` expression that matches any character except for `\n`. To build an
+    /// expression that matches any character, including `\n`, use the `any`
+    /// method.
+    pub const fn dot() -> Self {
+        Self::Or(Self::Seq(Seq('\0', '\x09')), Self::Seq(Seq('\x0B', '\u{10FFFF}')))
+    }
+
+    /// `(?s).` expression that matches any character, including `\n`. To build an
+    /// expression that matches any character except for `\n`, then use the
+    /// `dot` method.
+    pub const fn any() -> Self {
+        Self::Seq(Seq('\0', '\u{10FFFF}'))
+    }
+}
+
+impl const Repr<u8> {
+    pub const fn dot() -> Self {
+        Self::Or(Self::Seq(Seq(b'\0', b'\x09')), Self::Seq(Seq(b'\x0B', b'\xFF')))
+    }
+
+    pub const fn any() -> Self {
+        Self::Seq(Seq(b'\0', b'\xFF'))
+    }
+}
+
 impl<const N: usize, I: ~const Integral> const Into<[I; N]> for Repr<I> {
     fn into(self) -> [I; N] {
         match self {
@@ -92,7 +114,7 @@ impl<I: ~const Integral> const IntoIterator for Repr<I> {
 #[derive_const(Clone, Default, PartialEq, PartialOrd, Ord)]
 pub struct Seq<I: ~const Integral>(pub I, pub I);
 
-impl<I: ~const Integral> Seq<I> {
+impl<I: ~const Integral> const Seq<I> {
     pub const fn new(from: I, to: I) -> Self {
         if from <= to {
             Seq(from, to)
@@ -139,8 +161,203 @@ impl<I: ~const Integral> Seq<I> {
         };
         or.sub(&and)
     }
+    
+//     /// Apply Unicode simple case folding to this character class, in place.
+//     /// The character class will be expanded to include all simple case folded
+//     /// character variants.
+//     ///
+//     /// If this is a byte oriented character class, then this will be limited
+//     /// to the ASCII ranges `A-Z` and `a-z`.
+//     pub fn case_fold_simple(&mut self);
+    
+    /// Returns true if and only if this character class will only ever match
+    /// valid UTF-8.
+    ///
+    /// A character class can match invalid UTF-8 only when the following
+    /// conditions are met:
+    ///
+    /// 1. The translator was configured to permit generating an expression
+    ///    that can match invalid UTF-8. (By default, this is disabled.)
+    /// 2. Unicode mode (via the `u` flag) was disabled either in the concrete
+    ///    syntax or in the parser builder. By default, Unicode mode is
+    ///    enabled.
+    pub const fn is_always_utf8(&self) -> bool {
+        match *self {
+            Class::Unicode(_) => true,
+            Class::Bytes(ref x) => x.is_all_ascii(),
+        }
+    }
 }
 
+impl const Seq<char> {
+    /// Expand this character class such that it contains all case folded
+    /// characters, according to Unicode's "simple" mapping. For example, if
+    /// this class consists of the range `a-z`, then applying case folding will
+    /// result in the class containing both the ranges `a-z` and `A-Z`.
+    ///
+    /// # Panics
+    ///
+    /// This routine panics when the case mapping data necessary for this
+    /// routine to complete is unavailable. This occurs when the `unicode-case`
+    /// feature is not enabled.
+    ///
+    /// Callers should prefer using `try_case_fold_simple` instead, which will
+    /// return an error instead of panicking.
+    /// =======================================================================
+    /// Apply simple case folding to this Unicode scalar value range.
+    ///
+    /// Additional ranges are appended to the given vector. Canonical ordering
+    /// is *not* maintained in the given vector.
+    fn case_fold_simple(
+        &self,
+        ranges: &mut Vec<ClassUnicodeRange>,
+    ) -> Result<(), unicode::CaseFoldError> {
+        if !unicode::contains_simple_case_mapping(self.start, self.end)? {
+            return Ok(());
+        }
+        let start = self.start as u32;
+        let end = (self.end as u32).saturating_add(1);
+        let mut next_simple_cp = None;
+        for cp in (start..end).filter_map(char::from_u32) {
+            if next_simple_cp.map_or(false, |next| cp < next) {
+                continue;
+            }
+            let it = match unicode::simple_fold(cp)? {
+                Ok(it) => it,
+                Err(next) => {
+                    next_simple_cp = next;
+                    continue;
+                }
+            };
+            for cp_folded in it {
+                ranges.push(ClassUnicodeRange::new(cp_folded, cp_folded));
+            }
+        }
+        Ok(())
+    }
+
+    /// Expand this character class such that it contains all case folded
+    /// characters, according to Unicode's "simple" mapping. For example, if
+    /// this class consists of the range `a-z`, then applying case folding will
+    /// result in the class containing both the ranges `a-z` and `A-Z`.
+    ///
+    /// # Error
+    ///
+    /// This routine returns an error when the case mapping data necessary
+    /// for this routine to complete is unavailable. This occurs when the
+    /// `unicode-case` feature is not enabled.
+    pub fn try_case_fold_simple(
+        &mut self,
+    ) -> result::Result<(), CaseFoldError> {
+        self.0.case_fold_simple()
+    }
+
+    /// Returns true if and only if this character class will either match
+    /// nothing or only ASCII bytes. Stated differently, this returns false
+    /// if and only if this class contains a non-ASCII codepoint.
+    pub fn is_all_ascii(&self) -> bool {
+        self.0.intervals().last().map_or(true, |r| r.end <= '\x7F')
+    }
+}
+
+impl const Debug for Seq<char> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let start = if !self.0.is_whitespace() && !self.0.is_control()
+        {
+            self.0.to_string()
+        } else {
+            format!("0x{:X}", self.0 as u32)
+        };
+        let end = if !self.1.is_whitespace() && !self.1.is_control() {
+            self.1.to_string()
+        } else {
+            format!("0x{:X}", self.1 as u32)
+        };
+        f.debug_struct("ClassUnicodeRange")
+            .field("start", &start)
+            .field("end", &end)
+            .finish()
+    }
+}
+
+impl const Seq<u8> {
+    /// Expand this character class such that it contains all case folded
+    /// characters. For example, if this class consists of the range `a-z`,
+    /// then applying case folding will result in the class containing both the
+    /// ranges `a-z` and `A-Z`.
+    ///
+    /// Note that this only applies ASCII case folding, which is limited to the
+    /// characters `a-z` and `A-Z`.
+    /// =======================================================================
+    /// Apply simple case folding to this byte range. Only ASCII case mappings
+    /// (for a-z) are applied.
+    ///
+    /// Additional ranges are appended to the given vector. Canonical ordering
+    /// is *not* maintained in the given vector.
+    fn case_fold_simple(
+        &self,
+        ranges: &mut Vec<ClassBytesRange>,
+    ) -> Result<(), unicode::CaseFoldError> {
+        if !ClassBytesRange::new(b'a', b'z').is_intersection_empty(self) {
+            let lower = cmp::max(self.start, b'a');
+            let upper = cmp::min(self.end, b'z');
+            ranges.push(ClassBytesRange::new(lower - 32, upper - 32));
+        }
+        if !ClassBytesRange::new(b'A', b'Z').is_intersection_empty(self) {
+            let lower = cmp::max(self.start, b'A');
+            let upper = cmp::min(self.end, b'Z');
+            ranges.push(ClassBytesRange::new(lower + 32, upper + 32));
+        }
+        Ok(())
+    }
+
+    /// Returns true if and only if this character class will either match
+    /// nothing or only ASCII bytes. Stated differently, this returns false
+    /// if and only if this class contains a non-ASCII byte.
+    pub const fn is_all_ascii(&self) -> bool {
+        match self.0.intervals().last() {
+            None => true,
+            Some(r) => r.end <= 0x7F
+        }
+    }
+}
+
+impl Debug for Seq<u8> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut debug = f.debug_struct("ClassBytesRange");
+        if self.0 <= 0x7F {
+            debug.field("start", &(self.0 as char));
+        } else {
+            debug.field("start", &self.0);
+        }
+        if self.1 <= 0x7F {
+            debug.field("end", &(self.1 as char));
+        } else {
+            debug.field("end", &self.1);
+        }
+        debug.finish()
+    }
+}
+
+/// A single character, where a character is either
+/// defined by a Unicode scalar value or an arbitrary byte. Unicode characters
+/// are preferred whenever possible. In particular, a `Byte` variant is only
+/// ever produced when it could match invalid UTF-8.
+/// ==========================================================================
+/// Type of characters. A character is either
+/// defined by a Unicode scalar value or a byte. Unicode characters are used
+/// by default, while bytes are used when Unicode mode (via the `u` flag) is
+/// disabled.
+///
+/// A character class, regardless of its character type, is represented by a
+/// sequence of non-overlapping non-adjacent ranges of characters.
+///
+/// Note that unlike [`Literal`](enum.Literal.html), a `Bytes` variant may
+/// be produced even when it exclusively matches valid UTF-8. This is because
+/// a `Bytes` variant represents an intention by the author of the regular
+/// expression to disable Unicode mode, which in turn impacts the semantics of
+/// case insensitive matching. For example, `(?i)k` and `(?i-u)k` will not
+/// match the same set of strings.
 #[const_trait]
 pub trait Integral:
     Copy + ~const Clone + Debug + Eq + ~const PartialEq + ~const  PartialOrd
@@ -154,20 +371,7 @@ pub trait Integral:
     fn pred(self) -> Self;
 }
 
-impl const Integral for u8 {
-    const MIN: Self = u8::MIN;
-    const MAX: Self = u8::MAX;
-    fn as_u32(self) -> u32 {
-        self as u32
-    }
-    fn suc(self) -> Self {
-        self.checked_add(1).unwrap()
-    }
-    fn pred(self) -> Self {
-        self.checked_sub(1).unwrap()
-    }
-}
-
+/// Unicode scalar values
 impl const Integral for char {
     const MIN: Self = '\x00';
     const MAX: Self = '\u{10FFFF}';
@@ -190,6 +394,21 @@ impl const Integral for char {
     }
 }
 
+/// Arbitrary bytes
+impl const Integral for u8 {
+    const MIN: Self = u8::MIN;
+    const MAX: Self = u8::MAX;
+    fn as_u32(self) -> u32 {
+        self as u32
+    }
+    fn suc(self) -> Self {
+        self.checked_add(1).unwrap()
+    }
+    fn pred(self) -> Self {
+        self.checked_sub(1).unwrap()
+    }
+}
+
 // 24bit
 #[derive_const(Clone, PartialEq, PartialOrd, Ord)]
 #[derive(Copy, Debug, Eq)]
@@ -198,4 +417,24 @@ pub enum Range {
     From(usize),
     To(usize),
     Full(usize, usize),
+}
+
+impl Range {
+    /// Returns true if and only if this repetition operator makes it possible
+    /// to match the empty string.
+    ///
+    /// Note that this is not defined inductively. For example, while `a*`
+    /// will report `true`, `()+` will not, even though `()` matches the empty
+    /// string and one or more occurrences of something that matches the empty
+    /// string will always match the empty string. In order to get the
+    /// inductive definition, see the corresponding method on
+    /// [`Hir`](struct.Hir.html).
+    pub const fn is_match_empty(&self) -> bool {
+        match self {
+            Range::Empty => true,
+            Range::To(_) => true,
+            Range::From(n) => n == 0,
+            Range::Full(n, _) => n == 0,
+        }
+    }
 }

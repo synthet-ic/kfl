@@ -11,7 +11,7 @@ use core::{
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Repr<I: ~const Integral> {
-    Zero,  // TODO(rnarkk) let it hold word boundary
+    Zero,  // TODO(rnarkk) let it hold word boundary?
     /// A single character, where a character is either
     /// defined by a Unicode scalar value or an arbitrary byte. Unicode characters
     /// are preferred whenever possible. In particular, a `Byte` variant is only
@@ -70,31 +70,22 @@ impl<const N: usize, I: ~const Integral> const Into<[I; N]> for Repr<I> {
                 
             }
             Repr::Xor(lhs, rhs) => lhs.clone().or(rhs).sub(lhs.and(rhs)),
+            _ => unimplemented!()
         }
     }
 }
 
-#[derive(Debug)]
-pub struct ReprIter<'a, I>(Iter<'a, I>);
+impl<T> const IntoIterator for Repr<T> {
+    type Item = T;
+    type IntoIter: Iter<'a, T>;
 
-impl<'a, I> const Iterator for ReprIter<'a, I> {
-    type Item = &'a I;
-
-    fn next(&mut self) -> Option<&'a I> {
-        self.0.pop()
+    fn into_iter(self) -> Self::IntoIter {
+        let mut iter = Vec::new();
+        match self {
+            _ => unimplemented!()
+        }
     }
 }
-
-// impl<T> const IntoIterator for Repr<T> {
-//     type Item = T;
-//     type IntoIter: ReprIter<'a, T>;
-
-//     fn into_iter(self) -> Self::IntoIter {
-//         let mut iter = Vec::new();
-//         match self {
-//         }
-//     }
-// }
 
 #[derive(Copy, Debug, Eq)]
 #[derive_const(Clone, Default, PartialEq, PartialOrd, Ord)]
@@ -109,7 +100,7 @@ impl<I: ~const Integral> Seq<I> {
         }
     }
     
-    /// Intersect this range with the given range and return the result.
+    /// Intersect this Seq with the given Seq and return the result.
     ///
     /// If the intersection is empty, then this returns `None`.
     pub const fn and(&self, other: &Self) -> Option<Self> {
@@ -122,7 +113,7 @@ impl<I: ~const Integral> Seq<I> {
         }
     }
     
-    /// Union the given overlapping range into this range.
+    /// Union the given overlapping Seq into this Seq.
     ///
     /// If the two ranges aren't contiguous, then this returns `None`.
     pub const fn or(&self, other: &Self) -> Option<Self> {
@@ -134,7 +125,7 @@ impl<I: ~const Integral> Seq<I> {
         Some(Self::new(from, to))
     }
     
-    /// Compute the symmetric difference the given range from this range. This
+    /// Compute the symmetric difference the given Seq from this Seq. This
     /// returns the union of the two ranges minus its intersection.
     pub const fn xor(&self, other: &Self) -> (Option<Self>, Option<Self>) {
         let or = match self.or(other) {

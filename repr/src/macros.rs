@@ -1,5 +1,29 @@
 //! Macro definitions.
 
+/// Pi
+#[macro_export]
+macro_rules! and {
+    [$($repr:expr),*] => {
+
+    }
+}
+
+/// Sigma
+#[macro_export]
+macro_rules! or {
+    [$($repr:expr),*] => {
+        
+    }
+}
+
+/// Delta
+#[macro_export]
+macro_rules! xor {
+    [$($repr:expr),*] => {
+        
+    }
+}
+
 /// Pattern
 #[macro_export]
 macro_rules! p {

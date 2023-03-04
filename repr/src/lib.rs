@@ -30,7 +30,7 @@ let re = (wh | '.') * 1.. & '@' & (wh * 1.. & '.') * 1.. & wh * 2..4;
 #![feature(const_try)]
 #![feature(const_for)]
 #![feature(const_box)]
-#![feature(const_iter)]
+// #![feature(const_iter)]
 // #![feature(negative_impls)]
 // #![feature(specialization)]
 

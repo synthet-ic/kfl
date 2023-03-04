@@ -5,31 +5,32 @@ use alloc::{
 use core::{
     cmp::{max, min},
     fmt::Debug,
+    // iter::IntoIterator,
     marker::Destruct,
-    slice::IntoIter
 };
 
 use crate::unicode;
 
+// TODO(rnarkk) Debug specilisation
 // TODO(rnarkk) Seq (class) as `or` for char, &str as `and` for char?
 #[derive_const(Clone)]
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Eq, PartialEq)]
 pub enum Repr<S, I: ~const Integral<S>> {
     Zero,  // TODO(rnarkk) let it hold word boundary?
-    One(I),  // TODO(rnarkk)  Seq(I, I)
-    Seq(Seq<I>),  // TODO(rnarkk)
+    One(S),  // TODO(rnarkk)  Seq(I, I)
+    Seq(Seq<S, I>),  // TODO(rnarkk)
     Not(Box<Repr<S, I>>),
     Or(Box<Repr<S, I>>, Box<Repr<S, I>>),
     And(Box<Repr<S, I>>, Box<Repr<S, I>>),
     Xor(Box<Repr<S, I>>, Box<Repr<S, I>>),
     Add(Box<Repr<S, I>>, Box<Repr<S, I>>),  // RegexSet
-    Sub(Box<Repr<S, I>>, Seq<I>),
+    Sub(Box<Repr<S, I>>, Seq<S, I>),
     Mul(Box<Repr<S, I>>, Range),
     // Map(Box<Repr<S, I>>, Fn(Box<Repr<S, I>>), Fn(Box<Repr<S, I>>))
 }
 
 impl<S, I: ~const Integral<S>> Repr<S, I> {
-    pub const fn new<const N: usize>(seqs: [Seq<I>; N]) -> Self {
+    pub const fn new<const N: usize>(seqs: [Seq<S, I>; N]) -> Self {
 
     }
 
@@ -57,7 +58,7 @@ impl<S, I: ~const Integral<S>> Repr<S, I> {
         Self::Add(box self, box other)
     }
     
-    pub const fn sub(self, seq: Seq<I>) -> Self {
+    pub const fn sub(self, seq: Seq<S, I>) -> Self {
         Self::Sub(box self, seq)
     }
     
@@ -66,7 +67,7 @@ impl<S, I: ~const Integral<S>> Repr<S, I> {
     }
 }
 
-impl const Repr<char> {
+impl Repr<&'static str, char> {
     /// `.` expression that matches any character except for `\n`. To build an
     /// expression that matches any character, including `\n`, use the `any`
     /// method.
@@ -83,7 +84,7 @@ impl const Repr<char> {
     }
 }
 
-impl const Repr<u8> {
+impl Repr<&[u8], u8> {
     pub const fn dot() -> Self {
         Self::Or(box Self::Seq(Seq(b'\0', b'\x09')),
                  box Self::Seq(Seq(b'\x0B', b'\xFF')))
@@ -94,20 +95,20 @@ impl const Repr<u8> {
     }
 }
 
-impl<const N: usize, S, I: ~const Integral<S>> const Into<[I; N]> for Repr<S, I> {
-    fn into(self) -> [I; N] {
-        match self {
-            Repr::Zero => [],
-            Repr::Not(repr) => {
+// impl<const N: usize, I: ~const Integral> const Into<[I; N]> for Repr<S, I> {
+//     fn into(self) -> [I; N] {
+//         match self {
+//             Repr::Zero => [],
+//             Repr::Not(repr) => {
                 
-            }
-            Repr::Xor(lhs, rhs) => (*lhs).clone().or(*rhs).sub(lhs.and(*rhs)),
-            _ => unimplemented!()
-        }
-    }
-}
+//             }
+//             Repr::Xor(lhs, rhs) => (*lhs).clone().or(*rhs).sub(lhs.and(*rhs)),
+//             _ => unimplemented!()
+//         }
+//     }
+// }
 
-// impl<I: ~const Integral> const IntoIterator for Repr<S, I> {
+// impl<S, I: ~const Integral<S>> const IntoIterator for Repr<S, I> {
 //     type Item = I;
 //     type IntoIter: IntoIter<'a, I>;
 
@@ -121,9 +122,10 @@ impl<const N: usize, S, I: ~const Integral<S>> const Into<[I; N]> for Repr<S, I>
 
 #[derive(Copy, Eq)]
 #[derive_const(Clone, Default, PartialEq, PartialOrd, Ord)]
-pub struct Seq<I: ~const Integral>(pub I, pub I);
+pub struct Seq<S, I: ~const Integral<S>>(pub I, pub I);
+    // where S: Clone;
 
-impl<S, I: ~const Integral<S>> const Seq<I> {
+impl<S, I: ~const Integral<S>> Seq<S, I> {
     pub const fn new(from: I, to: I) -> Self {
         if from <= to {
             Seq(from, to)
@@ -135,7 +137,7 @@ impl<S, I: ~const Integral<S>> const Seq<I> {
     /// Intersect this Seq with the given Seq and return the result.
     ///
     /// If the intersection is empty, then this returns `None`.
-    pub const fn and(&self, other: &Self) -> Option<Self> {
+    pub const fn and(self, other: Self) -> Option<Self> {
         match (max(self.0, other.0), min(self.1, other.1)) {
             (from, to) if from <= to => Some(Self::new(from, to)),
             _ => None
@@ -145,7 +147,7 @@ impl<S, I: ~const Integral<S>> const Seq<I> {
     /// Union the given overlapping Seq into this Seq.
     ///
     /// If the two Seqs aren't contiguous, then this returns `None`.
-    pub const fn or(&self, other: &Self) -> Option<Self> {
+    pub const fn or(self, other: Self) -> Option<Self> {
         match (max(self.0, other.0), min(self.1, other.1)) {
             (from, to) if from <= to.succ() => Some(Self::new(from, to)),
             _ => None
@@ -154,7 +156,7 @@ impl<S, I: ~const Integral<S>> const Seq<I> {
     
     /// Compute the symmetric difference the given Seq from this Seq. This
     /// returns the union of the two Seqs minus its intersection.
-    pub const fn xor(&self, other: &Self) -> (Option<Self>, Option<Self>) {
+    pub const fn xor(self, other: Self) -> (Option<Self>, Option<Self>) {
         let or = match self.or(other) {
             None => return (Some(self.clone()), Some(other.clone())),
             Some(or) => or,
@@ -171,8 +173,8 @@ impl<S, I: ~const Integral<S>> const Seq<I> {
     ///
     /// If subtraction would result in an empty Seq, then no Seqs are
     /// returned.
-    fn sub(&self, other: &Self) -> (Option<Self>, Option<Self>) {
-        if self.le(other) {
+    fn sub(self, other: Self) -> (Option<Self>, Option<Self>) {
+        if self.le(&other) {
             return (None, None);
         }
         if self.and(other).is_none() {
@@ -185,11 +187,11 @@ impl<S, I: ~const Integral<S>> const Seq<I> {
         assert!(add_lower || add_upper);
         let mut ret = (None, None);
         if add_lower {
-            let upper = other.0.decrement();
+            let upper = other.0.pred();
             ret.0 = Some(Self::new(self.0, upper));
         }
         if add_upper {
-            let lower = other.1.increment();
+            let lower = other.1.succ();
             let range = Self::new(lower, self.1);
             if ret.0.is_none() {
                 ret.0 = Some(range);
@@ -217,7 +219,7 @@ impl<S, I: ~const Integral<S>> const Seq<I> {
 //     pub fn case_fold_simple(&mut self);
 }
 
-impl const Seq<char> {
+impl<S> Seq<S, char> {
     /// Expand this character class such that it contains all case folded
     /// characters, according to Unicode's "simple" mapping. For example, if
     /// this class consists of the range `a-z`, then applying case folding will
@@ -303,7 +305,7 @@ impl const Seq<char> {
     // }
 }
 
-impl Debug for Seq<char> {
+impl<S> Debug for Seq<S, char> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let start = if !self.0.is_whitespace() && !self.0.is_control() {
             self.0.to_string()
@@ -322,7 +324,7 @@ impl Debug for Seq<char> {
     }
 }
 
-impl const Seq<u8> {
+impl<S> Seq<S, u8> {
     /// Expand this character class such that it contains all case folded
     /// characters. For example, if this class consists of the range `a-z`,
     /// then applying case folding will result in the class containing both the
@@ -364,7 +366,7 @@ impl const Seq<u8> {
     }
 }
 
-impl Debug for Seq<u8> {
+impl<S> Debug for Seq<S, u8> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let mut debug = f.debug_struct("Seq<u8>");
         if self.0 <= 0x7F {
@@ -405,7 +407,8 @@ pub trait Integral<S>: Copy + ~const Clone + Debug
                        + ~const PartialEq + Eq
                        + ~const PartialOrd + ~const Ord
                        + ~const Destruct
-    where S: ~const Iterator<Item = Self>
+    // where I: ~const Iterator<Item = Self>,
+    //       S: ~const Into<I>
 {
     const MIN: Self;
     const MAX: Self;
@@ -430,12 +433,6 @@ impl<S> const Integral<S> for char {
         }
     }
 }
-
-// impl<'a> const Iterator<char> for core::str::Chars<'a> {
-//     fn next(&mut self) -> Option<char> {
-//         <Self as core::iter::Iterator>::next(&mut self)
-//     }
-// }
 
 /// Arbitrary bytes
 impl<S> const Integral<S> for u8 {

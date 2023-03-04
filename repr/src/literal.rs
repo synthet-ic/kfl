@@ -1,14 +1,10 @@
 /*!
-Provides routines for extracting literal prefixes and suffixes from an `Hir`.
+Provides routines for extracting literal prefixes and suffixes from an `Repr<S, I>`.
 */
 
-use std::cmp;
-use std::fmt;
-use std::iter;
-use std::mem;
-use std::ops;
+use core::{cmp, fmt::{self, Debug}, iter, mem, ops};
 
-use crate::hir::{self, Hir, Repr};
+use crate::repr::{Repr, Seq, Range, Integral};
 
 /// A set of literal byte strings extracted from a regular expression.
 ///
@@ -27,7 +23,7 @@ use crate::hir::{self, Hir, Repr};
 /// be tweaked.
 ///
 /// **WARNING**: Literal extraction uses stack space proportional to the size
-/// of the `Hir` expression. At some point, this drawback will be eliminated.
+/// of the `Repr<S, I>` expression. At some point, this drawback will be eliminated.
 /// To protect yourself, set a reasonable
 /// [`nest_limit` on your `Parser`](../../struct.ParserBuilder.html#method.nest_limit).
 /// This is done for you by default.
@@ -54,15 +50,15 @@ impl Literals {
         Literals { lits: vec![], limit_size: 250, limit_class: 10 }
     }
 
-    /// Returns a set of literal prefixes extracted from the given `Hir`.
-    pub fn prefixes<const N: usize>(expr: &Hir) -> Literals {
+    /// Returns a set of literal prefixes extracted from the given `Repr<S, I>`.
+    pub fn prefixes<S, I: ~const Integral<S>>(expr: &Repr<S, I>) -> Literals {
         let mut lits = Literals::empty();
         lits.union_prefixes(expr);
         lits
     }
 
-    /// Returns a set of literal suffixes extracted from the given `Hir`.
-    pub fn suffixes<const N: usize>(expr: &Hir) -> Literals {
+    /// Returns a set of literal suffixes extracted from the given `Repr<S, I>`.
+    pub fn suffixes<S, I: ~const Integral<S>>(expr: &Repr<S, I>) -> Literals {
         let mut lits = Literals::empty();
         lits.union_suffixes(expr);
         lits
@@ -304,7 +300,7 @@ impl Literals {
     /// Note that prefix literals extracted from `expr` are said to be complete
     /// if and only if the literal extends from the beginning of `expr` to the
     /// end of `expr`.
-    pub fn union_prefixes<const N: usize>(&mut self, expr: &Hir) -> bool {
+    pub fn union_prefixes<S, I: ~const Integral<S>>(&mut self, expr: &Repr<S, I>) -> bool {
         let mut lits = self.to_empty();
         prefixes(expr, &mut lits);
         !lits.is_empty() && !lits.contains_empty() && self.union(lits)
@@ -319,7 +315,7 @@ impl Literals {
     /// Note that prefix literals extracted from `expr` are said to be complete
     /// if and only if the literal extends from the end of `expr` to the
     /// beginning of `expr`.
-    pub fn union_suffixes<const N: usize>(&mut self, expr: &Hir) -> bool {
+    pub fn union_suffixes<S, I: ~const Integral<S>>(&mut self, expr: &Repr<S, I>) -> bool {
         let mut lits = self.to_empty();
         suffixes(expr, &mut lits);
         lits.reverse();
@@ -448,7 +444,7 @@ impl Literals {
     /// Extends each literal in this set with the character class given.
     ///
     /// Returns false if the character class was too big to add.
-    pub fn add_char_class<const N: usize>(&mut self, cls: &hir::ClassUnicode)
+    pub fn add_char_class<S, I: ~const Integral<S>>(&mut self, cls: &Seq<char>)
         -> bool
     {
         self._add_char_class(cls, false)
@@ -458,16 +454,16 @@ impl Literals {
     /// writing the bytes of each character in reverse.
     ///
     /// Returns false if the character class was too big to add.
-    fn add_char_class_reverse<const N: usize>(&mut self,
-                                              cls: &hir::ClassUnicode)
+    fn add_char_class_reverse<S, I: ~const Integral<S>>(&mut self,
+                                              cls: &Seq<char>)
         -> bool
     {
         self._add_char_class(cls, true)
     }
 
-    fn _add_char_class<const N: usize>(
+    fn _add_char_class<S, I: ~const Integral<S>>(
         &mut self,
-        cls: &hir::ClassUnicode,
+        cls: &Seq<char>,
         reverse: bool,
     ) -> bool {
         use std::char;
@@ -498,7 +494,7 @@ impl Literals {
     /// Extends each literal in this set with the byte class given.
     ///
     /// Returns false if the byte class was too big to add.
-    pub fn add_byte_class<const N: usize>(&mut self, cls: &hir::ClassBytes) -> bool {
+    pub fn add_byte_class<S, I: ~const Integral<S>>(&mut self, cls: &Seq<u8>) -> bool {
         if self.class_exceeds_limits(cls_byte_count(cls)) {
             return false;
         }
@@ -584,54 +580,53 @@ impl Literals {
     }
 }
 
-fn prefixes<const N: usize>(expr: &Hir, lits: &mut Literals) {
+const fn prefixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
+    where I: ~const Integral<S>,
+{
     match *expr.kind() {
-        Repr<S, I>::Literal(hir::Literal::Unicode(c)) => {
+        Repr::One(c) => {
             let mut buf = [0; 4];
             lits.cross_add(c.encode_utf8(&mut buf).as_bytes());
         }
-        Repr<S, I>::Literal(hir::Literal::Byte(b)) => {
+        Repr::One(b) => {
             lits.cross_add(&[b]);
         }
-        Repr<S, I>::Class(hir::Class::Unicode(ref cls)) => {
+        Repr::Seq(ref cls) => {
             if !lits.add_char_class(cls) {
                 lits.cut();
             }
         }
-        Repr<S, I>::Class(hir::Class::Bytes(ref cls)) => {
+        Repr::Seq(ref cls) => {
             if !lits.add_byte_class(cls) {
                 lits.cut();
             }
         }
-        Repr<S, I>::Group(hir::Group { ref hir, .. }) => {
-            prefixes(&**hir, lits);
-        }
-        Repr<S, I>::Repetition(ref x) => match x.kind {
-            hir::Range::Full(0, 1) => {
+        Repr::Mul(ref x) => match x.kind {
+            Range::Full(0, 1) => {
                 repeat_zero_or_one_literals(&x.hir, lits, prefixes);
             }
-            hir::Range::From(0) => {
+            Range::From(0) => {
                 repeat_zero_or_more_literals(&x.hir, lits, prefixes);
             }
-            hir::Range::From(1) => {
+            Range::From(1) => {
                 repeat_one_or_more_literals(&x.hir, lits, prefixes);
             }
-            hir::Range::Full(ref rng) => {
+            Range::Full(ref rng) => {
                 let (min, max) = match *rng {
-                    hir::RepetitionRange::Exactly(m) => (m, Some(m)),
-                    hir::RepetitionRange::AtLeast(m) => (m, None),
-                    hir::RepetitionRange::Bounded(m, n) => (m, Some(n)),
+                    Range::Full(m, m) => (m, Some(m)),
+                    Range::From(m) => (m, None),
+                    Range::Full(m, n) => (m, Some(n)),
                 };
                 repeat_range_literals(
-                    &x.hir, min, max, x.greedy, lits, prefixes,
+                    &x.hir, min, max, lits, prefixes,
                 )
             }
         },
-        Repr<S, I>::Concat(ref es) if es.is_empty() => {}
-        Repr<S, I>::Concat(ref es) if es.len() == 1 => prefixes(&es[0], lits),
-        Repr<S, I>::Concat(ref es) => {
+        Repr::And(ref es) if es.is_empty() => {}
+        Repr::And(ref es) if es.len() == 1 => prefixes(&es[0], lits),
+        Repr::And(ref es) => {
             for e in es {
-                if let Repr<S, I>::Anchor(hir::Anchor::StartText) = *e.kind() {
+                if let Repr::Anchor(hir::Anchor::StartText) = *e.kind() {
                     if !lits.is_empty() {
                         lits.cut();
                         break;
@@ -650,64 +645,62 @@ fn prefixes<const N: usize>(expr: &Hir, lits: &mut Literals) {
                 }
             }
         }
-        Repr<S, I>::Alternation(ref es) => {
+        Repr::Or(ref es) => {
             alternate_literals(es, lits, prefixes);
         }
         _ => lits.cut(),
     }
 }
 
-fn suffixes<const N: usize>(expr: &Hir, lits: &mut Literals) {
+const fn suffixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
+    where I: ~const Integral<S>,
+{
     match *expr.kind() {
-        Repr<S, I>::Literal(hir::Literal::Unicode(c)) => {
+        Repr::One(c) => {
             let mut buf = [0u8; 4];
             let i = c.encode_utf8(&mut buf).len();
             let buf = &mut buf[..i];
             buf.reverse();
             lits.cross_add(buf);
         }
-        Repr<S, I>::Literal(hir::Literal::Byte(b)) => {
+        Repr::One(b) => {
             lits.cross_add(&[b]);
         }
-        Repr<S, I>::Class(hir::Class::Unicode(ref cls)) => {
+        Repr::Seq(ref cls) => {
             if !lits.add_char_class_reverse(cls) {
                 lits.cut();
             }
         }
-        Repr<S, I>::Class(hir::Class::Bytes(ref cls)) => {
+        Repr::Seq(ref cls) => {
             if !lits.add_byte_class(cls) {
                 lits.cut();
             }
         }
-        Repr<S, I>::Group(hir::Group { ref hir, .. }) => {
-            suffixes(&**hir, lits);
-        }
-        Repr<S, I>::Repetition(ref x) => match x.kind {
-            hir::Range::Full(0, 1) => {
+        Repr::Mul(ref x) => match x.kind {
+            Range::Full(0, 1) => {
                 repeat_zero_or_one_literals(&x.hir, lits, suffixes);
             }
-            hir::Range::From(0) => {
+            Range::From(0) => {
                 repeat_zero_or_more_literals(&x.hir, lits, suffixes);
             }
-            hir::Range::From(1) => {
+            Range::From(1) => {
                 repeat_one_or_more_literals(&x.hir, lits, suffixes);
             }
-            hir::Range::Full(ref rng) => {
+            Range::Full(ref rng) => {
                 let (min, max) = match *rng {
-                    hir::RepetitionRange::Exactly(m) => (m, Some(m)),
-                    hir::RepetitionRange::AtLeast(m) => (m, None),
-                    hir::RepetitionRange::Bounded(m, n) => (m, Some(n)),
+                    Range::Full(m, m) => (m, Some(m)),
+                    Range::From(m) => (m, None),
+                    Range::Full(m, n) => (m, Some(n)),
                 };
                 repeat_range_literals(
-                    &x.hir, min, max, x.greedy, lits, suffixes,
+                    &x.hir, min, max, lits, suffixes,
                 )
             }
         },
-        Repr<S, I>::Concat(ref es) if es.is_empty() => {}
-        Repr<S, I>::Concat(ref es) if es.len() == 1 => suffixes(&es[0], lits),
-        Repr<S, I>::Concat(ref es) => {
+        Repr::And(ref es) if es.len() == 1 => suffixes(&es[0], lits),
+        Repr::And(ref es) => {
             for e in es.iter().rev() {
-                if let Repr<S, I>::Anchor(hir::Anchor::EndText) = *e.kind() {
+                if let Repr::Anchor(hir::Anchor::EndText) = *e.kind() {
                     if !lits.is_empty() {
                         lits.cut();
                         break;
@@ -726,38 +719,32 @@ fn suffixes<const N: usize>(expr: &Hir, lits: &mut Literals) {
                 }
             }
         }
-        Repr<S, I>::Alternation(ref es) => {
+        Repr::Or(ref es) => {
             alternate_literals(es, lits, suffixes);
         }
         _ => lits.cut(),
     }
 }
 
-fn repeat_zero_or_one_literals<const N: usize,
-                               F: FnMut(&Hir, &mut Literals)>(
-    e: &Hir,
+const fn repeat_zero_or_one_literals<S, I, F>(
+    e: &Repr<S, I>,
     lits: &mut Literals,
     mut f: F,
-) {
-    f(
-        &Hir::repetition(hir::Repetition {
-            kind: hir::Range::From(0),
-            // FIXME: Our literal extraction doesn't care about greediness.
-            // Which is partially why we're treating 'e?' as 'e*'. Namely,
-            // 'ab??' yields [Complete(ab), Complete(a)], but it should yield
-            // [Complete(a), Complete(ab)] because of the non-greediness.
-            greedy: true,
-            hir: Box::new(e.clone()),
-        }),
-        lits,
-    );
+)
+    where I: ~const Integral<S>,
+          F: FnMut(&Repr<S, I>, &mut Literals)
+{
+    f(&Repr::Mul(box e.clone(), Range::From(0)), lits);
 }
 
-fn repeat_zero_or_more_literals<const N: usize, F: FnMut(&Hir, &mut Literals)>(
-    e: &Hir,
+fn repeat_zero_or_more_literals<S, I, F>(
+    e: &Repr<S, I>,
     lits: &mut Literals,
     mut f: F,
-) {
+)
+    where I: ~const Integral<S>,
+          F: FnMut(&Repr<S, I>, &mut Literals)
+{
     let (mut lits2, mut lits3) = (lits.clone(), lits.to_empty());
     lits3.set_limit_size(lits.limit_size() / 2);
     f(e, &mut lits3);
@@ -773,40 +760,38 @@ fn repeat_zero_or_more_literals<const N: usize, F: FnMut(&Hir, &mut Literals)>(
     }
 }
 
-fn repeat_one_or_more_literals<const N: usize, F: FnMut(&Hir, &mut Literals)>(
-    e: &Hir,
+fn repeat_one_or_more_literals<S, I, F>(
+    e: &Repr<S, I>,
     lits: &mut Literals,
     mut f: F,
-) {
+)
+    where I: ~const Integral<S>,
+          F: FnMut(&Repr<S, I>, &mut Literals)
+{
     f(e, lits);
     lits.cut();
 }
 
-fn repeat_range_literals<const N: usize, F: FnMut(&Hir, &mut Literals)>(
-    e: &Hir,
+fn repeat_range_literals<S, I, F>(
+    e: &Repr<S, I>,
     min: u32,
     max: Option<u32>,
-    greedy: bool,
     lits: &mut Literals,
     mut f: F,
-) {
+)
+    where I: ~const Integral<S>,
+          F: FnMut(&Repr<S, I>, &mut Literals)
+{
     if min == 0 {
         // This is a bit conservative. If `max` is set, then we could
         // treat this as a finite set of alternations. For now, we
         // just treat it as `e*`.
-        f(
-            &Hir::repetition(hir::Repetition {
-                kind: hir::Range::From(0),
-                greedy,
-                hir: Box::new(e.clone()),
-            }),
-            lits,
-        );
+        f(&Repr::Mul(e.clone(), Range::From(0)), lits);
     } else {
         if min > 0 {
             let n = cmp::min(lits.limit_size, min as usize);
             let es = iter::repeat(e.clone()).take(n).collect();
-            f(&Hir::concat(es), lits);
+            f(&Repr::concat(es), lits);
             if n < min as usize || lits.contains_empty() {
                 lits.cut();
             }
@@ -817,11 +802,14 @@ fn repeat_range_literals<const N: usize, F: FnMut(&Hir, &mut Literals)>(
     }
 }
 
-fn alternate_literals<const N: usize, F: FnMut(&Hir, &mut Literals)>(
-    es: &[Hir],
+fn alternate_literals<S, I, F>(
+    es: &[Repr<S, I>],
     lits: &mut Literals,
     mut f: F,
-) {
+)
+    where I: ~const Integral<S>,
+          F: FnMut(&Repr<S, I>, &mut Literals)
+{
     let mut lits2 = lits.to_empty();
     for e in es {
         let mut lits3 = lits.to_empty();
@@ -964,12 +952,12 @@ fn escape_byte(byte: u8) -> String {
     String::from_utf8_lossy(&escaped).into_owned()
 }
 
-fn cls_char_count<const N: usize>(cls: &hir::ClassUnicode) -> usize {
+fn cls_char_count<S, I: ~const Integral<S>>(cls: &Seq<char>) -> usize {
     cls.iter().map(|&r| 1 + (r.end as u32) - (r.start as u32)).sum::<u32>()
         as usize
 }
 
-fn cls_byte_count<const N: usize>(cls: &hir::ClassBytes) -> usize {
+fn cls_byte_count<S, I: ~const Integral<S>>(cls: &Seq<u8>) -> usize {
     cls.iter().map(|&r| 1 + (r.end as u32) - (r.start as u32)).sum::<u32>()
         as usize
 }
@@ -979,8 +967,7 @@ mod tests {
     use std::fmt;
 
     use super::{escape_bytes, Literal, Literals};
-    use crate::hir::Hir;
-    use crate::ParserBuilder;
+    use crate::repr::Repr;
 
     // To make test failures easier to read.
     #[derive(Debug, Eq, PartialEq)]
@@ -1049,11 +1036,11 @@ mod tests {
         ULiteral { v: s.to_owned(), cut: false }
     }
 
-    fn prefixes<const N: usize>(lits: &mut Literals, expr: &Hir) {
+    fn prefixes<S, I: ~const Integral<S>>(lits: &mut Literals, expr: &Repr<S, I>) {
         lits.union_prefixes(expr);
     }
 
-    fn suffixes<const N: usize>(lits: &mut Literals, expr: &Hir) {
+    fn suffixes<S, I: ~const Integral<S>>(lits: &mut Literals, expr: &Repr<S, I>) {
         lits.union_suffixes(expr);
     }
 

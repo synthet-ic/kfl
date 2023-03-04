@@ -14,6 +14,6 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-order = "0"
+order = { git = "https://github.com/synthet-ic/order" }
 regex = { version = "1.7", features = ["pattern"] }
 regex-syntax = "0.6"

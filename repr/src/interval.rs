@@ -29,7 +29,7 @@ use order;
 // Tests on this are relegated to the public API of HIR in src/hir.rs.
 // Tests for interval sets are written in src/hir.rs against the public API.
 
-impl<I: Interval> Repr<I> {
+impl<I: Interval> Repr<S, I> {
     /// Create a new set from a sequence of intervals.
     ///
     /// The given ranges do not need to be in any specific order, and ranges

@@ -586,27 +586,27 @@ impl Literals {
 
 fn prefixes<const N: usize>(expr: &Hir, lits: &mut Literals) {
     match *expr.kind() {
-        Repr<I>::Literal(hir::Literal::Unicode(c)) => {
+        Repr<S, I>::Literal(hir::Literal::Unicode(c)) => {
             let mut buf = [0; 4];
             lits.cross_add(c.encode_utf8(&mut buf).as_bytes());
         }
-        Repr<I>::Literal(hir::Literal::Byte(b)) => {
+        Repr<S, I>::Literal(hir::Literal::Byte(b)) => {
             lits.cross_add(&[b]);
         }
-        Repr<I>::Class(hir::Class::Unicode(ref cls)) => {
+        Repr<S, I>::Class(hir::Class::Unicode(ref cls)) => {
             if !lits.add_char_class(cls) {
                 lits.cut();
             }
         }
-        Repr<I>::Class(hir::Class::Bytes(ref cls)) => {
+        Repr<S, I>::Class(hir::Class::Bytes(ref cls)) => {
             if !lits.add_byte_class(cls) {
                 lits.cut();
             }
         }
-        Repr<I>::Group(hir::Group { ref hir, .. }) => {
+        Repr<S, I>::Group(hir::Group { ref hir, .. }) => {
             prefixes(&**hir, lits);
         }
-        Repr<I>::Repetition(ref x) => match x.kind {
+        Repr<S, I>::Repetition(ref x) => match x.kind {
             hir::Range::Full(0, 1) => {
                 repeat_zero_or_one_literals(&x.hir, lits, prefixes);
             }
@@ -627,11 +627,11 @@ fn prefixes<const N: usize>(expr: &Hir, lits: &mut Literals) {
                 )
             }
         },
-        Repr<I>::Concat(ref es) if es.is_empty() => {}
-        Repr<I>::Concat(ref es) if es.len() == 1 => prefixes(&es[0], lits),
-        Repr<I>::Concat(ref es) => {
+        Repr<S, I>::Concat(ref es) if es.is_empty() => {}
+        Repr<S, I>::Concat(ref es) if es.len() == 1 => prefixes(&es[0], lits),
+        Repr<S, I>::Concat(ref es) => {
             for e in es {
-                if let Repr<I>::Anchor(hir::Anchor::StartText) = *e.kind() {
+                if let Repr<S, I>::Anchor(hir::Anchor::StartText) = *e.kind() {
                     if !lits.is_empty() {
                         lits.cut();
                         break;
@@ -650,7 +650,7 @@ fn prefixes<const N: usize>(expr: &Hir, lits: &mut Literals) {
                 }
             }
         }
-        Repr<I>::Alternation(ref es) => {
+        Repr<S, I>::Alternation(ref es) => {
             alternate_literals(es, lits, prefixes);
         }
         _ => lits.cut(),
@@ -659,30 +659,30 @@ fn prefixes<const N: usize>(expr: &Hir, lits: &mut Literals) {
 
 fn suffixes<const N: usize>(expr: &Hir, lits: &mut Literals) {
     match *expr.kind() {
-        Repr<I>::Literal(hir::Literal::Unicode(c)) => {
+        Repr<S, I>::Literal(hir::Literal::Unicode(c)) => {
             let mut buf = [0u8; 4];
             let i = c.encode_utf8(&mut buf).len();
             let buf = &mut buf[..i];
             buf.reverse();
             lits.cross_add(buf);
         }
-        Repr<I>::Literal(hir::Literal::Byte(b)) => {
+        Repr<S, I>::Literal(hir::Literal::Byte(b)) => {
             lits.cross_add(&[b]);
         }
-        Repr<I>::Class(hir::Class::Unicode(ref cls)) => {
+        Repr<S, I>::Class(hir::Class::Unicode(ref cls)) => {
             if !lits.add_char_class_reverse(cls) {
                 lits.cut();
             }
         }
-        Repr<I>::Class(hir::Class::Bytes(ref cls)) => {
+        Repr<S, I>::Class(hir::Class::Bytes(ref cls)) => {
             if !lits.add_byte_class(cls) {
                 lits.cut();
             }
         }
-        Repr<I>::Group(hir::Group { ref hir, .. }) => {
+        Repr<S, I>::Group(hir::Group { ref hir, .. }) => {
             suffixes(&**hir, lits);
         }
-        Repr<I>::Repetition(ref x) => match x.kind {
+        Repr<S, I>::Repetition(ref x) => match x.kind {
             hir::Range::Full(0, 1) => {
                 repeat_zero_or_one_literals(&x.hir, lits, suffixes);
             }
@@ -703,11 +703,11 @@ fn suffixes<const N: usize>(expr: &Hir, lits: &mut Literals) {
                 )
             }
         },
-        Repr<I>::Concat(ref es) if es.is_empty() => {}
-        Repr<I>::Concat(ref es) if es.len() == 1 => suffixes(&es[0], lits),
-        Repr<I>::Concat(ref es) => {
+        Repr<S, I>::Concat(ref es) if es.is_empty() => {}
+        Repr<S, I>::Concat(ref es) if es.len() == 1 => suffixes(&es[0], lits),
+        Repr<S, I>::Concat(ref es) => {
             for e in es.iter().rev() {
-                if let Repr<I>::Anchor(hir::Anchor::EndText) = *e.kind() {
+                if let Repr<S, I>::Anchor(hir::Anchor::EndText) = *e.kind() {
                     if !lits.is_empty() {
                         lits.cut();
                         break;
@@ -726,7 +726,7 @@ fn suffixes<const N: usize>(expr: &Hir, lits: &mut Literals) {
                 }
             }
         }
-        Repr<I>::Alternation(ref es) => {
+        Repr<S, I>::Alternation(ref es) => {
             alternate_literals(es, lits, suffixes);
         }
         _ => lits.cut(),

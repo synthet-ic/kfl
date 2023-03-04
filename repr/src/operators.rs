@@ -1,22 +1,20 @@
-use core::ops::{
-    BitOr, BitAnd, Range, RangeFrom, RangeTo, Mul, RangeBounds, Bound, Try,
-    ControlFlow, FromResidual, RangeFull
-};
+use core::ops::{BitOr, BitAnd, BitXor, Range, Mul, RangeBounds};
 
-use crate::repr::Repr;
+use crate::repr::{Repr, Seq, Integral, Iterator};
 
-impl BitAnd<char> for Repr<char> {
-    type Output = Repr<char>;
+impl<I: ~const Integral> const BitAnd<I> for Repr<S, I> {
+    type Output = Repr<S, I>;
 
-    fn bitand(self, rhs: char) -> Repr<char> {
+    fn bitand(self, rhs: I) -> Repr<S, I> {
         self.and(rhs)
     }
 }
 
-impl BitAnd<&str> for Repr<char> {
-    type Output = Repr<char>;
+impl<S, I: ~const Integral<S>> const BitAnd<S> for Repr<S, I>
+{
+    type Output = Repr<S, I>;
 
-    fn bitand(self, rhs: &str) -> Repr<char> {
+    fn bitand(self, rhs: T) -> Repr<S, I> {
         self.and(rhs)
     }
 }
@@ -29,10 +27,10 @@ impl BitAnd<Repr<char>> for &str {
     }
 }
 
-impl BitAnd<Repr<char>> for Repr<char> {
-    type Output = Repr<char>;
+impl<I: ~const Integral> BitAnd<Repr<S, I>> for Repr<S, I> {
+    type Output = Repr<S, I>;
 
-    fn bitand(self, rhs: Self) -> Repr<char> {
+    fn bitand(self, rhs: Self) -> Repr<S, I> {
         self.and(rhs)
     }
 }
@@ -45,10 +43,10 @@ impl BitAnd<Repr<char>> for Repr<char> {
 //     }
 // }
 
-impl BitAnd<Range<char>> for Repr<char> {
-    type Output = Repr<char>;
+impl<I: ~const Integral> BitAnd<Range<I>> for Repr<S, I> {
+    type Output = Repr<S, I>;
 
-    fn bitand(self, rhs: Range<char>) -> Repr<char> {
+    fn bitand(self, rhs: Range<I>) -> Repr<S, I> {
         self.and(rhs)
     }
 }
@@ -61,10 +59,10 @@ impl<T: Into<Repr<char>>> BitAnd<[T; 1]> for Repr<char> {
     }
 }
 
-impl BitOr<char> for Repr<char> {
-    type Output = Repr<char>;
+impl<I: ~const Integral> BitOr<I> for Repr<S, I> {
+    type Output = Repr<S, I>;
     
-    fn bitor(self, rhs: char) -> Repr<char> {
+    fn bitor(self, rhs: I) -> Repr<S, I> {
         self.or(rhs)
     }
 }
@@ -85,18 +83,18 @@ impl BitOr<Repr<char>> for &str {
     }
 }
 
-impl BitOr<Repr<char>> for Repr<char> {
-    type Output = Repr<char>;
+impl<I: ~const Integral> BitOr<Repr<S, I>> for Repr<S, I> {
+    type Output = Repr<S, I>;
 
-    fn bitor(self, rhs: Self) -> Repr<char> {
+    fn bitor(self, rhs: Self) -> Repr<S, I> {
         self.or(rhs)
     }
 }
 
-impl BitOr<Range<char>> for Repr<char> {
-    type Output = Repr<char>;
+impl<I: ~const Integral> BitOr<Range<I>> for Repr<S, I> {
+    type Output = Repr<S, I>;
 
-    fn bitor(self, rhs: Range<char>) -> Repr<char> {
+    fn bitor(self, rhs: Range<I>) -> Repr<S, I> {
         self.or(rhs)
     }
 }
@@ -109,96 +107,34 @@ impl<T: Into<Repr<char>>> BitOr<[T; 1]> for Repr<char> {
     }
 }
 
-impl Mul<u32> for Repr<char> {
-    type Output = Repr<char>;
+impl<R: RangeBounds<usize>, I: ~const Integral> const Mul<R> for Repr<S, I> {
+    type Output = Repr<S, I>;
 
-    fn mul(self, rhs: u32) -> Repr<char> {
-        let rep = Repetition {
-            kind: RepetitionKind::Range(RepetitionRange::Exactly(rhs)),
-            greedy: true,
-            hir: box self.0
-        };
-        Self(Hir::repetition(rep))
+    fn mul(self, rhs: R) -> Repr<S, I> {
+        Self::Mul(box self, rhs.into())
     }
 }
 
-impl Mul<RangeFull> for Repr<char> {
-    type Output = Repr<char>;
+impl<I: ~const Integral> const BitAnd<Seq<I>> for Seq<I> {
+    type Output = Seq<I>;
 
-    fn mul(self, _: RangeFull) -> Repr<char> {
-        let rep = Repetition {
-            kind: RepetitionKind::Range(RepetitionRange::AtLeast(0)),
-            greedy: true,
-            hir: box self.0
-        };
-        Self(Hir::repetition(rep))
+    fn bitand(self, rhs: Seq<I>) -> Seq<I> {
+        self.and(&rhs)
     }
 }
 
-impl Mul<Range<u32>> for Repr<char> {
-    type Output = Repr<char>;
+impl<I: ~const Integral> const BitOr<Seq<I>> for Seq<I> {
+    type Output = Seq<I>;
 
-    fn mul(self, rhs: Range<u32>) -> Repr<char> {
-        let rep = Repetition {
-            kind: RepetitionKind::Range(RepetitionRange::Bounded(rhs.start, rhs.end)),
-            greedy: true,
-            hir: box self.0
-        };
-        Self(Hir::repetition(rep))
+    fn bitor(self, rhs: Seq<I>) -> Seq<I> {
+        self.or(&rhs)
     }
 }
 
-impl Mul<RangeFrom<u32>> for Repr<char> {
-    type Output = Repr<char>;
+impl<I: ~const Integral> const BitXor<Seq<I>> for Seq<I> {
+    type Output = Seq<I>;
 
-    fn mul(self, rhs: RangeFrom<u32>) -> Repr<char> {
-        let rep = Repetition {
-            kind: RepetitionKind::Range(RepetitionRange::AtLeast(rhs.start)),
-            greedy: true,
-            hir: box self.0
-        };
-        Self(Hir::repetition(rep))
-    }
-}
-
-impl Mul<RangeTo<u32>> for Repr<char> {
-    type Output = Repr<char>;
-
-    fn mul(self, rhs: RangeTo<u32>) -> Repr<char> {
-        let rep = Repetition {
-            kind: RepetitionKind::Range(RepetitionRange::Bounded(0, rhs.end)),
-            greedy: true,
-            hir: box self.0
-        };
-        Self(Hir::repetition(rep))
-    }
-}
-
-impl Try for Repr<char> {
-    type Output = Repr<char>;
-    type Residual = Repr<char>;
-
-    fn from_output(output: Repr<char>) -> Self {
-        output * (0..1)
-    }
-
-    fn branch(self) -> ControlFlow<Self::Residual, Repr<char>> {
-        match self.0.kind() {
-            HirKind::Repetition(rep) => {
-                let rep = Repetition {
-                    kind: rep.kind.clone(),
-                    greedy: false,
-                    hir: rep.hir.clone()
-                };
-                ControlFlow::Continue(Self(Hir::repetition(rep)))
-            },
-            _ => ControlFlow::Continue(self * (0..1))
-        }
-    }
-}
-
-impl FromResidual for Repr<char> {
-    fn from_residual(residual: <Self as Try>::Residual) -> Self {
-        residual
+    fn bitxor(self, rhs: Seq<I>) -> Seq<I> {
+        self.xor(&rhs)
     }
 }

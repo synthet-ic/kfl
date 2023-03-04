@@ -27,8 +27,14 @@ let re = (wh | '.') * 1.. & '@' & (wh * 1.. & '.') * 1.. & wh * 2..4;
 #![feature(box_syntax)]
 #![feature(try_trait_v2)]
 #![feature(derive_const)]
+#![feature(const_try)]
+#![feature(const_for)]
+#![feature(const_box)]
+#![feature(const_iter)]
+// #![feature(negative_impls)]
+// #![feature(specialization)]
 
-extern crate alloc;
+extern crate alloc; 
 
 mod conversions;
 mod operators;
@@ -40,6 +46,7 @@ pub mod escape;
 pub mod literal;
 pub mod macros;
 pub mod repr;
+// pub mod unicode;
 
 pub use consts::{DIGIT, SPACE, WORD};
 pub use repr::{Repr, Seq, Range};

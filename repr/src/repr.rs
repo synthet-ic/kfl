@@ -4,28 +4,35 @@ use alloc::{
 };
 use core::{
     cmp::{max, min},
-    fmt::{Debug, Display},
+    fmt::Debug,
     marker::Destruct,
-    slice::Iter
+    slice::IntoIter
 };
 
+use crate::unicode;
+
 // TODO(rnarkk) Seq (class) as `or` for char, &str as `and` for char?
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Repr<I: ~const Integral> {
+#[derive_const(Clone)]
+#[derive(Debug, Eq, PartialEq)]
+pub enum Repr<S, I: ~const Integral<S>> {
     Zero,  // TODO(rnarkk) let it hold word boundary?
     One(I),  // TODO(rnarkk)  Seq(I, I)
     Seq(Seq<I>),  // TODO(rnarkk)
-    Not(Box<Repr<I>>),
-    Or(Box<Repr<I>>, Box<Repr<I>>),
-    And(Box<Repr<I>>, Box<Repr<I>>),
-    Xor(Box<Repr<I>>, Box<Repr<I>>),
-    Add(Box<Repr<I>>, Box<Repr<I>>),  // RegexSet
-    Sub(Box<Repr<I>>, Seq<I>),
-    Mul(Box<Repr<I>>, Range),
-    // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
+    Not(Box<Repr<S, I>>),
+    Or(Box<Repr<S, I>>, Box<Repr<S, I>>),
+    And(Box<Repr<S, I>>, Box<Repr<S, I>>),
+    Xor(Box<Repr<S, I>>, Box<Repr<S, I>>),
+    Add(Box<Repr<S, I>>, Box<Repr<S, I>>),  // RegexSet
+    Sub(Box<Repr<S, I>>, Seq<I>),
+    Mul(Box<Repr<S, I>>, Range),
+    // Map(Box<Repr<S, I>>, Fn(Box<Repr<S, I>>), Fn(Box<Repr<S, I>>))
 }
 
-impl<I: ~const Integral> Repr<I> {
+impl<S, I: ~const Integral<S>> Repr<S, I> {
+    pub const fn new<const N: usize>(seqs: [Seq<I>; N]) -> Self {
+
+    }
+
     pub const fn empty() -> Self {
         Self::Zero
     }
@@ -64,7 +71,8 @@ impl const Repr<char> {
     /// expression that matches any character, including `\n`, use the `any`
     /// method.
     pub const fn dot() -> Self {
-        Self::Or(Self::Seq(Seq('\0', '\x09')), Self::Seq(Seq('\x0B', '\u{10FFFF}')))
+        Self::Or(box Self::Seq(Seq('\0', '\x09')),
+                 box Self::Seq(Seq('\x0B', '\u{10FFFF}')))
     }
 
     /// `(?s).` expression that matches any character, including `\n`. To build an
@@ -77,7 +85,8 @@ impl const Repr<char> {
 
 impl const Repr<u8> {
     pub const fn dot() -> Self {
-        Self::Or(Self::Seq(Seq(b'\0', b'\x09')), Self::Seq(Seq(b'\x0B', b'\xFF')))
+        Self::Or(box Self::Seq(Seq(b'\0', b'\x09')),
+                 box Self::Seq(Seq(b'\x0B', b'\xFF')))
     }
 
     pub const fn any() -> Self {
@@ -85,36 +94,36 @@ impl const Repr<u8> {
     }
 }
 
-impl<const N: usize, I: ~const Integral> const Into<[I; N]> for Repr<I> {
+impl<const N: usize, S, I: ~const Integral<S>> const Into<[I; N]> for Repr<S, I> {
     fn into(self) -> [I; N] {
         match self {
             Repr::Zero => [],
             Repr::Not(repr) => {
                 
             }
-            Repr::Xor(lhs, rhs) => lhs.clone().or(rhs).sub(lhs.and(rhs)),
+            Repr::Xor(lhs, rhs) => (*lhs).clone().or(*rhs).sub(lhs.and(*rhs)),
             _ => unimplemented!()
         }
     }
 }
 
-impl<I: ~const Integral> const IntoIterator for Repr<I> {
-    type Item = I;
-    type IntoIter: Iter<'a, I>;
+// impl<I: ~const Integral> const IntoIterator for Repr<S, I> {
+//     type Item = I;
+//     type IntoIter: IntoIter<'a, I>;
 
-    fn into_iter(self) -> Self::IntoIter {
-        let mut iter = Vec::new();
-        match self {
-            _ => unimplemented!()
-        }
-    }
-}
+//     fn into_iter(self) -> Self::IntoIter {
+//         let mut iter = Vec::new();
+//         match self {
+//             _ => unimplemented!()
+//         }
+//     }
+// }
 
-#[derive(Copy, Debug, Eq)]
+#[derive(Copy, Eq)]
 #[derive_const(Clone, Default, PartialEq, PartialOrd, Ord)]
 pub struct Seq<I: ~const Integral>(pub I, pub I);
 
-impl<I: ~const Integral> const Seq<I> {
+impl<S, I: ~const Integral<S>> const Seq<I> {
     pub const fn new(from: I, to: I) -> Self {
         if from <= to {
             Seq(from, to)
@@ -127,29 +136,24 @@ impl<I: ~const Integral> const Seq<I> {
     ///
     /// If the intersection is empty, then this returns `None`.
     pub const fn and(&self, other: &Self) -> Option<Self> {
-        let from = max(self.0, other.0);
-        let to = min(self.1, other.1);
-        if from <= to {
-            Some(Self::new(from, to))
-        } else {
-            None
+        match (max(self.0, other.0), min(self.1, other.1)) {
+            (from, to) if from <= to => Some(Self::new(from, to)),
+            _ => None
         }
     }
     
     /// Union the given overlapping Seq into this Seq.
     ///
-    /// If the two ranges aren't contiguous, then this returns `None`.
+    /// If the two Seqs aren't contiguous, then this returns `None`.
     pub const fn or(&self, other: &Self) -> Option<Self> {
-        if !self.is_contiguous(other) {
-            return None;
+        match (max(self.0, other.0), min(self.1, other.1)) {
+            (from, to) if from <= to.succ() => Some(Self::new(from, to)),
+            _ => None
         }
-        let from = max(self.0, other.0);
-        let to = min(self.1, other.1);
-        Some(Self::new(from, to))
     }
     
     /// Compute the symmetric difference the given Seq from this Seq. This
-    /// returns the union of the two ranges minus its intersection.
+    /// returns the union of the two Seqs minus its intersection.
     pub const fn xor(&self, other: &Self) -> (Option<Self>, Option<Self>) {
         let or = match self.or(other) {
             None => return (Some(self.clone()), Some(other.clone())),
@@ -195,15 +199,6 @@ impl<I: ~const Integral> const Seq<I> {
         }
         ret
     }
-    
-    /// If Seqs are either overlapping or adjacent.
-    pub const fn is_contiguous(&self, other: &Self) -> bool {
-        let lower1 = self.0.as_u32();
-        let upper1 = self.1.as_u32();
-        let lower2 = other.0.as_u32();
-        let upper2 = other.1.as_u32();
-        max(lower1, lower2) <= min(upper1, upper2).saturating_add(1)
-    }
 
     /// Returns true if and only if this range is a subset of the other range.
     pub const fn le(&self, other: &Self) -> bool {
@@ -243,17 +238,19 @@ impl const Seq<char> {
     /// is *not* maintained in the given vector.
     fn case_fold_simple(
         &self,
-        ranges: &mut Vec<ClassUnicodeRange>,
-    ) -> Result<(), unicode::CaseFoldError> {
-        if !unicode::contains_simple_case_mapping(self.start, self.end)? {
+        ranges: &mut Vec<Self>,
+    ) -> Result<(), ()> {
+        if !unicode::contains_simple_case_mapping(self.0, self.1)? {
             return Ok(());
         }
-        let start = self.start as u32;
-        let end = (self.end as u32).saturating_add(1);
+        let start = self.0 as u32;
+        let end = (self.1 as u32).saturating_add(1);
         let mut next_simple_cp = None;
         for cp in (start..end).filter_map(char::from_u32) {
-            if next_simple_cp.map_or(false, |next| cp < next) {
-                continue;
+            if let Some(next) = next_simple_cp {
+                if cp < next {
+                    continue;
+                }
             }
             let it = match unicode::simple_fold(cp)? {
                 Ok(it) => it,
@@ -263,7 +260,7 @@ impl const Seq<char> {
                 }
             };
             for cp_folded in it {
-                ranges.push(ClassUnicodeRange::new(cp_folded, cp_folded));
+                ranges.push(Seq::new(cp_folded, cp_folded));
             }
         }
         Ok(())
@@ -279,9 +276,7 @@ impl const Seq<char> {
     /// This routine returns an error when the case mapping data necessary
     /// for this routine to complete is unavailable. This occurs when the
     /// `unicode-case` feature is not enabled.
-    pub fn try_case_fold_simple(
-        &mut self,
-    ) -> result::Result<(), CaseFoldError> {
+    pub fn try_case_fold_simple(&mut self) -> Result<(), ()> {
         self.0.case_fold_simple()
     }
     
@@ -300,18 +295,17 @@ impl const Seq<char> {
         true
     }
 
-    /// Returns true if and only if this character class will either match
-    /// nothing or only ASCII bytes. Stated differently, this returns false
-    /// if and only if this class contains a non-ASCII codepoint.
-    pub fn is_all_ascii(&self) -> bool {
-        self.0.intervals().last().map_or(true, |r| r.end <= '\x7F')
-    }
+    // /// Returns true if and only if this character class will either match
+    // /// nothing or only ASCII bytes. Stated differently, this returns false
+    // /// if and only if this class contains a non-ASCII codepoint.
+    // pub fn is_all_ascii(&self) -> bool {
+    //     self.0.intervals().last().map_or(true, |r| r.end <= '\x7F')
+    // }
 }
 
-impl const Debug for Seq<char> {
+impl Debug for Seq<char> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let start = if !self.0.is_whitespace() && !self.0.is_control()
-        {
+        let start = if !self.0.is_whitespace() && !self.0.is_control() {
             self.0.to_string()
         } else {
             format!("0x{:X}", self.0 as u32)
@@ -321,9 +315,9 @@ impl const Debug for Seq<char> {
         } else {
             format!("0x{:X}", self.1 as u32)
         };
-        f.debug_struct("ClassUnicodeRange")
-            .field("start", &start)
-            .field("end", &end)
+        f.debug_struct("Seq<char>")
+            .field("0", &start)
+            .field("1", &end)
             .finish()
     }
 }
@@ -344,17 +338,17 @@ impl const Seq<u8> {
     /// is *not* maintained in the given vector.
     fn case_fold_simple(
         &self,
-        ranges: &mut Vec<ClassBytesRange>,
-    ) -> Result<(), unicode::CaseFoldError> {
-        if !ClassBytesRange::new(b'a', b'z').is_intersection_empty(self) {
-            let lower = max(self.start, b'a');
-            let upper = min(self.end, b'z');
-            ranges.push(ClassBytesRange::new(lower - 32, upper - 32));
+        ranges: &mut Vec<Self>,
+    ) -> Result<(), ()> {
+        if !Seq::new(b'a', b'z').and(self).is_none() {
+            let lower = max(self.0, b'a');
+            let upper = min(self.1, b'z');
+            ranges.push(Seq::new(lower - 32, upper - 32));
         }
-        if !ClassBytesRange::new(b'A', b'Z').is_intersection_empty(self) {
-            let lower = max(self.start, b'A');
-            let upper = min(self.end, b'Z');
-            ranges.push(ClassBytesRange::new(lower + 32, upper + 32));
+        if !Seq::new(b'A', b'Z').and(self).is_none() {
+            let lower = max(self.0, b'A');
+            let upper = min(self.1, b'Z');
+            ranges.push(Seq::new(lower + 32, upper + 32));
         }
         Ok(())
     }
@@ -372,16 +366,16 @@ impl const Seq<u8> {
 
 impl Debug for Seq<u8> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let mut debug = f.debug_struct("ClassBytesRange");
+        let mut debug = f.debug_struct("Seq<u8>");
         if self.0 <= 0x7F {
-            debug.field("start", &(self.0 as char));
+            debug.field("0", &(self.0 as char));
         } else {
-            debug.field("start", &self.0);
+            debug.field("0", &self.0);
         }
         if self.1 <= 0x7F {
-            debug.field("end", &(self.1 as char));
+            debug.field("1", &(self.1 as char));
         } else {
-            debug.field("end", &self.1);
+            debug.field("1", &self.1);
         }
         debug.finish()
     }
@@ -407,33 +401,28 @@ impl Debug for Seq<u8> {
 /// case insensitive matching. For example, `(?i)k` and `(?i-u)k` will not
 /// match the same set of strings.
 #[const_trait]
-pub trait Integral:
-    Copy + ~const Clone + Debug + Eq + ~const PartialEq + ~const  PartialOrd
-    + ~const Ord
-    + ~const Destruct
+pub trait Integral<S>: Copy + ~const Clone + Debug
+                       + ~const PartialEq + Eq
+                       + ~const PartialOrd + ~const Ord
+                       + ~const Destruct
+    where S: ~const Iterator<Item = Self>
 {
     const MIN: Self;
     const MAX: Self;
-    fn as_u32(self) -> u32;
     fn succ(self) -> Self;
     fn pred(self) -> Self;
 }
 
 /// Unicode scalar values
-impl const Integral for char {
+impl<S> const Integral<S> for char {
     const MIN: Self = '\x00';
     const MAX: Self = '\u{10FFFF}';
-    fn as_u32(self) -> u32 {
-        self as u32
-    }
-
     fn succ(self) -> Self {
         match self {
             '\u{D7FF}' => '\u{E000}',
             c => char::from_u32((c as u32).checked_add(1).unwrap()).unwrap(),
         }
     }
-
     fn pred(self) -> Self {
         match self {
             '\u{E000}' => '\u{D7FF}',
@@ -442,13 +431,16 @@ impl const Integral for char {
     }
 }
 
+// impl<'a> const Iterator<char> for core::str::Chars<'a> {
+//     fn next(&mut self) -> Option<char> {
+//         <Self as core::iter::Iterator>::next(&mut self)
+//     }
+// }
+
 /// Arbitrary bytes
-impl const Integral for u8 {
+impl<S> const Integral<S> for u8 {
     const MIN: Self = u8::MIN;
     const MAX: Self = u8::MAX;
-    fn as_u32(self) -> u32 {
-        self as u32
-    }
     fn succ(self) -> Self {
         self.checked_add(1).unwrap()
     }
@@ -481,8 +473,8 @@ impl Range {
         match self {
             Range::Empty => true,
             Range::To(_) => true,
-            Range::From(n) => n == 0,
-            Range::Full(n, _) => n == 0,
+            Range::From(n) => n == &0,
+            Range::Full(n, _) => n == &0,
         }
     }
 }

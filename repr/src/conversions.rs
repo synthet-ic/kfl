@@ -1,34 +1,33 @@
-use core::ops::{
-    self, RangeFrom, RangeTo, RangeFull, RangeBounds, Bound
-};
+use core::ops::{self, RangeBounds, Bound};
 
-use crate::repr::{Repr, Seq, Range};
+use crate::repr::{Repr, Seq, Range, Integral};
 
-impl From<char> for Repr<char> {
-    fn from(value: char) -> Self {
-        Self::new(&value.to_string())
+impl<I: ~const Integral> const From<I> for Repr<S, I> {
+    fn from(value: I) -> Repr<S, I> {
+        Self::One(value)
     }
 }   
 
-impl From<&str> for Repr<char> {
-    fn from(value: &str) -> Self {
-        Self::new(value)
+// impl From<&str> for Repr<char> {
+//     fn from(value: &str) -> Self {
+//         Self::new(value)
+//     }
+// }
+
+// TODO(rnarkk) Is ther any use to generalise it to R: RangeBounds<usize>?
+impl<I: ~const Integral> const From<ops::Range<I>> for Repr<S, I> {
+    fn from(value: ops::Range<I>) -> Repr<S, I> {
+        Self::Seq(value.into())
     }
 }
 
-impl From<ops::Range<char>> for Repr<char> {
-    fn from(value: ops::Range<char>) -> Self {
-        Self::seq(value)
-    }
-}
-
-impl<T: Into<Repr<char>>> From<[T; 1]> for Repr<char> {
-    fn from(value: [T; 1]) -> Self {
+impl<I: ~const Integral, T: Into<Repr<S, I>>> const From<[T; 1]> for Repr<S, I> {
+    fn from(value: [T; 1]) -> Repr<S, I> {
         value.into_iter().nth(0).unwrap().into() * ..
     }
 }
 
-impl const From<R: RangeBounds<usize>> for Range {
+impl<R: RangeBounds<usize>> const From<R> for Range {
     fn from(range: R) -> Self {
         match (range.start_bound(), range.end_bound()) {
             (Bound::Unbounded, Bound::Unbounded) => Range::Empty,
@@ -38,13 +37,5 @@ impl const From<R: RangeBounds<usize>> for Range {
                 => Range::Full(start, end),
             _ => panic!("Try m..n in place of m..=n.")
         }
-    }
-}
-
-impl Into<Regex> for Repr<char> {
-    fn into(self) -> Regex {
-        let mut pat = String::new();
-        Printer::new().print(&self.0, &mut pat).unwrap();
-        Regex::new(&pat).unwrap()
     }
 }

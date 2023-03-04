@@ -8,7 +8,7 @@ use core::{
     ops::{Deref, DerefMut}
 };
 
-use crate::repr::{Repr, Seq, Range, Integral};
+use crate::repr::{Repr, Seq, Range, Integral, Zero};
 
 /// A set of literal byte strings extracted from a regular expression.
 ///
@@ -580,7 +580,7 @@ const fn prefixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
     where I: ~const Integral<S>,
 {
     match *expr.kind() {
-        Repr::Empty => {}
+        Repr::Zero(_) => {}
         Repr::One(c) => {
             let mut buf = [0; 4];
             lits.cross_add(c.encode_utf8(&mut buf).as_bytes());
@@ -626,7 +626,7 @@ const fn prefixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
         
         Repr::And(ref lhs, ref rhs) => {
             for e in es {
-                if let Repr::Anchor(hir::Anchor::StartText) = *e.kind() {
+                if let Repr::Zero(Zero::StartText) = e {
                     if !lits.is_empty() {
                         lits.cut = true;
                         break;
@@ -705,7 +705,7 @@ const fn suffixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
         },
         Repr::And(ref lhs, ref rhs) => {
             for e in es.iter().rev() {
-                if let Repr::Anchor(hir::Anchor::EndText) = *e.kind() {
+                if let Repr::Anchor(Zero::EndText) = e {
                     if !lits.is_empty() {
                         lits.cut = true;
                         break;

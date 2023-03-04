@@ -16,16 +16,16 @@ use crate::unicode;
 #[derive_const(Clone)]
 #[derive(Eq, PartialEq)]
 pub enum Repr<S, I: ~const Integral<S>> {
-    Zero(Zero),  // TODO(rnarkk)
+    Zero(Zero),
     One(S),  // TODO(rnarkk)  Seq(I, I)
     Seq(Seq<S, I>),  // TODO(rnarkk)
     Not(Box<Repr<S, I>>),
     Or(Box<Repr<S, I>>, Box<Repr<S, I>>),
     And(Box<Repr<S, I>>, Box<Repr<S, I>>),
     Xor(Box<Repr<S, I>>, Box<Repr<S, I>>),
-    Add(Box<Repr<S, I>>, Box<Repr<S, I>>),  // RegexSet
-    Sub(Box<Repr<S, I>>, Seq<S, I>),
-    Mul(Box<Repr<S, I>>, Range),
+    Add(Box<Repr<S, I>>, Box<Repr<S, I>>),
+    Sub(Box<Repr<S, I>>, Seq<S, I>),  // TODO(rnarkk)
+    Mul(Box<Repr<S, I>>, Range),  // TODO(rnarkk) should use for intersection?
     // Map(Box<Repr<S, I>>, Fn(Box<Repr<S, I>>), Fn(Box<Repr<S, I>>))
 }
 

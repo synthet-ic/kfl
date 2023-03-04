@@ -383,7 +383,7 @@ pub fn is_word_character(c: char) -> result::Result<bool, ()> {
 /// value.
 type PropertyValues = &'static [(&'static str, &'static str)];
 
-fn canonical_gencat(normalized_value: &str) -> Result<Option<&'static str>> {
+const fn canonical_gencat(normalized_value: &str) -> Result<Option<&'static str>> {
     Ok(match normalized_value {
         "any" => Some("Any"),
         "assigned" => Some("Assigned"),
@@ -395,7 +395,7 @@ fn canonical_gencat(normalized_value: &str) -> Result<Option<&'static str>> {
     })
 }
 
-fn canonical_script(normalized_value: &str) -> Result<Option<&'static str>> {
+const fn canonical_script(normalized_value: &str) -> Result<Option<&'static str>> {
     let scripts = property_values("Script")?.unwrap();
     Ok(canonical_value(scripts, normalized_value))
 }
@@ -408,7 +408,7 @@ fn canonical_script(normalized_value: &str) -> Result<Option<&'static str>> {
 /// UAX44 LM3, which can be done using `symbolic_name_normalize`.
 ///
 /// If the property names data is not available, then an error is returned.
-fn canonical_prop(normalized_name: &str) -> Result<Option<&'static str>> {
+const fn canonical_prop(normalized_name: &str) -> Result<Option<&'static str>> {
     #[cfg(not(any(
         feature = "unicode-age",
         feature = "unicode-bool",
@@ -451,7 +451,7 @@ fn canonical_prop(normalized_name: &str) -> Result<Option<&'static str>> {
 ///
 /// The normalized property value must have been normalized according to
 /// UAX44 LM3, which can be done using `symbolic_name_normalize`.
-fn canonical_value(
+const fn canonical_value(
     vals: PropertyValues,
     normalized_value: &str,
 ) -> Option<&'static str> {
@@ -463,7 +463,7 @@ fn canonical_value(
 /// Return the table of property values for the given property name.
 ///
 /// If the property values data is not available, then an error is returned.
-fn property_values(
+const fn property_values(
     canonical_property_name: &'static str,
 ) -> Result<Option<PropertyValues>> {
     #[cfg(not(any(
@@ -501,7 +501,7 @@ fn property_values(
 // This is only used in some cases, but small enough to just let it be dead
 // instead of figuring out (and maintaining) the right set of features.
 #[allow(dead_code)]
-fn property_set(
+const fn property_set(
     name_map: &'static [(&'static str, Range)],
     canonical: &'static str,
 ) -> Option<Range> {
@@ -517,7 +517,7 @@ fn property_set(
 ///
 /// If the given age value isn't valid or if the data isn't available, then an
 /// error is returned instead.
-fn ages(canonical_age: &str) -> Result<impl Iterator<Item = Range>> {
+const fn ages(canonical_age: &str) -> Result<impl Iterator<Item = Range>> {
     #[cfg(not(feature = "unicode-age"))]
     fn imp(_: &str) -> Result<impl Iterator<Item = Range>> {
         use std::option::IntoIter;
@@ -573,7 +573,7 @@ fn ages(canonical_age: &str) -> Result<impl Iterator<Item = Range>> {
 ///
 /// If the given general category could not be found, or if the general
 /// category data is not available, then an error is returned.
-fn gencat(canonical_name: &'static str) -> Result<Repr> {
+const fn gencat(canonical_name: &'static str) -> Result<Repr> {
     #[cfg(not(feature = "unicode-gencat"))]
     fn imp(_: &'static str) -> Result<Repr> {
         Err(Error::PropertyNotFound)
@@ -608,7 +608,7 @@ fn gencat(canonical_name: &'static str) -> Result<Repr> {
 ///
 /// If the given script could not be found, or if the script data is not
 /// available, then an error is returned.
-fn script(canonical_name: &'static str) -> Result<Repr> {
+const fn script(canonical_name: &'static str) -> Result<Repr> {
     #[cfg(not(feature = "unicode-script"))]
     fn imp(_: &'static str) -> Result<Repr> {
         Err(Error::PropertyNotFound)
@@ -631,7 +631,7 @@ fn script(canonical_name: &'static str) -> Result<Repr> {
 ///
 /// If the given script extension could not be found, or if the script data is
 /// not available, then an error is returned.
-fn script_extension(
+const fn script_extension(
     canonical_name: &'static str,
 ) -> Result<Repr> {
     #[cfg(not(feature = "unicode-script"))]
@@ -657,7 +657,7 @@ fn script_extension(
 ///
 /// If the given boolean property could not be found, or if the boolean
 /// property data is not available, then an error is returned.
-fn bool_property(canonical_name: &'static str) -> Result<Repr> {
+const fn bool_property(canonical_name: &'static str) -> Result<Repr> {
     #[cfg(not(feature = "unicode-bool"))]
     fn imp(_: &'static str) -> Result<Repr> {
         Err(Error::PropertyNotFound)
@@ -685,7 +685,7 @@ fn bool_property(canonical_name: &'static str) -> Result<Repr> {
 ///
 /// If the given property could not be found, or if the corresponding data is
 /// not available, then an error is returned.
-fn gcb(canonical_name: &'static str) -> Result<Repr> {
+const fn gcb(canonical_name: &'static str) -> Result<Repr> {
     #[cfg(not(feature = "unicode-segment"))]
     fn imp(_: &'static str) -> Result<Repr> {
         Err(Error::PropertyNotFound)
@@ -709,7 +709,7 @@ fn gcb(canonical_name: &'static str) -> Result<Repr> {
 ///
 /// If the given property could not be found, or if the corresponding data is
 /// not available, then an error is returned.
-fn wb(canonical_name: &'static str) -> Result<Repr> {
+const fn wb(canonical_name: &'static str) -> Result<Repr> {
     #[cfg(not(feature = "unicode-segment"))]
     fn imp(_: &'static str) -> Result<Repr> {
         Err(Error::PropertyNotFound)
@@ -733,7 +733,7 @@ fn wb(canonical_name: &'static str) -> Result<Repr> {
 ///
 /// If the given property could not be found, or if the corresponding data is
 /// not available, then an error is returned.
-fn sb(canonical_name: &'static str) -> Result<Repr> {
+const fn sb(canonical_name: &'static str) -> Result<Repr> {
     #[cfg(not(feature = "unicode-segment"))]
     fn imp(_: &'static str) -> Result<Repr> {
         Err(Error::PropertyNotFound)
@@ -751,7 +751,7 @@ fn sb(canonical_name: &'static str) -> Result<Repr> {
 }
 
 /// Like symbolic_name_normalize_bytes, but operates on a string.
-fn symbolic_name_normalize(x: &str) -> String {
+const fn symbolic_name_normalize(x: &str) -> String {
     let mut tmp = x.as_bytes().to_vec();
     let len = symbolic_name_normalize_bytes(&mut tmp).len();
     tmp.truncate(len);
@@ -774,7 +774,7 @@ fn symbolic_name_normalize(x: &str) -> String {
 /// of `slice`.
 ///
 /// See: https://unicode.org/reports/tr44/#UAX44-LM3
-fn symbolic_name_normalize_bytes(slice: &mut [u8]) -> &mut [u8] {
+const fn symbolic_name_normalize_bytes(slice: &mut [u8]) -> &mut [u8] {
     // I couldn't find a place in the standard that specified that property
     // names/aliases had a particular structure (unlike character names), but
     // we assume that it's ASCII only and drop anything that isn't ASCII.

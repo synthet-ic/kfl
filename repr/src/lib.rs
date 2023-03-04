@@ -37,12 +37,12 @@ let re = (wh | '.') * 1.. & '@' & (wh * 1.. & '.') * 1.. & wh * 2..4;
 extern crate alloc; 
 
 mod conversions;
+mod interval;
 mod operators;
 mod wrappers;
 
 pub mod char;
 pub mod consts;
-pub mod escape;
 pub mod literal;
 pub mod macros;
 pub mod repr;

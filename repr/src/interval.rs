@@ -1,4 +1,5 @@
 //! TODO(rnarkk) Refactor and relocate them in crate::repr
+//! <https://en.wikipedia.org/wiki/Interval_arithmetic>
 
 use order;
 

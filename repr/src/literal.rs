@@ -688,7 +688,7 @@ const fn suffixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
             }
             Range::Full(ref rng) => {
                 let (min, max) = match *rng {
-                    Range::Full(m, m) => (m, Some(m)),
+                    Range::Full(m, n) if m == n => (m, Some(m)),
                     Range::From(m) => (m, None),
                     Range::Full(m, n) => (m, Some(n)),
                 };
@@ -829,7 +829,7 @@ fn alternate_literals<S, I, F>(
     }
 }
 
-impl fmt::Debug for Literals {
+impl Debug for Literals {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Literals")
             .field("lits", &self.lits)
@@ -873,7 +873,7 @@ impl PartialOrd for Literal {
     }
 }
 
-impl fmt::Debug for Literal {
+impl Debug for Literal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.is_cut() {
             write!(f, "Cut({})", escape_unicode(&self.v))
@@ -1005,7 +1005,7 @@ mod tests {
         }
     }
 
-    impl fmt::Debug for ULiteral {
+    impl Debug for ULiteral {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             if self.is_cut() {
                 write!(f, "Cut({})", self.v)

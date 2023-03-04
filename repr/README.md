@@ -67,28 +67,6 @@ pub enum Flag {
 ```
 
 ```rust
-/// An anchor assertion. An anchor assertion match always has zero length.
-/// The high-level intermediate representation for an anchor assertion.
-///
-/// A matching anchor assertion is always zero-length.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Anchor {
-    /// Match the beginning of a line or the beginning of text. Specifically,
-    /// this matches at the starting position of the input, or at the position
-    /// immediately following a `\n` character.
-    StartLine,
-    /// Match the end of a line or the end of text. Specifically,
-    /// this matches at the end position of the input, or at the position
-    /// immediately preceding a `\n` character.
-    EndLine,
-    /// Match the beginning of text. Specifically, this matches at the starting
-    /// position of the input.
-    StartText,
-    /// Match the end of text. Specifically, this matches at the ending
-    /// position of the input.
-    EndText,
-}
-
 /// A word boundary assertion, which may or may not be Unicode aware. A
 /// word boundary assertion match always has zero length.
 /// The high-level intermediate representation for a word-boundary assertion.

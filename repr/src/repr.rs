@@ -16,7 +16,7 @@ use crate::unicode;
 #[derive_const(Clone)]
 #[derive(Eq, PartialEq)]
 pub enum Repr<S, I: ~const Integral<S>> {
-    Zero,  // TODO(rnarkk) let it hold word boundary?
+    Zero(Zero),  // TODO(rnarkk)
     One(S),  // TODO(rnarkk)  Seq(I, I)
     Seq(Seq<S, I>),  // TODO(rnarkk)
     Not(Box<Repr<S, I>>),
@@ -476,4 +476,26 @@ impl Range {
             Range::Full(n, _) => n == &0,
         }
     }
+}
+
+/// An anchor assertion. An anchor assertion match always has zero length.
+/// The high-level intermediate representation for an anchor assertion.
+///
+/// A matching anchor assertion is always zero-length.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Zero {
+    /// Match the beginning of a line or the beginning of text. Specifically,
+    /// this matches at the starting position of the input, or at the position
+    /// immediately following a `\n` character.
+    StartLine,
+    /// Match the end of a line or the end of text. Specifically,
+    /// this matches at the end position of the input, or at the position
+    /// immediately preceding a `\n` character.
+    EndLine,
+    /// Match the beginning of text. Specifically, this matches at the starting
+    /// position of the input.
+    StartText,
+    /// Match the end of text. Specifically, this matches at the ending
+    /// position of the input.
+    EndText,
 }

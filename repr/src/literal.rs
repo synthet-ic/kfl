@@ -624,7 +624,7 @@ const fn prefixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
             }
         },
         
-        Repr::And(ref es) => {
+        Repr::And(ref lhs, ref rhs) => {
             for e in es {
                 if let Repr::Anchor(hir::Anchor::StartText) = *e.kind() {
                     if !lits.is_empty() {
@@ -703,7 +703,7 @@ const fn suffixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
                 }
             }
         },
-        Repr::And(ref es) => {
+        Repr::And(ref lhs, ref rhs) => {
             for e in es.iter().rev() {
                 if let Repr::Anchor(hir::Anchor::EndText) = *e.kind() {
                     if !lits.is_empty() {

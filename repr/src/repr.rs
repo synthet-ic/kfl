@@ -453,6 +453,8 @@ pub enum Range {
     Empty,
     From(usize),
     To(usize),
+    // TODO(rnarkk) validate 0 <= 1
+    // TODO(rnarkk) if this is (0, 0), need to ignore it or treat as zero sized match any way? For now, ignore if (0, 0)
     Full(usize, usize),
 }
 

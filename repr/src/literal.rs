@@ -323,7 +323,7 @@ impl Literals {
     /// If the union would cause the set to exceed its limits, then the union
     /// is skipped and it returns false. Otherwise, if the union succeeds, it
     /// returns true.
-    pub fn union(&mut self, lits: Literals) -> bool {
+    pub fn union(&mut self, lits: Self) -> bool {
         if self.num_bytes() + lits.num_bytes() > self.limit_size {
             return false;
         }
@@ -599,7 +599,6 @@ const fn prefixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
             }
         }
         Repr::Mul(ref repr, range) => match range {
-            Range::Full(0, 1) => prefixes(&repr, lits),
             Range::From(0) => {
                 repeat_zero_or_more_literals(&repr, lits, prefixes);
             }
@@ -607,15 +606,21 @@ const fn prefixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
                 prefixes(&repr, lits);
                 lits.cut = true;
             }
-            Range::Full(ref rng) => {
-                let (min, max) = match *rng {
-                    Range::Full(m, n) if m == n => (m, Some(m)),
-                    Range::From(m) => (m, None),
-                    Range::Full(m, n) => (m, Some(n)),
-                };
-                repeat_range_literals(
-                    &repr, min, max, lits, prefixes,
-                )
+            Range::From(min) => {
+                repeat_range_literals(&repr, min, lits, prefixes);
+                lits.cut = true;
+            },
+            Range::Full(0, 1) => prefixes(&repr, lits),
+            // TODO(rnarkk) treat this as a finite set
+            Range::Full(0, max) => {
+                prefixes(&Repr::Mul(repr, Range::From(0)), lits);
+                lits.cut = true;
+            }
+            Range::Full(min, max) => {
+                repeat_range_literals(&repr, min, lits, prefixes);
+                if min < max {
+                    lits.cut = true;
+                }
             }
         },
         
@@ -672,9 +677,6 @@ const fn suffixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
             }
         }
         Repr::Mul(ref repr, range) => match range {
-            Range::Full(0, 1) => {
-                suffixes(&repr, lits);
-            }
             Range::From(0) => {
                 repeat_zero_or_more_literals(&repr, lits, suffixes);
             }
@@ -682,15 +684,23 @@ const fn suffixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
                 suffixes(&repr, lits);
                 lits.cut = true;
             }
-            Range::Full(ref rng) => {
-                let (min, max) = match *rng {
-                    Range::Full(m, n) if m == n => (m, Some(m)),
-                    Range::From(m) => (m, None),
-                    Range::Full(m, n) => (m, Some(n)),
-                };
-                repeat_range_literals(
-                    &repr, min, max, lits, suffixes,
-                )
+            Range::From(min) => {
+                repeat_range_literals(&repr, min, lits, suffixes);
+                lits.cut = true;
+            },
+            Range::Full(0, 1) => {
+                suffixes(&repr, lits);
+            }
+            // TODO(rnarkk) treat this as a finite set
+            Range::Full(0, max) => {
+                suffixes(&Repr::Mul(repr, Range::From(0)), lits);
+                lits.cut = true;
+            }
+            Range::Full(min, max) => {
+                repeat_range_literals(&repr, min, lits, suffixes);
+                if min < max {
+                    lits.cut = true;
+                }
             }
         },
         Repr::And(ref es) => {
@@ -744,33 +754,24 @@ const fn repeat_zero_or_more_literals<S, I, F>(
     }
 }
 
+// TODO
+// This is a bit conservative. If `max` is set, then we could
+// treat this as a finite set of alternations. For now, we
+// just treat it as `e*`.
 const fn repeat_range_literals<S, I, F>(
     e: &Repr<S, I>,
     min: u32,
-    max: Option<u32>,
     lits: &mut Literals,
     mut f: F,
 )
     where I: ~const Integral<S>,
           F: FnMut(&Repr<S, I>, &mut Literals)
 {
-    if min == 0 {
-        // This is a bit conservative. If `max` is set, then we could
-        // treat this as a finite set of alternations. For now, we
-        // just treat it as `e*`.
-        f(&Repr::Mul(e.clone(), Range::From(0)), lits);
-    } else {
-        if min > 0 {
-            let n = cmp::min(lits.limit_size, min as usize);
-            let es = iter::repeat(e.clone()).take(n).collect();
-            f(&Repr::concat(es), lits);
-            if n < min as usize || lits.contains_empty() {
-                lits.cut = true;
-            }
-        }
-        if max.map_or(true, |max| min < max) {
-            lits.cut = true;
-        }
+    let n = cmp::min(lits.limit_size, min as usize);
+    let es = iter::repeat(e.clone()).take(n).collect();
+    f(&Repr::concat(es), lits);
+    if n < min as usize || lits.contains_empty() {
+        lits.cut = true;
     }
 }
 

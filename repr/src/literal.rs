@@ -1,6 +1,7 @@
 //! Provides routines for extracting literal prefixes and suffixes from an `Repr<S, I>`.
 
 use core::{
+    char::from_u32,
     cmp,
     fmt::{self, Debug},
     iter,
@@ -42,6 +43,17 @@ pub struct Literals {
     /// The new limits will only apply to additions to this set. Existing
     /// members remain unchanged, even if the set exceeds the new limit.
     pub limit_size: usize,
+    /// Get the character class size limit for this set.
+    /// Limits the size of character(or byte) classes considered.
+    ///
+    /// A value of `0` prevents all character classes from being considered.
+    ///
+    /// This limit also applies to case insensitive literals, since each
+    /// character in the case insensitive literal is converted to a class, and
+    /// then case folded.
+    ///
+    /// The new limits will only apply to additions to this set. Existing
+    /// members remain unchanged, even if the set exceeds the new limit.
     pub limit_class: usize,
 }
 
@@ -73,26 +85,6 @@ impl Literals {
         let mut lits = Literals::empty();
         lits.union_suffixes(expr);
         lits
-    }
-
-    /// Get the character class size limit for this set.
-    pub fn limit_class(&self) -> usize {
-        self.limit_class
-    }
-
-    /// Limits the size of character(or byte) classes considered.
-    ///
-    /// A value of `0` prevents all character classes from being considered.
-    ///
-    /// This limit also applies to case insensitive literals, since each
-    /// character in the case insensitive literal is converted to a class, and
-    /// then case folded.
-    ///
-    /// The new limits will only apply to additions to this set. Existing
-    /// members remain unchanged, even if the set exceeds the new limit.
-    pub fn set_limit_class(&mut self, size: usize) -> &mut Literals {
-        self.limit_class = size;
-        self
     }
 
     /// Returns the set of literals as a slice. Its order is unspecified.
@@ -437,33 +429,12 @@ impl Literals {
         true
     }
 
-    /// Extends each literal in this set with the character class given.
+    /// Extends each literal in this set with the Seq given, writing the bytes of each character in reverse when `Seq<_, char>`.
     ///
-    /// Returns false if the character class was too big to add.
-    pub fn add_char_class<S, I: ~const Integral<S>>(&mut self, seq: &Seq<char>)
-        -> bool
+    /// Returns false if the Seq was too big to add.
+    pub fn add_seq<S, I>(&mut self, seq: &Seq<S, I>, reverse: bool) -> bool
+        where I: ~const Integral<S>
     {
-        self._add_char_class(seq, false)
-    }
-
-    /// Extends each literal in this set with the character class given,
-    /// writing the bytes of each character in reverse.
-    ///
-    /// Returns false if the character class was too big to add.
-    fn add_char_class_reverse<S, I: ~const Integral<S>>(&mut self,
-                                              seq: &Seq<char>)
-        -> bool
-    {
-        self._add_char_class(seq, true)
-    }
-
-    fn _add_char_class<S, I: ~const Integral<S>>(
-        &mut self,
-        seq: &Seq<char>,
-        reverse: bool,
-    ) -> bool {
-        use std::char;
-
         if self.class_exceeds_limits(seq_count(seq)) {
             return false;
         }
@@ -471,40 +442,11 @@ impl Literals {
         if base.is_empty() {
             base = vec![Literal::empty()];
         }
-        for r in seq.iter() {
-            let (s, e) = (r.start as u32, r.end as u32 + 1);
-            for c in (s..e).filter_map(char::from_u32) {
-                for mut lit in base.clone() {
-                    let mut bytes = c.to_string().into_bytes();
-                    if reverse {
-                        bytes.reverse();
-                    }
-                    lit.extend(&bytes);
-                    self.lits.push(lit);
-                }
-            }
-        }
-        true
-    }
-
-    /// Extends each literal in this set with the byte class given.
-    ///
-    /// Returns false if the byte class was too big to add.
-    pub fn add_byte_class<S, I: ~const Integral<S>>(&mut self, seq: &Seq<u8>) -> bool {
-        if self.class_exceeds_limits(seq_count(seq)) {
-            return false;
-        }
-        let mut base = self.remove_complete();
-        if base.is_empty() {
-            base = vec![Literal::empty()];
-        }
-        for r in seq.iter() {
-            let (s, e) = (r.start as u32, r.end as u32 + 1);
-            for b in (s..e).map(|b| b as u8) {
-                for mut lit in base.clone() {
-                    lit.push(b);
-                    self.lits.push(lit);
-                }
+        // TODO(rnarkk) need .filter_map(char::from_u32)?
+        for c in (seq.0..seq.1) {
+            for mut lit in base.clone() {
+                lit.extend(&c.as_bytes(reverse));
+                self.lits.push(lit);
             }
         }
         true
@@ -533,7 +475,7 @@ impl Literals {
     /// Pops all complete literals out of this set.
     fn remove_complete(&mut self) -> Vec<Literal> {
         let mut base = vec![];
-        for lit in mem::replace(&mut self.lits, vec![]) {
+        for lit in mem::take(&mut self.lits) {
             if lit.cut {
                 self.lits.push(lit);
             } else {
@@ -582,19 +524,10 @@ const fn prefixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
     match *expr {
         Repr::Zero(_) => {}
         Repr::One(c) => {
-            let mut buf = [0; 4];
-            lits.cross_add(c.encode_utf8(&mut buf).as_bytes());
-        }
-        Repr::One(b) => {
-            lits.cross_add(&[b]);
+            lits.cross_add(&c.as_bytes());
         }
         Repr::Seq(ref seq) => {
-            if !lits.add_char_class(seq) {
-                lits.cut = true;
-            }
-        }
-        Repr::Seq(ref seq) => {
-            if !lits.add_byte_class(seq) {
+            if !lits.add_seq(seq, false) {
                 lits.cut = true;
             }
         }
@@ -657,22 +590,10 @@ const fn suffixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
 {
     match *expr {
         Repr::One(c) => {
-            let mut buf = [0u8; 4];
-            let i = c.encode_utf8(&mut buf).len();
-            let buf = &mut buf[..i];
-            buf.reverse();
-            lits.cross_add(buf);
-        }
-        Repr::One(b) => {
-            lits.cross_add(&[b]);
+            lits.cross_add(&c.as_bytes());
         }
         Repr::Seq(ref seq) => {
-            if !lits.add_char_class_reverse(seq) {
-                lits.cut = true;
-            }
-        }
-        Repr::Seq(ref seq) => {
-            if !lits.add_byte_class(seq) {
+            if !lits.add_seq(seq, false) {
                 lits.cut = true;
             }
         }
@@ -705,7 +626,7 @@ const fn suffixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
         },
         Repr::And(ref lhs, ref rhs) => {
             for e in es.iter().rev() {
-                if let Repr::Anchor(Zero::EndText) = e {
+                if let Repr::Zero(Zero::EndText) = e {
                     if !lits.is_empty() {
                         lits.cut = true;
                         break;
@@ -926,7 +847,7 @@ const fn escape_byte(byte: u8) -> String {
     String::from_utf8_lossy(&escaped).into_owned()
 }
 
-const fn seq_count<S, I: ~const Integral<S>>(seq: &Seq<I>) -> usize {
+const fn seq_count<S, I: ~const Integral<S>>(seq: &Seq<S, I>) -> usize {
     seq.iter().map(|&r| 1 + (r.end as u32) - (r.start as u32)).sum::<u32>()
         as usize
 }

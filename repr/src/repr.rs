@@ -383,6 +383,7 @@ impl<S> Debug for Seq<S, u8> {
     }
 }
 
+// TODO(rnarkk) check if I..I always yield valid characters
 /// A single character, where a character is either
 /// defined by a Unicode scalar value or an arbitrary byte. Unicode characters
 /// are preferred whenever possible. In particular, a `Byte` variant is only
@@ -414,6 +415,8 @@ pub trait Integral<S>: Copy + ~const Clone + Debug
     const MAX: Self;
     fn succ(self) -> Self;
     fn pred(self) -> Self;
+    // (rnarkk) use in crate::literal
+    fn as_bytes(self, reverse: bool) -> [u8];
 }
 
 /// Unicode scalar values
@@ -432,6 +435,15 @@ impl<S> const Integral<S> for char {
             c => char::from_u32((c as u32).checked_sub(1).unwrap()).unwrap(),
         }
     }
+    fn as_bytes(self, reverse: bool) -> [u8] {
+        let mut buf = [0u8; 4];
+        let len = self.encode_utf8(&mut buf).len();
+        let buf = &mut buf[..len];
+        if reverse {
+            buf.reverse();
+        }
+        buf
+    }
 }
 
 /// Arbitrary bytes
@@ -443,6 +455,9 @@ impl<S> const Integral<S> for u8 {
     }
     fn pred(self) -> Self {
         self.checked_sub(1).unwrap()
+    }
+    fn as_bytes(self, _: bool) -> [u8] {
+        [self]
     }
 }
 

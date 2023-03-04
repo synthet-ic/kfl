@@ -444,10 +444,10 @@ impl Literals {
     /// Extends each literal in this set with the character class given.
     ///
     /// Returns false if the character class was too big to add.
-    pub fn add_char_class<S, I: ~const Integral<S>>(&mut self, cls: &Seq<char>)
+    pub fn add_char_class<S, I: ~const Integral<S>>(&mut self, seq: &Seq<char>)
         -> bool
     {
-        self._add_char_class(cls, false)
+        self._add_char_class(seq, false)
     }
 
     /// Extends each literal in this set with the character class given,
@@ -455,27 +455,27 @@ impl Literals {
     ///
     /// Returns false if the character class was too big to add.
     fn add_char_class_reverse<S, I: ~const Integral<S>>(&mut self,
-                                              cls: &Seq<char>)
+                                              seq: &Seq<char>)
         -> bool
     {
-        self._add_char_class(cls, true)
+        self._add_char_class(seq, true)
     }
 
     fn _add_char_class<S, I: ~const Integral<S>>(
         &mut self,
-        cls: &Seq<char>,
+        seq: &Seq<char>,
         reverse: bool,
     ) -> bool {
         use std::char;
 
-        if self.class_exceeds_limits(cls_char_count(cls)) {
+        if self.class_exceeds_limits(cls_char_count(seq)) {
             return false;
         }
         let mut base = self.remove_complete();
         if base.is_empty() {
             base = vec![Literal::empty()];
         }
-        for r in cls.iter() {
+        for r in seq.iter() {
             let (s, e) = (r.start as u32, r.end as u32 + 1);
             for c in (s..e).filter_map(char::from_u32) {
                 for mut lit in base.clone() {
@@ -494,15 +494,15 @@ impl Literals {
     /// Extends each literal in this set with the byte class given.
     ///
     /// Returns false if the byte class was too big to add.
-    pub fn add_byte_class<S, I: ~const Integral<S>>(&mut self, cls: &Seq<u8>) -> bool {
-        if self.class_exceeds_limits(cls_byte_count(cls)) {
+    pub fn add_byte_class<S, I: ~const Integral<S>>(&mut self, seq: &Seq<u8>) -> bool {
+        if self.class_exceeds_limits(cls_byte_count(seq)) {
             return false;
         }
         let mut base = self.remove_complete();
         if base.is_empty() {
             base = vec![Literal::empty()];
         }
-        for r in cls.iter() {
+        for r in seq.iter() {
             let (s, e) = (r.start as u32, r.end as u32 + 1);
             for b in (s..e).map(|b| b as u8) {
                 for mut lit in base.clone() {
@@ -584,6 +584,7 @@ const fn prefixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
     where I: ~const Integral<S>,
 {
     match *expr.kind() {
+        Repr::Empty => {}
         Repr::One(c) => {
             let mut buf = [0; 4];
             lits.cross_add(c.encode_utf8(&mut buf).as_bytes());
@@ -591,25 +592,23 @@ const fn prefixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
         Repr::One(b) => {
             lits.cross_add(&[b]);
         }
-        Repr::Seq(ref cls) => {
-            if !lits.add_char_class(cls) {
+        Repr::Seq(ref seq) => {
+            if !lits.add_char_class(seq) {
                 lits.cut();
             }
         }
-        Repr::Seq(ref cls) => {
-            if !lits.add_byte_class(cls) {
+        Repr::Seq(ref seq) => {
+            if !lits.add_byte_class(seq) {
                 lits.cut();
             }
         }
-        Repr::Mul(ref x) => match x.kind {
-            Range::Full(0, 1) => {
-                repeat_zero_or_one_literals(&x.hir, lits, prefixes);
-            }
+        Repr::Mul(ref repr, range) => match range {
+            Range::Full(0, 1) => prefixes(&repr, lits),
             Range::From(0) => {
-                repeat_zero_or_more_literals(&x.hir, lits, prefixes);
+                repeat_zero_or_more_literals(&repr, lits, prefixes);
             }
             Range::From(1) => {
-                repeat_one_or_more_literals(&x.hir, lits, prefixes);
+                repeat_one_or_more_literals(&repr, lits, prefixes);
             }
             Range::Full(ref rng) => {
                 let (min, max) = match *rng {
@@ -618,12 +617,11 @@ const fn prefixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
                     Range::Full(m, n) => (m, Some(n)),
                 };
                 repeat_range_literals(
-                    &x.hir, min, max, lits, prefixes,
+                    &repr, min, max, lits, prefixes,
                 )
             }
         },
-        Repr::And(ref es) if es.is_empty() => {}
-        Repr::And(ref es) if es.len() == 1 => prefixes(&es[0], lits),
+        
         Repr::And(ref es) => {
             for e in es {
                 if let Repr::Anchor(hir::Anchor::StartText) = *e.kind() {
@@ -666,25 +664,25 @@ const fn suffixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
         Repr::One(b) => {
             lits.cross_add(&[b]);
         }
-        Repr::Seq(ref cls) => {
-            if !lits.add_char_class_reverse(cls) {
+        Repr::Seq(ref seq) => {
+            if !lits.add_char_class_reverse(seq) {
                 lits.cut();
             }
         }
-        Repr::Seq(ref cls) => {
-            if !lits.add_byte_class(cls) {
+        Repr::Seq(ref seq) => {
+            if !lits.add_byte_class(seq) {
                 lits.cut();
             }
         }
-        Repr::Mul(ref x) => match x.kind {
+        Repr::Mul(ref repr, range) => match range {
             Range::Full(0, 1) => {
-                repeat_zero_or_one_literals(&x.hir, lits, suffixes);
+                suffixes(&repr, lits);
             }
             Range::From(0) => {
-                repeat_zero_or_more_literals(&x.hir, lits, suffixes);
+                repeat_zero_or_more_literals(&repr, lits, suffixes);
             }
             Range::From(1) => {
-                repeat_one_or_more_literals(&x.hir, lits, suffixes);
+                repeat_one_or_more_literals(&repr, lits, suffixes);
             }
             Range::Full(ref rng) => {
                 let (min, max) = match *rng {
@@ -693,11 +691,10 @@ const fn suffixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
                     Range::Full(m, n) => (m, Some(n)),
                 };
                 repeat_range_literals(
-                    &x.hir, min, max, lits, suffixes,
+                    &repr, min, max, lits, suffixes,
                 )
             }
         },
-        Repr::And(ref es) if es.len() == 1 => suffixes(&es[0], lits),
         Repr::And(ref es) => {
             for e in es.iter().rev() {
                 if let Repr::Anchor(hir::Anchor::EndText) = *e.kind() {
@@ -952,13 +949,13 @@ const fn escape_byte(byte: u8) -> String {
     String::from_utf8_lossy(&escaped).into_owned()
 }
 
-const fn cls_char_count<S, I: ~const Integral<S>>(cls: &Seq<char>) -> usize {
-    cls.iter().map(|&r| 1 + (r.end as u32) - (r.start as u32)).sum::<u32>()
+const fn cls_char_count<S, I: ~const Integral<S>>(seq: &Seq<char>) -> usize {
+    seq.iter().map(|&r| 1 + (r.end as u32) - (r.start as u32)).sum::<u32>()
         as usize
 }
 
-const fn cls_byte_count<S, I: ~const Integral<S>>(cls: &Seq<u8>) -> usize {
-    cls.iter().map(|&r| 1 + (r.end as u32) - (r.start as u32)).sum::<u32>()
+const fn cls_byte_count<S, I: ~const Integral<S>>(seq: &Seq<u8>) -> usize {
+    seq.iter().map(|&r| 1 + (r.end as u32) - (r.start as u32)).sum::<u32>()
         as usize
 }
 

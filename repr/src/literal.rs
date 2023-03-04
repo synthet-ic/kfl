@@ -579,7 +579,7 @@ impl Literals {
 const fn prefixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
     where I: ~const Integral<S>,
 {
-    match *expr.kind() {
+    match *expr {
         Repr::Zero(_) => {}
         Repr::One(c) => {
             let mut buf = [0; 4];
@@ -655,7 +655,7 @@ const fn prefixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
 const fn suffixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
     where I: ~const Integral<S>,
 {
-    match *expr.kind() {
+    match *expr {
         Repr::One(c) => {
             let mut buf = [0u8; 4];
             let i = c.encode_utf8(&mut buf).len();

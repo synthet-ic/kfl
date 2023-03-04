@@ -1,6 +1,8 @@
 //! TODO(rnarkk) Refactor and relocate them in crate::repr
 //! <https://en.wikipedia.org/wiki/Interval_arithmetic>
 //! <https://en.wikipedia.org/wiki/Boundary_(topology)>
+//! <https://en.wikipedia.org/wiki/Partition_of_a_set>
+//! <https://en.wikipedia.org/wiki/Sequence>
 
 use order;
 

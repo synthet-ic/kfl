@@ -1,5 +1,6 @@
 //! TODO(rnarkk) Refactor and relocate them in crate::repr
 //! <https://en.wikipedia.org/wiki/Interval_arithmetic>
+//! <https://en.wikipedia.org/wiki/Boundary_(topology)>
 
 use order;
 

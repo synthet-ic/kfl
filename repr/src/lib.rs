@@ -46,7 +46,7 @@ pub mod escape;
 pub mod literal;
 pub mod macros;
 pub mod repr;
-// pub mod unicode;
+pub mod unicode;
 
 pub use consts::{DIGIT, SPACE, WORD};
 pub use repr::{Repr, Seq, Range};

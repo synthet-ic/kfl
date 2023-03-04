@@ -613,7 +613,7 @@ const fn prefixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
             }
             Range::Full(ref rng) => {
                 let (min, max) = match *rng {
-                    Range::Full(m, m) => (m, Some(m)),
+                    Range::Full(m, n) if m == n => (m, Some(m)),
                     Range::From(m) => (m, None),
                     Range::Full(m, n) => (m, Some(n)),
                 };

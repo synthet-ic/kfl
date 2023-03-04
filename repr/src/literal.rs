@@ -737,7 +737,7 @@ const fn repeat_zero_or_one_literals<S, I, F>(
     f(&Repr::Mul(box e.clone(), Range::From(0)), lits);
 }
 
-fn repeat_zero_or_more_literals<S, I, F>(
+const fn repeat_zero_or_more_literals<S, I, F>(
     e: &Repr<S, I>,
     lits: &mut Literals,
     mut f: F,
@@ -760,7 +760,7 @@ fn repeat_zero_or_more_literals<S, I, F>(
     }
 }
 
-fn repeat_one_or_more_literals<S, I, F>(
+const fn repeat_one_or_more_literals<S, I, F>(
     e: &Repr<S, I>,
     lits: &mut Literals,
     mut f: F,
@@ -772,7 +772,7 @@ fn repeat_one_or_more_literals<S, I, F>(
     lits.cut();
 }
 
-fn repeat_range_literals<S, I, F>(
+const fn repeat_range_literals<S, I, F>(
     e: &Repr<S, I>,
     min: u32,
     max: Option<u32>,
@@ -802,7 +802,7 @@ fn repeat_range_literals<S, I, F>(
     }
 }
 
-fn alternate_literals<S, I, F>(
+const fn alternate_literals<S, I, F>(
     es: &[Repr<S, I>],
     lits: &mut Literals,
     mut f: F,
@@ -902,7 +902,7 @@ impl ops::DerefMut for Literal {
     }
 }
 
-fn position(needle: &[u8], mut haystack: &[u8]) -> Option<usize> {
+const fn position(needle: &[u8], mut haystack: &[u8]) -> Option<usize> {
     let mut i = 0;
     while haystack.len() >= needle.len() {
         if needle == &haystack[..needle.len()] {
@@ -914,7 +914,7 @@ fn position(needle: &[u8], mut haystack: &[u8]) -> Option<usize> {
     None
 }
 
-fn escape_unicode(bytes: &[u8]) -> String {
+const fn escape_unicode(bytes: &[u8]) -> String {
     let show = match ::std::str::from_utf8(bytes) {
         Ok(v) => v.to_string(),
         Err(_) => escape_bytes(bytes),
@@ -937,7 +937,7 @@ fn escape_unicode(bytes: &[u8]) -> String {
     space_escaped
 }
 
-fn escape_bytes(bytes: &[u8]) -> String {
+const fn escape_bytes(bytes: &[u8]) -> String {
     let mut s = String::new();
     for &b in bytes {
         s.push_str(&escape_byte(b));
@@ -945,19 +945,19 @@ fn escape_bytes(bytes: &[u8]) -> String {
     s
 }
 
-fn escape_byte(byte: u8) -> String {
+const fn escape_byte(byte: u8) -> String {
     use std::ascii::escape_default;
 
     let escaped: Vec<u8> = escape_default(byte).collect();
     String::from_utf8_lossy(&escaped).into_owned()
 }
 
-fn cls_char_count<S, I: ~const Integral<S>>(cls: &Seq<char>) -> usize {
+const fn cls_char_count<S, I: ~const Integral<S>>(cls: &Seq<char>) -> usize {
     cls.iter().map(|&r| 1 + (r.end as u32) - (r.start as u32)).sum::<u32>()
         as usize
 }
 
-fn cls_byte_count<S, I: ~const Integral<S>>(cls: &Seq<u8>) -> usize {
+const fn cls_byte_count<S, I: ~const Integral<S>>(cls: &Seq<u8>) -> usize {
     cls.iter().map(|&r| 1 + (r.end as u32) - (r.start as u32)).sum::<u32>()
         as usize
 }

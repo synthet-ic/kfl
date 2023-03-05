@@ -1,5 +1,5 @@
 [package]
-name = "kfl-rust"
+name = "kfl-rustc"
 version = "0.0.0"
 edition = "2021"
 description = "KFL for Rust AST"

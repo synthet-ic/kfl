@@ -25,7 +25,9 @@ pub enum Repr<I: ~const Integral> {
     Xor(Box<Repr<I>>, Box<Repr<I>>),
     Add(Box<Repr<I>>, Box<Repr<I>>),
     Sub(Box<Repr<I>>, Seq<I>),  // TODO(rnarkk)
-    Mul(Box<Repr<I>>, Range),  // TODO(rnarkk) should use for intersection?
+    // Mul(Box<Repr<I>>, Box<Repr<I>>),  // TODO(rnarkk) intersection
+    // Div(Box<Repr<I>>, Box<Repr<I>>),
+    Exp(Box<Repr<S, I>>, Range),
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
 }
 
@@ -63,7 +65,7 @@ impl<I: ~const Integral> Repr<I> {
     }
     
     pub const fn mul(self, range: Range) -> Self {
-        Self::Mul(box self, range)
+        Self::Exp(box self, range)
     }
 }
 

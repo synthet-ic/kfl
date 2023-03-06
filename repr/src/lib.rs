@@ -38,6 +38,7 @@ let re = (wh | '.') * 1.. & '@' & (wh * 1.. & '.') * 1.. & wh * 2..4;
 #![feature(const_mut_refs)]
 #![feature(const_option)]
 #![feature(const_refs_to_cell)]
+#![feature(const_heap)]
 #![feature(core_intrinsics)]
 // #![feature(const_iter)]
 // #![feature(negative_impls)]

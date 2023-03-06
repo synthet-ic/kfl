@@ -1,5 +1,5 @@
 use crate::{
-    u, seq,
+    u,
     repr::Repr
 };
 

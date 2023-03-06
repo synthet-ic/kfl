@@ -1,0 +1,15 @@
+[package]
+name = "kfl-rust"
+version = "0.0.0"
+edition = "2021"
+description = "KFL for Rust AST"
+license = "MIT/Apache-2.0"
+homepage = "https://github.com/synthet-ic/kfl"
+documentation = "https://docs.rs/kfl-rust"
+rust-version = "1.62.0"
+readme = "README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+kfl = "0"

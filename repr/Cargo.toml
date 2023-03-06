@@ -1,6 +1,6 @@
 [package]
 name = "repr"
-version = "0.0.6"
+version = "0.0.7"
 edition = "2021"
 description = "Regular expression combinator"
 license = "MIT/Apache-2.0"
@@ -14,5 +14,6 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+order = { git = "https://github.com/synthet-ic/order" }
 regex = { version = "1.7", features = ["pattern"] }
 regex-syntax = "0.6"

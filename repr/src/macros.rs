@@ -1,14 +1,68 @@
 //! Macro definitions.
 
-use crate::pat::Pat;
+/// Pi
+#[macro_export]
+macro_rules! and {
+    [$one:expr] => {
+        ::repr::Repr::from($one)
+    };
+    [$one:expr, $two:expr] => {
+        ::repr::Repr::from($one) & ::repr::Repr::from($two)
+    };
+    [$one:expr, $($repr:expr),*] => {
+        ::repr::Repr::from($one) & and![$($repr:expr),*]
+    }
+}
+
+/// Sigma
+#[macro_export]
+macro_rules! or {
+    [$one:expr] => {
+        ::repr::Repr::from($one)
+    };
+    [$one:expr, $two:expr] => {
+        ::repr::Repr::from($one) | ::repr::Repr::from($two)
+    };
+    [$one:expr, $($repr:expr),*] => {
+        ::repr::Repr::from($one) | or![$($repr:expr),*]
+    }
+}
+
+/// Delta
+#[macro_export]
+macro_rules! xor {
+    [$one:expr] => {
+        ::repr::Repr::from($one)
+    };
+    [$one:expr, $two:expr] => {
+        ::repr::Repr::from($one) ^ ::repr::Repr::from($two)
+    };
+    [$one:expr, $($repr:expr),*] => {
+        ::repr::Repr::from($one) ^ xor![$($repr:expr),*]
+    }
+}
+
+/// Seq
+#[macro_export]
+macro_rules! seq {
+    ($lhs:tt .. $rhs:tt) => {
+        Repr::from(stringify!($lhs).chars().nth(0).unwrap()..stringify!($rhs).chars().nth(0).unwrap())
+    };
+}
 
 /// Pattern
 #[macro_export]
 macro_rules! p {
     ($lhs:tt | $rhs:tt) => {
-        Pat::from(stringify!($lhs)) | stringify!($rhs);
+        Repr::from(stringify!($lhs)) | stringify!($rhs)
     };
-    ($lhs:tt .. $rhs:tt) => {
+}
+
+/// Pattern from a char
+#[macro_export]
+macro_rules! c {
+    ($tt:literal) => {
+        Repr::from($tt)
     };
 }
 
@@ -16,7 +70,7 @@ macro_rules! p {
 #[macro_export]
 macro_rules! u {
     ($tt:tt) => {
-        Pat::from(char::from_u32(u32::from_str_radix(stringify!($tt), 16).unwrap()).unwrap());
+        Repr::from(char::from_u32(u32::from_str_radix(stringify!($tt), 16).unwrap()).unwrap())
     }
 }
 
@@ -24,7 +78,7 @@ macro_rules! u {
 #[macro_export]
 macro_rules! e {
     ($tt:tt) => {
-        Pat::from(format!(r"\{}", stringify!($tt)));
+        Repr::from(format!(r"\{}", stringify!($tt)));
     }
 }
 
@@ -35,3 +89,25 @@ macro_rules! i {
         
     }
 }
+
+/// Delimit pattern by 
+#[macro_export]
+macro_rules! delimit {
+    ($tt:expr) => {
+        Repr::new(r"\(") & $tt & Repr::new(r"\)")
+    };
+    {$tt:expr} => {
+        Repr::new(r"\{") & $tt & Repr::new(r"\}")
+    };
+    [$tt:expr] => {
+        Repr::new(r"\[") & $tt & Repr::new(r"\]")
+    };
+}
+
+// #[test]
+// fn test() {
+//     use crate::pat::Repr<char>;
+//     use super::{c, delimit};
+//     assert_eq!(delimit!(c!('a')), Repr::from(r"\(a\)"));
+//     assert_eq!(delimit!(c!{'a'}), Repr::from(r"\{a\}"));
+// }

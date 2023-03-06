@@ -1,34 +1,17 @@
-// #![no_std]
-
-use core::clone::Clone;
+#![no_std]
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse, ItemFn, ItemTrait, TraitItem, ItemImpl, ImplItem};
+use syn::{parse, Item, ImplItem, TraitItem};
 
 #[proc_macro_attribute]
 pub fn unconst(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    match parse::<ItemFn>(item.clone()) {
-        Ok(mut r#fn) => {
+    match parse::<Item>(item).unwrap() {
+        Item::Fn(mut r#fn) => {
             r#fn.sig.constness = None;
             return quote!(#r#fn).into();
         }
-        Err(_) => {}
-    };
-    match parse::<ItemTrait>(item.clone()) {
-        Ok(mut r#trait) => {
-            for item in r#trait.items.iter_mut() {
-                match item {
-                    TraitItem::Method(method) => method.sig.constness = None,
-                    _ => continue
-                };
-            }
-            return quote!(#r#trait).into()
-        }
-        Err(_) => {}
-    };
-    match parse::<ItemImpl>(item.clone()) {
-        Ok(mut r#impl) => {
+        Item::Impl(mut r#impl) => {
             for item in r#impl.items.iter_mut() {
                 match item {
                     ImplItem::Method(method) => method.sig.constness = None,
@@ -37,7 +20,16 @@ pub fn unconst(_attr: TokenStream, item: TokenStream) -> TokenStream {
             }
             return quote!(#r#impl).into()
         }
-        Err(_) => {}
-    };
-    panic!("Input is neither a function, a trait nor an impl");
+        Item::Trait(mut r#trait) => {
+            for item in r#trait.items.iter_mut() {
+                match item {
+                    TraitItem::Method(method) => method.sig.constness = None,
+                    _ => continue
+                };
+            }
+            return quote!(#r#trait).into()
+        }
+        Item::Verbatim(_tt) => unimplemented!(),
+        _ => panic!("Input is neither a function, a trait nor an impl")
+    }
 }

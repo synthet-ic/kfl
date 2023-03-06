@@ -220,6 +220,12 @@ impl Seq<char> {
     /// This routine panics when the case mapping data necessary for this
     /// routine to complete is unavailable. This occurs when the `unicode-case`
     /// feature is not enabled.
+    /// 
+    /// # Error
+    ///
+    /// This routine returns an error when the case mapping data necessary
+    /// for this routine to complete is unavailable. This occurs when the
+    /// `unicode-case` feature is not enabled.
     ///
     /// Callers should prefer using `try_case_fold_simple` instead, which will
     /// return an error instead of panicking.
@@ -257,42 +263,13 @@ impl Seq<char> {
         }
         Ok(())
     }
-
-    /// Expand this character class such that it contains all case folded
-    /// characters, according to Unicode's "simple" mapping. For example, if
-    /// this class consists of the range `a-z`, then applying case folding will
-    /// result in the class containing both the ranges `a-z` and `A-Z`.
-    ///
-    /// # Error
-    ///
-    /// This routine returns an error when the case mapping data necessary
-    /// for this routine to complete is unavailable. This occurs when the
-    /// `unicode-case` feature is not enabled.
-    pub fn try_case_fold_simple(&mut self) -> Result<(), ()> {
-        self.0.case_fold_simple()
-    }
     
-    /// Returns true if and only if this character class will only ever match
-    /// valid UTF-8.
-    ///
-    /// A character class can match invalid UTF-8 only when the following
-    /// conditions are met:
-    ///
-    /// 1. The translator was configured to permit generating an expression
-    ///    that can match invalid UTF-8. (By default, this is disabled.)
-    /// 2. Unicode mode (via the `u` flag) was disabled either in the concrete
-    ///    syntax or in the parser builder. By default, Unicode mode is
-    ///    enabled.
-    pub const fn is_always_utf8(&self) -> bool {
-        true
+    /// Returns true if and only if this character class will either match
+    /// nothing or only ASCII bytes. Stated differently, this returns false
+    /// if and only if this class contains a non-ASCII codepoint.
+    pub fn is_all_ascii(&self) -> bool {
+        self.1 <= '\x7F'
     }
-
-    // /// Returns true if and only if this character class will either match
-    // /// nothing or only ASCII bytes. Stated differently, this returns false
-    // /// if and only if this class contains a non-ASCII codepoint.
-    // pub fn is_all_ascii(&self) -> bool {
-    //     self.0.intervals().last().map_or(true, |r| r.end <= '\x7F')
-    // }
 }
 
 impl Debug for Seq<char> {

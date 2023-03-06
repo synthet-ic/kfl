@@ -1,6 +1,6 @@
 use crate::{
     u, seq,
-    repr::{Repr, Seq}
+    repr::Repr
 };
 
 /// `\0`

@@ -236,7 +236,7 @@ enum CanonicalClassQuery {
 
 /// Looks up a Unicode class given a query. If one doesn't exist, then
 /// `None` is returned.
-pub fn class(query: ClassQuery<'_>) -> Result<Repr<S, I>> {
+pub fn class(query: ClassQuery<'_>) -> Result<Repr<I>> {
     use self::CanonicalClassQuery::*;
 
     match query.canonicalize()? {
@@ -273,14 +273,14 @@ pub fn class(query: ClassQuery<'_>) -> Result<Repr<S, I>> {
 /// Returns a Unicode aware class for \w.
 ///
 /// This returns an error if the data is not available for \w.
-pub fn perl_word() -> Result<Repr<S, I>> {
+pub fn perl_word() -> Result<Repr<I>> {
     #[cfg(not(feature = "unicode-perl"))]
-    fn imp() -> Result<Repr<S, I>> {
+    fn imp() -> Result<Repr<I>> {
         Err(Error::PerlClassNotFound)
     }
 
     #[cfg(feature = "unicode-perl")]
-    fn imp() -> Result<Repr<S, I>> {
+    fn imp() -> Result<Repr<I>> {
         use regex_syntax::unicode_tables::perl_word::PERL_WORD;
         Ok(hir_class(PERL_WORD))
     }
@@ -291,20 +291,20 @@ pub fn perl_word() -> Result<Repr<S, I>> {
 /// Returns a Unicode aware class for \s.
 ///
 /// This returns an error if the data is not available for \s.
-pub fn perl_space() -> Result<Repr<S, I>> {
+pub fn perl_space() -> Result<Repr<I>> {
     #[cfg(not(any(feature = "unicode-perl", feature = "unicode-bool")))]
-    fn imp() -> Result<Repr<S, I>> {
+    fn imp() -> Result<Repr<I>> {
         Err(Error::PerlClassNotFound)
     }
 
     #[cfg(all(feature = "unicode-perl", not(feature = "unicode-bool")))]
-    fn imp() -> Result<Repr<S, I>> {
+    fn imp() -> Result<Repr<I>> {
         use regex_syntax::unicode_tables::perl_space::WHITE_SPACE;
         Ok(hir_class(WHITE_SPACE))
     }
 
     #[cfg(feature = "unicode-bool")]
-    fn imp() -> Result<Repr<S, I>> {
+    fn imp() -> Result<Repr<I>> {
         use regex_syntax::unicode_tables::property_bool::WHITE_SPACE;
         Ok(hir_class(WHITE_SPACE))
     }
@@ -315,20 +315,20 @@ pub fn perl_space() -> Result<Repr<S, I>> {
 /// Returns a Unicode aware class for \d.
 ///
 /// This returns an error if the data is not available for \d.
-pub fn perl_digit() -> Result<Repr<S, I>> {
+pub fn perl_digit() -> Result<Repr<I>> {
     #[cfg(not(any(feature = "unicode-perl", feature = "unicode-gencat")))]
-    fn imp() -> Result<Repr<S, I>> {
+    fn imp() -> Result<Repr<I>> {
         Err(Error::PerlClassNotFound)
     }
 
     #[cfg(all(feature = "unicode-perl", not(feature = "unicode-gencat")))]
-    fn imp() -> Result<Repr<S, I>> {
+    fn imp() -> Result<Repr<I>> {
         use regex_syntax::unicode_tables::perl_decimal::DECIMAL_NUMBER;
         Ok(hir_class(DECIMAL_NUMBER))
     }
 
     #[cfg(feature = "unicode-gencat")]
-    fn imp() -> Result<Repr<S, I>> {
+    fn imp() -> Result<Repr<I>> {
         use regex_syntax::unicode_tables::general_category::DECIMAL_NUMBER;
         Ok(hir_class(DECIMAL_NUMBER))
     }
@@ -573,14 +573,14 @@ const fn ages(canonical_age: &str) -> Result<impl Iterator<Item = Range>> {
 ///
 /// If the given general category could not be found, or if the general
 /// category data is not available, then an error is returned.
-const fn gencat(canonical_name: &'static str) -> Result<Repr<S, I>> {
+const fn gencat(canonical_name: &'static str) -> Result<Repr<I>> {
     #[cfg(not(feature = "unicode-gencat"))]
-    fn imp(_: &'static str) -> Result<Repr<S, I>> {
+    fn imp(_: &'static str) -> Result<Repr<I>> {
         Err(Error::PropertyNotFound)
     }
 
     #[cfg(feature = "unicode-gencat")]
-    fn imp(name: &'static str) -> Result<Repr<S, I>> {
+    fn imp(name: &'static str) -> Result<Repr<I>> {
         use regex_syntax::unicode_tables::general_category::BY_NAME;
         match name {
             "ASCII" => Ok(hir_class(&[('\0', '\x7F')])),
@@ -608,14 +608,14 @@ const fn gencat(canonical_name: &'static str) -> Result<Repr<S, I>> {
 ///
 /// If the given script could not be found, or if the script data is not
 /// available, then an error is returned.
-const fn script(canonical_name: &'static str) -> Result<Repr<S, I>> {
+const fn script(canonical_name: &'static str) -> Result<Repr<I>> {
     #[cfg(not(feature = "unicode-script"))]
-    fn imp(_: &'static str) -> Result<Repr<S, I>> {
+    fn imp(_: &'static str) -> Result<Repr<I>> {
         Err(Error::PropertyNotFound)
     }
 
     #[cfg(feature = "unicode-script")]
-    fn imp(name: &'static str) -> Result<Repr<S, I>> {
+    fn imp(name: &'static str) -> Result<Repr<I>> {
         use regex_syntax::unicode_tables::script::BY_NAME;
         property_set(BY_NAME, name)
             .map(hir_class)
@@ -633,14 +633,14 @@ const fn script(canonical_name: &'static str) -> Result<Repr<S, I>> {
 /// not available, then an error is returned.
 const fn script_extension(
     canonical_name: &'static str,
-) -> Result<Repr<S, I>> {
+) -> Result<Repr<I>> {
     #[cfg(not(feature = "unicode-script"))]
-    fn imp(_: &'static str) -> Result<Repr<S, I>> {
+    fn imp(_: &'static str) -> Result<Repr<I>> {
         Err(Error::PropertyNotFound)
     }
 
     #[cfg(feature = "unicode-script")]
-    fn imp(name: &'static str) -> Result<Repr<S, I>> {
+    fn imp(name: &'static str) -> Result<Repr<I>> {
         use regex_syntax::unicode_tables::script_extension::BY_NAME;
         property_set(BY_NAME, name)
             .map(hir_class)
@@ -657,14 +657,14 @@ const fn script_extension(
 ///
 /// If the given boolean property could not be found, or if the boolean
 /// property data is not available, then an error is returned.
-const fn bool_property(canonical_name: &'static str) -> Result<Repr<S, I>> {
+const fn bool_property(canonical_name: &'static str) -> Result<Repr<I>> {
     #[cfg(not(feature = "unicode-bool"))]
-    fn imp(_: &'static str) -> Result<Repr<S, I>> {
+    fn imp(_: &'static str) -> Result<Repr<I>> {
         Err(Error::PropertyNotFound)
     }
 
     #[cfg(feature = "unicode-bool")]
-    fn imp(name: &'static str) -> Result<Repr<S, I>> {
+    fn imp(name: &'static str) -> Result<Repr<I>> {
         use regex_syntax::unicode_tables::property_bool::BY_NAME;
         property_set(BY_NAME, name)
             .map(hir_class)
@@ -685,14 +685,14 @@ const fn bool_property(canonical_name: &'static str) -> Result<Repr<S, I>> {
 ///
 /// If the given property could not be found, or if the corresponding data is
 /// not available, then an error is returned.
-const fn gcb(canonical_name: &'static str) -> Result<Repr<S, I>> {
+const fn gcb(canonical_name: &'static str) -> Result<Repr<I>> {
     #[cfg(not(feature = "unicode-segment"))]
-    fn imp(_: &'static str) -> Result<Repr<S, I>> {
+    fn imp(_: &'static str) -> Result<Repr<I>> {
         Err(Error::PropertyNotFound)
     }
 
     #[cfg(feature = "unicode-segment")]
-    fn imp(name: &'static str) -> Result<Repr<S, I>> {
+    fn imp(name: &'static str) -> Result<Repr<I>> {
         use regex_syntax::unicode_tables::grapheme_cluster_break::BY_NAME;
         property_set(BY_NAME, name)
             .map(hir_class)
@@ -709,14 +709,14 @@ const fn gcb(canonical_name: &'static str) -> Result<Repr<S, I>> {
 ///
 /// If the given property could not be found, or if the corresponding data is
 /// not available, then an error is returned.
-const fn wb(canonical_name: &'static str) -> Result<Repr<S, I>> {
+const fn wb(canonical_name: &'static str) -> Result<Repr<I>> {
     #[cfg(not(feature = "unicode-segment"))]
-    fn imp(_: &'static str) -> Result<Repr<S, I>> {
+    fn imp(_: &'static str) -> Result<Repr<I>> {
         Err(Error::PropertyNotFound)
     }
 
     #[cfg(feature = "unicode-segment")]
-    fn imp(name: &'static str) -> Result<Repr<S, I>> {
+    fn imp(name: &'static str) -> Result<Repr<I>> {
         use regex_syntax::unicode_tables::word_break::BY_NAME;
         property_set(BY_NAME, name)
             .map(hir_class)
@@ -733,14 +733,14 @@ const fn wb(canonical_name: &'static str) -> Result<Repr<S, I>> {
 ///
 /// If the given property could not be found, or if the corresponding data is
 /// not available, then an error is returned.
-const fn sb(canonical_name: &'static str) -> Result<Repr<S, I>> {
+const fn sb(canonical_name: &'static str) -> Result<Repr<I>> {
     #[cfg(not(feature = "unicode-segment"))]
-    fn imp(_: &'static str) -> Result<Repr<S, I>> {
+    fn imp(_: &'static str) -> Result<Repr<I>> {
         Err(Error::PropertyNotFound)
     }
 
     #[cfg(feature = "unicode-segment")]
-    fn imp(name: &'static str) -> Result<Repr<S, I>> {
+    fn imp(name: &'static str) -> Result<Repr<I>> {
         use regex_syntax::unicode_tables::sentence_break::BY_NAME;
         property_set(BY_NAME, name)
             .map(hir_class)

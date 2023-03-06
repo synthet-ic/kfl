@@ -43,7 +43,7 @@ mod wrappers;
 
 pub mod char;
 pub mod consts;
-pub mod literal;
+// pub mod literal;
 pub mod macros;
 pub mod repr;
 // pub mod unicode;

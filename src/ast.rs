@@ -76,6 +76,7 @@ impl Node {
 }
 
 impl Scalar {
+    ///
     pub fn new(type_name: Box<str>, literal: Box<str>) -> Self {
         Self { type_name: Some(type_name), literal }
     }

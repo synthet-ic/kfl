@@ -2,7 +2,7 @@ use alloc::{
     borrow::ToOwned,
     boxed::Box,
     collections::{BTreeSet, BTreeMap},
-    string::{String, ToString},
+    string::String,
     vec::Vec
 };
 use core::fmt::{Debug, Pointer};
@@ -23,15 +23,13 @@ use crate::{
 type I<'a> = &'a str;
 type Extra = Full<ParseError, Context, ()>;
 
-fn begin_comment<'a>(which: char)
-    -> impl Parser<'a, I<'a>, (), Extra> + Clone
-{
+fn begin_comment<'a>(which: char) -> impl Parser<'a, I<'a>, (), Extra> + Clone {
     just('/')
     .map_err(|e: ParseError| e.with_no_expected())
     .ignore_then(just(which).ignored())
 }
 
-fn newline<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
+fn newline<'a>() -> impl Parser<'a, I<'a>, (), Extra> + Clone {
     just('\r')
         .or_not()
         .ignore_then(just('\n'))
@@ -44,7 +42,7 @@ fn newline<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
     .map_err(|e: ParseError| e.with_expected_kind("newline"))
 }
 
-fn ws_char<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
+fn ws_char<'a>() -> impl Parser<'a, I<'a>, (), Extra> + Clone {
     any().filter(|c| matches!(c,
         '\t' | ' ' | '\u{00a0}' | '\u{1680}' |
         '\u{2000}'..='\u{200A}' |
@@ -54,7 +52,7 @@ fn ws_char<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
     .ignored()
 }
 
-fn id_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
+fn id_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> + Clone {
     any().filter(|c| !matches!(c,
         '\u{0000}'..='\u{0021}' |
         '\\'|'/'|'('|')'|'{'|'}'|'<'|'>'|';'|'['|']'|'='|','|'"' |
@@ -68,7 +66,7 @@ fn id_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
     .map_err(|e: ParseError| e.with_expected_kind("letter"))
 }
 
-fn id_sans_dig<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
+fn id_sans_dig<'a>() -> impl Parser<'a, I<'a>, char, Extra> + Clone {
     any().filter(|c| !matches!(c,
         '0'..='9' |
         '\u{0000}'..='\u{0020}' |
@@ -83,7 +81,7 @@ fn id_sans_dig<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
     .map_err(|e: ParseError| e.with_expected_kind("letter"))
 }
 
-fn id_sans_sign_dig<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
+fn id_sans_sign_dig<'a>() -> impl Parser<'a, I<'a>, char, Extra> + Clone {
     any().filter(|c| !matches!(c,
         '-'| '+' | '0'..='9' |
         '\u{0000}'..='\u{0020}' |
@@ -98,17 +96,18 @@ fn id_sans_sign_dig<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
     .map_err(|e: ParseError| e.with_expected_kind("letter"))
 }
 
-fn ws<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
+fn ws<'a>() -> impl Parser<'a, I<'a>, (), Extra> + Clone {
     ws_char().repeated().at_least(1).ignored().or(ml_comment())
     .map_err(|e| e.with_expected_kind("whitespace"))
 }
 
-fn comment<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
+fn comment<'a>() -> impl Parser<'a, I<'a>, (), Extra> + Clone {
     begin_comment('/')
-    .then(take_until(newline().or(end()))).ignored()
+    .then(any().repeated().then(newline().or(end())))  // take_until
+    .ignored()
 }
 
-fn ml_comment<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
+fn ml_comment<'a>() -> impl Parser<'a, I<'a>, (), Extra> + Clone {
     recursive(|comment| {
         choice((
             comment,
@@ -165,7 +164,7 @@ fn ml_comment<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
 //     )
 // }
 
-fn string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
+fn string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> + Clone {
     // TODO(rnarkk) recover this
     // raw_string().or(escaped_string())
     escaped_string()
@@ -175,7 +174,7 @@ fn expected_kind(s: &'static str) -> BTreeSet<TokenFormat> {
     [TokenFormat::Kind(s)].into_iter().collect()
 }
 
-fn esc_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
+fn esc_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> + Clone {
     any().try_map(|c, span: <I as Input>::Span| match c {
         '"'|'\\'|'/' => Ok(c),
         'b' => Ok('\u{0008}'),
@@ -191,40 +190,41 @@ fn esc_char<'a>() -> impl Parser<'a, I<'a>, char, Extra> {
             expected: "\"\\/bfnrt".chars().map(|c| c.into()).collect(),
         })}
     })
-    .or(
-        just('u')
-        .ignore_then(
-            any()
-            .try_map(|c: char, span: <I as Input>::Span|
-                c.is_digit(16).then(|| c)
-                .ok_or_else(|| {
-                    ParseError::Unexpected {
-                    label: Some("unexpected character"),
-                    span: Span::from(span),
-                    found: c.into(),
-                    expected: expected_kind("hexadecimal digit"),
-                }}))
-            .repeated()
-            .at_least(1)
-            .at_most(6)
-            .delimited_by(just('{'), just('}'))
-            .map_slice(|v: &str| v)
-            .try_map(|hex_chars, span: <I as Input>::Span| {
-                let s = hex_chars.chars().collect::<String>();
-                let c =
-                    u32::from_str_radix(&s, 16).map_err(|e| e.to_string())
-                    .and_then(|n| char::try_from(n).map_err(|e| e.to_string()))
-                    .map_err(|e| ParseError::Message {
-                        label: Some("invalid character code"),
-                        span: Span(span.start, span.end),
-                        message: e.to_string(),
-                    })?;
-                Ok(c)
-            })
-            .recover_with(skip_until(one_of(['}', '"', '\\']).map(|_| '\0')))))
+    // TODO(rnarkk)
+    // .or(
+    //     just('u')
+    //     .ignore_then(
+    //         any()
+    //         .try_map(|c: char, span: <I as Input>::Span|
+    //             c.is_digit(16).then(|| c)
+    //             .ok_or_else(|| {
+    //                 ParseError::Unexpected {
+    //                 label: Some("unexpected character"),
+    //                 span: Span::from(span),
+    //                 found: c.into(),
+    //                 expected: expected_kind("hexadecimal digit"),
+    //             }}))
+    //         .repeated()
+    //         .at_least(1)
+    //         .at_most(6)
+    //         .delimited_by(just('{'), just('}'))
+    //         .map_slice(|v: &str| v)
+    //         .try_map(|hex_chars, span: <I as Input>::Span| {
+    //             let s = hex_chars.chars().collect::<String>();
+    //             let c =
+    //                 u32::from_str_radix(&s, 16).map_err(|e| e.to_string())
+    //                 .and_then(|n| char::try_from(n).map_err(|e| e.to_string()))
+    //                 .map_err(|e| ParseError::Message {
+    //                     label: Some("invalid character code"),
+    //                     span: Span(span.start, span.end),
+    //                     message: e.to_string(),
+    //                 })?;
+    //             Ok(c)
+    //         })
+    //         .recover_with(skip_until(one_of(['}', '"', '\\']).map(|_| '\0')))))
 }
 
-fn escaped_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
+fn escaped_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> + Clone {
     just('"')
     .ignore_then(
         any().filter(|&c| c != '"' && c != '\\')
@@ -249,7 +249,7 @@ fn escaped_string<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
 }
 
 // TODO(ranrkk)
-fn bare_ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
+fn bare_ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> + Clone {
     let sign = just('+').or(just('-'));
     choice((
         sign.then(id_sans_dig().then(id_char().repeated())).map_slice(|v| v),
@@ -259,22 +259,22 @@ fn bare_ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
     .map_slice(|s| s.to_owned().into_boxed_str())
 }
 
-fn ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
+fn ident<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> + Clone {
     bare_ident().or(string())
 }
 
-fn literal<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
+fn literal<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> + Clone {
     string()
     .or(any().filter(|c| c != &' ' && c != &'{' && c != &'}' && c != &'\n' && c != &'(' && c != &')' && c != &'\\' && c != &'=' && c != &'"').repeated().at_least(1).map_slice(|v: &str| v.chars().collect::<String>().into()))
 }
 
-fn type_name<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> {
+fn type_name<'a>() -> impl Parser<'a, I<'a>, Box<str>, Extra> + Clone {
     ident().delimited_by(just('('), just(')'))
 }
 
-fn spanned<'a, T, P>(p: P) -> impl Parser<'a, I<'a>, T, Extra>
+fn spanned<'a, T, P>(p: P) -> impl Parser<'a, I<'a>, T, Extra> + Clone 
     where T: Pointer + Debug,
-          P: Parser<'a, I<'a>, T, Extra>,
+          P: Parser<'a, I<'a>, T, Extra> + Clone,
 {
     p.map_with_state(|value, span, ctx| {
         ctx.set_span(&value, span.into());
@@ -282,17 +282,17 @@ fn spanned<'a, T, P>(p: P) -> impl Parser<'a, I<'a>, T, Extra>
     })
 }
 
-fn esc_line<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
+fn esc_line<'a>() -> impl Parser<'a, I<'a>, (), Extra> + Clone {
     just('\\')
         .ignore_then(ws().repeated())
         .ignore_then(comment().or(newline()))
 }
 
-fn node_space<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
+fn node_space<'a>() -> impl Parser<'a, I<'a>, (), Extra> + Clone {
     ws().or(esc_line())
 }
 
-fn node_terminator<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
+fn node_terminator<'a>() -> impl Parser<'a, I<'a>, (), Extra> + Clone {
     choice((newline(), comment(), just(';').ignored(), end()))
 }
 
@@ -303,18 +303,17 @@ enum PropOrArg {
     Ignore,
 }
 
-fn type_name_value<'a>() -> impl Parser<'a, I<'a>, Scalar, Extra> {
+fn type_name_value<'a>() -> impl Parser<'a, I<'a>, Scalar, Extra> + Clone {
     type_name().then(literal())
     .map(|(type_name, literal)| Scalar { type_name: Some(type_name), literal })
 }
 
-fn scalar<'a>() -> impl Parser<'a, I<'a>, Scalar, Extra> {
+fn scalar<'a>() -> impl Parser<'a, I<'a>, Scalar, Extra> + Clone {
     type_name_value()
     .or(literal().map(|literal| Scalar { type_name: None, literal }))
 }
 
-fn prop_or_arg_inner<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra>
-{
+fn prop_or_arg_inner<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra> + Clone {
     use PropOrArg::*;
     choice((
         bare_ident().then(just('=').ignore_then(scalar()))
@@ -325,7 +324,7 @@ fn prop_or_arg_inner<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra>
     ))
 }
 
-fn prop_or_arg<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra> {
+fn prop_or_arg<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra> + Clone {
     begin_comment('-')
         .ignore_then(node_space().repeated())
         .ignore_then(prop_or_arg_inner())
@@ -333,7 +332,7 @@ fn prop_or_arg<'a>() -> impl Parser<'a, I<'a>, PropOrArg, Extra> {
     .or(prop_or_arg_inner())
 }
 
-fn line_space<'a>() -> impl Parser<'a, I<'a>, (), Extra> {
+fn line_space<'a>() -> impl Parser<'a, I<'a>, (), Extra> + Clone {
     newline().or(ws()).or(comment())
 }
 
@@ -428,7 +427,7 @@ fn nodes<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
 }
 
 pub(crate) fn document<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
-    nodes().then_ignore(end())
+    nodes()
 }
 
 // TODO(rnarkk) tests which need span info are comment-outed
@@ -436,7 +435,7 @@ pub(crate) fn document<'a>() -> impl Parser<'a, I<'a>, Vec<Node>, Extra> {
 mod test {
     extern crate std;
     use alloc::{borrow::ToOwned, string::String, vec::Vec};
-    use chumsky::zero_copy::{
+    use chumsky::{
         prelude::*,
         extra::Full
     };

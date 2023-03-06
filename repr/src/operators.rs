@@ -132,7 +132,7 @@ impl<I: ~const Integral> const BitOr<Self> for Seq<I> {
 }
 
 impl<I: ~const Integral> const BitXor<Self> for Seq<I> {
-    type Output = Self;
+    type Output = (Option<Self>, Option<Self>);
 
     fn bitxor(self, rhs: Self) -> Self::Output {
         self.xor(rhs)

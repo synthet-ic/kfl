@@ -111,6 +111,7 @@ impl<'a> Repr<char> {
 //     }
 // }
 
+// TODO(rnarkk) Does negative Seq (self.1 < self.0) have use case?
 #[derive(Copy, Eq)]
 #[derive_const(Clone, Default, PartialEq, PartialOrd, Ord)]
 pub struct Seq<I: ~const Integral>(pub I, pub I);
@@ -163,6 +164,11 @@ impl<I: ~const Integral> Seq<I> {
     ///
     /// If subtraction would result in an empty Seq, then no Seqs are
     /// returned.
+    /// 
+    /// other.0 <= self.0 <= self.1 <= other.1 (self <= other) => (None, None)
+    /// self.0 <= other.0 <= other.1 <= self.1 (other <= self) => (lower, upper)
+    /// self.0 <= other.0 <= self.1 <= other.1 => (lower, None)
+    /// other.0 <= self.0 <= other.1 <= self.1 => (None, uppper)
     pub const fn sub(self, other: Self) -> (Option<Self>, Option<Self>) {
         if self.le(&other) {
             return (None, None);
@@ -170,19 +176,12 @@ impl<I: ~const Integral> Seq<I> {
         if self.and(other).is_none() {
             return (Some(self.clone()), None);
         }
-        let add_lower = other.0 > self.0;
-        let add_upper = other.1 < self.1;
-        // We know this because !self.le(other) and the ranges have
-        // a non-empty intersection.
-        assert!(add_lower || add_upper);
         let mut ret = (None, None);
-        if add_lower {
-            let upper = other.0.pred();
-            ret.0 = Some(Self::new(self.0, upper));
+        if self.0 < other.0 {
+            ret.0 = Some(Self::new(self.0, other.0.pred()));
         }
-        if add_upper {
-            let lower = other.1.succ();
-            let range = Self::new(lower, self.1);
+        if other.1 < self.1 {
+            let range = Self::new(other.1.succ(), self.1);
             if ret.0.is_none() {
                 ret.0 = Some(range);
             } else {
@@ -192,12 +191,11 @@ impl<I: ~const Integral> Seq<I> {
         ret
     }
 
+    // TODO(rnarkk) Why not simply `other.0 <= self.0 && self.1 <= other.1`
     /// Returns true if and only if this range is a subset of the other range.
     pub const fn le(&self, other: &Self) -> bool {
-        let (lower1, upper1) = (self.0, self.1);
-        let (lower2, upper2) = (other.0, other.1);
-        (lower2 <= lower1 && lower1 <= upper2)
-        && (lower2 <= upper1 && upper1 <= upper2)
+        (other.0 <= self.0 && self.0 <= other.1)
+        && (other.0 <= self.1 && self.1 <= other.1)
     }
     
 //     /// Apply Unicode simple case folding to this character class, in place.

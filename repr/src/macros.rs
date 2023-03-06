@@ -42,13 +42,13 @@ macro_rules! xor {
     }
 }
 
-/// Seq
-#[macro_export]
-macro_rules! seq {
-    ($lhs:tt .. $rhs:tt) => {
-        Repr::from(stringify!($lhs).chars().nth(0).unwrap()..stringify!($rhs).chars().nth(0).unwrap())
-    };
-}
+// /// Seq
+// #[macro_export]
+// macro_rules! seq {
+//     ($lhs:tt .. $rhs:tt) => {
+//         Repr::Seq((stringify!($lhs).chars().nth(0).unwrap()..stringify!($rhs).chars().nth(0).unwrap()).into())
+//     };
+// }
 
 /// Pattern
 #[macro_export]
@@ -66,13 +66,13 @@ macro_rules! c {
     };
 }
 
-/// Unicode
-#[macro_export]
-macro_rules! u {
-    ($tt:tt) => {
-        Repr::from(char::from_u32(u32::from_str_radix(stringify!($tt), 16).unwrap()).unwrap())
-    }
-}
+// /// Unicode
+// #[macro_export]
+// macro_rules! u {
+//     ($tt:tt) => {
+//         Repr::from(char::from_u32(u32::from_str_radix(stringify!($tt), 16).unwrap()).unwrap())
+//     }
+// }
 
 /// Escaped character
 #[macro_export]

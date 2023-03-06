@@ -15,9 +15,15 @@ impl<I: ~const Integral> const From<I> for Repr<I> {
 // }
 
 // TODO(rnarkk) Is ther any use to generalise it to R: RangeBounds<usize>?
+impl<I: ~const Integral> const From<ops::Range<I>> for Seq<I> {
+    fn from(range: ops::Range<I>) -> Self {
+        Seq(range.start, range.end)
+    }
+}
+
 impl<I: ~const Integral> const From<ops::Range<I>> for Repr<I> {
-    fn from(value: ops::Range<I>) -> Repr<I> {
-        Self::Seq(value.into())
+    fn from(range: ops::Range<I>) -> Self {
+        Repr::Seq(range.into())
     }
 }
 
@@ -27,15 +33,16 @@ impl<I: ~const Integral> const From<ops::Range<I>> for Repr<I> {
 //     }
 // }
 
-impl<R: RangeBounds<usize>> const From<R> for Range {
+impl<R: ~const RangeBounds<usize>> const From<R> for Range {
     fn from(range: R) -> Self {
+        use Bound::*;
         match (range.start_bound(), range.end_bound()) {
-            (Bound::Unbounded, Bound::Unbounded) => Range::Empty,
-            (Bound::Unbounded, Bound::Excluded(end)) => Range::To(end),
-            (Bound::Included(start), Bound::Unbounded) => Range::From(start),
-            (Bound::Included(start), Bound::Excluded(end))
-                => Range::Full(start, end),
-            _ => panic!("Try m..n in place of m..=n.")
+            (Unbounded, Unbounded) => Range::Empty,
+            (Unbounded, Excluded(end)) => Range::To(end.clone()),
+            (Included(start), Unbounded) => Range::From(start.clone()),
+            (Included(start), Excluded(end)) => Range::Full(start.clone(),
+                                                            end.clone()),
+            _ => panic!("Try m..n instead of m..=n.")
         }
     }
 }

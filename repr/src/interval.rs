@@ -4,8 +4,6 @@
 //! <https://en.wikipedia.org/wiki/Partition_of_a_set>
 //! <https://en.wikipedia.org/wiki/Sequence>
 
-use order;
-
 // This module contains an *internal* implementation of interval sets.
 //
 // The primary invariant that interval sets guards is canonical ordering. That

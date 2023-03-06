@@ -17,7 +17,7 @@ use crate::unicode;
 #[derive(Eq, PartialEq)]
 pub enum Repr<I: ~const Integral> {
     Zero(Zero),
-    One(I::S),  // TODO(rnarkk)  Seq(I, I)
+    One(I),  // TODO(rnarkk)  Seq(I, I)
     Seq(Seq<I>),  // TODO(rnarkk)
     Not(Box<Repr<I>>),
     Or(Box<Repr<I>>, Box<Repr<I>>),
@@ -27,7 +27,7 @@ pub enum Repr<I: ~const Integral> {
     Sub(Box<Repr<I>>, Seq<I>),  // TODO(rnarkk)
     // Mul(Box<Repr<I>>, Box<Repr<I>>),  // TODO(rnarkk) intersection
     // Div(Box<Repr<I>>, Box<Repr<I>>),
-    Exp(Box<Repr<S, I>>, Range),
+    Exp(Box<Repr<I>>, Range),
     // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
 }
 
@@ -37,7 +37,7 @@ impl<I: ~const Integral> Repr<I> {
     }
 
     pub const fn empty() -> Self {
-        Self::Zero
+        Self::Zero(Default::default())
     }
     
     pub const fn not(self) -> Self {
@@ -155,7 +155,7 @@ impl<I: ~const Integral> Seq<I> {
             None => return (Some(self.clone()), Some(other.clone())),
             Some(and) => and,
         };
-        or.sub(&and)
+        or.sub(and)
     }
     
     /// Subtract the given Seq from this Seq and return the resulting
@@ -340,7 +340,7 @@ pub trait Integral: Copy + ~const Clone + Debug
                     + ~const PartialOrd + ~const Ord
                     + ~const Destruct
 {
-    type S: ~const IntoIterator<Item = Self>;
+    // type S: ~const IntoIterator<Item = Self>;
     const MIN: Self;
     const MAX: Self;
     fn succ(self) -> Self;
@@ -350,8 +350,8 @@ pub trait Integral: Copy + ~const Clone + Debug
 }
 
 /// Unicode scalar values
-impl<'a> const Integral for char {
-    type S = Str<'a>;
+impl const Integral for char {
+    // type S = Str<'a>;
     const MIN: Self = '\x00';
     const MAX: Self = '\u{10FFFF}';
     fn succ(self) -> Self {
@@ -384,7 +384,7 @@ impl<'a> IntoIterator for Str<'a> {
     type IntoIter = core::str::Chars<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.chars()
+        self.0.chars()
     }
 }
 
@@ -424,8 +424,10 @@ impl Range {
 /// The high-level intermediate representation for an anchor assertion.
 ///
 /// A matching anchor assertion is always zero-length.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum Zero {
+    #[default]
+    Any,
     /// Match the beginning of a line or the beginning of text. Specifically,
     /// this matches at the starting position of the input, or at the position
     /// immediately following a `\n` character.

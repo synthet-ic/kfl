@@ -42,13 +42,13 @@ macro_rules! xor {
     }
 }
 
-/// Seq
-#[macro_export]
-macro_rules! seq {
-    ($lhs:tt .. $rhs:tt) => {
-        Repr::from(stringify!($lhs).chars().nth(0).unwrap()..stringify!($rhs).chars().nth(0).unwrap())
-    };
-}
+// /// Seq
+// #[macro_export]
+// macro_rules! seq {
+//     ($lhs:tt .. $rhs:tt) => {
+//         Repr::Seq((stringify!($lhs).chars().nth(0).unwrap()..stringify!($rhs).chars().nth(0).unwrap()).into())
+//     };
+// }
 
 /// Pattern
 #[macro_export]

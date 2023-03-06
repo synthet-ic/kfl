@@ -2,32 +2,7 @@ use core::ops::{BitOr, BitAnd, BitXor, Range, Mul, RangeBounds};
 
 use crate::repr::{Repr, Seq, Integral};
 
-impl<I: ~const Integral> const BitAnd<I> for Repr<I> {
-    type Output = Repr<I>;
-
-    fn bitand(self, rhs: I) -> Repr<I> {
-        self.and(rhs)
-    }
-}
-
-// impl<I: ~const Integral> const BitAnd<S> for Repr<I>
-// {
-//     type Output = Repr<I>;
-
-//     fn bitand(self, rhs: T) -> Repr<I> {
-//         self.and(rhs)
-//     }
-// }
-
-impl BitAnd<Repr<char>> for &str {
-    type Output = Repr<char>;
-
-    fn bitand(self, rhs: Repr<char>) -> Self::Output {
-        rhs.clone().and(self)
-    }
-}
-
-impl<I: ~const Integral> BitAnd<Repr<I>> for Repr<I> {
+impl<I: ~const Integral> const BitAnd<Self> for Repr<I> {
     type Output = Self;
 
     fn bitand(self, rhs: Self) -> Self {
@@ -35,7 +10,32 @@ impl<I: ~const Integral> BitAnd<Repr<I>> for Repr<I> {
     }
 }
 
-// impl BitAnd<Range<u8>> for Repr<char> {
+impl<I: ~const Integral> const BitAnd<I> for Repr<I> {
+    type Output = Self;
+
+    fn bitand(self, rhs: I) -> Self {
+        self.and(Repr::One(rhs))
+    }
+}
+
+// impl<I: ~const Integral> const BitAnd<S> for Repr<I>
+// {
+//     type Output = Self;
+
+//     fn bitand(self, rhs: T) -> Self {
+//         self.and(rhs)
+//     }
+// }
+
+// impl const BitAnd<Repr<char>> for &str {
+//     type Output = Repr<char>;
+
+//     fn bitand(self, rhs: Repr<char>) -> Self::Output {
+//         rhs.clone().and(self)
+//     }
+// }
+
+// impl const BitAnd<Range<u8>> for Repr<char> {
 //     type Output = Self;
 
 //     fn bitand(self, rhs: Range<u8>) -> Repr<char> {
@@ -43,15 +43,15 @@ impl<I: ~const Integral> BitAnd<Repr<I>> for Repr<I> {
 //     }
 // }
 
-impl<I: ~const Integral> BitAnd<Range<I>> for Repr<I> {
+impl<I: ~const Integral> const BitAnd<Range<I>> for Repr<I> {
     type Output = Self;
 
     fn bitand(self, rhs: Range<I>) -> Self::Output {
-        self.and(rhs)
+        self.and(Repr::Seq(rhs.into()))
     }
 }
 
-// impl<S, I: ~const Integral, T: Into<Self>> BitAnd<[T; 1]> for Repr<I> {
+// impl<S, I: ~const Integral, T: Into<Self>> const BitAnd<[T; 1]> for Repr<I> {
 //     type Output = Self;
 
 //     fn bitand(self, rhs: [T; 1]) -> Self::Output {
@@ -59,47 +59,47 @@ impl<I: ~const Integral> BitAnd<Range<I>> for Repr<I> {
 //     }
 // }
 
-impl<I: ~const Integral> BitOr<I> for Repr<I> {
-    type Output = Repr<I>;
-    
-    fn bitor(self, rhs: I) -> Repr<I> {
+impl<I: ~const Integral> const BitOr<Self> for Repr<I> {
+    type Output = Self;
+
+    fn bitor(self, rhs: Self) -> Self {
         self.or(rhs)
     }
 }
 
-impl BitOr<&str> for Repr<char> {
-    type Output = Repr<char>;
-
-    fn bitor(self, rhs: &str) -> Repr<char> {
+impl<I: ~const Integral> const BitOr<I> for Repr<I> {
+    type Output = Self;
+    
+    fn bitor(self, rhs: I) -> Self {
         self.or(Self::One(rhs))
     }
 }
 
-impl BitOr<Repr<char>> for &str {
-    type Output = Repr<char>;
+// impl const BitOr<&str> for Repr<char> {
+//     type Output = Repr<char>;
 
-    fn bitor(self, rhs: Repr<char>) -> Repr<char> {
-        Self::One(rhs).or(self)
+//     fn bitor(self, rhs: &str) -> Repr<char> {
+//         self.or(Self::One(rhs))
+//     }
+// }
+
+// impl const BitOr<Repr<char>> for &str {
+//     type Output = Repr<char>;
+
+//     fn bitor(self, rhs: Repr<char>) -> Repr<char> {
+//         Self::One(rhs).or(self)
+//     }
+// }
+
+impl<I: ~const Integral> const BitOr<Range<I>> for Repr<I> {
+    type Output = Self;
+
+    fn bitor(self, rhs: Range<I>) -> Self {
+        self.or(Repr::Seq(rhs.into()))
     }
 }
 
-impl<I: ~const Integral> BitOr<Repr<I>> for Repr<I> {
-    type Output = Repr<I>;
-
-    fn bitor(self, rhs: Self) -> Repr<I> {
-        self.or(rhs)
-    }
-}
-
-impl<I: ~const Integral> BitOr<Range<I>> for Repr<I> {
-    type Output = Repr<I>;
-
-    fn bitor(self, rhs: Range<I>) -> Repr<I> {
-        self.or(rhs.into())
-    }
-}
-
-// impl<S, I: ~const Integral, T: Into<Repr<I>>> BitOr<[T; 1]> for Repr<I> {
+// impl<S, I: ~const Integral, T: Into<Self>> const BitOr<[T; 1]> for Repr<I> {
 //     type Output = Self;
 
 //     fn bitor(self, rhs: [T; 1]) -> Self {
@@ -107,34 +107,34 @@ impl<I: ~const Integral> BitOr<Range<I>> for Repr<I> {
 //     }
 // }
 
-impl<R: RangeBounds<usize>, I: ~const Integral> const Mul<R> for Repr<I> {
-    type Output = Repr<I>;
+// impl<R: RangeBounds<usize>, I: ~const Integral> const Mul<R> for Repr<I> {
+//     type Output = Self;
 
-    fn mul(self, rhs: R) -> Repr<I> {
-        Self::Mul(box self, rhs.into())
+//     fn mul(self, rhs: R) -> Self {
+//         Self::Exp(box self, rhs.into())
+//     }
+// }
+
+impl<I: ~const Integral> const BitAnd<Self> for Seq<I> {
+    type Output = Option<Self>;
+
+    fn bitand(self, rhs: Self) -> Self::Output {
+        self.and(rhs)
     }
 }
 
-impl<I: ~const Integral> const BitAnd<Seq<I>> for Seq<I> {
-    type Output = Seq<I>;
+impl<I: ~const Integral> const BitOr<Self> for Seq<I> {
+    type Output = Option<Self>;
 
-    fn bitand(self, rhs: Seq<I>) -> Seq<I> {
-        self.and(&rhs)
+    fn bitor(self, rhs: Self) -> Self::Output {
+        self.or(rhs)
     }
 }
 
-impl<I: ~const Integral> const BitOr<Seq<I>> for Seq<I> {
-    type Output = Seq<I>;
+impl<I: ~const Integral> const BitXor<Self> for Seq<I> {
+    type Output = Self;
 
-    fn bitor(self, rhs: Seq<I>) -> Seq<I> {
-        self.or(&rhs)
-    }
-}
-
-impl<I: ~const Integral> const BitXor<Seq<I>> for Seq<I> {
-    type Output = Seq<I>;
-
-    fn bitxor(self, rhs: Seq<I>) -> Seq<I> {
-        self.xor(&rhs)
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        self.xor(rhs)
     }
 }

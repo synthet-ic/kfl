@@ -1,6 +1,6 @@
 use crate::{
     u, seq,
-    repr::Repr
+    repr::{Repr, Seq}
 };
 
 /// `\0`
@@ -16,6 +16,6 @@ pub const CR: Repr<char> = u!(000D);
 /// ` `
 pub const SP: Repr<char> = u!(0020);
 
-pub const DIGIT: Repr<char> = seq!(0..9);
+pub const DIGIT: Repr<char> = Repr::from('0'..'9');
 pub const SPACE: Repr<char> = SP;
-pub const WORD: Repr<char> = seq!(A..Z) | seq!(a..z);
+pub const WORD: Repr<char> = Repr::from('A'..'Z') | ('a'..'z');

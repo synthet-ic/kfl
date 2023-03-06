@@ -7,7 +7,7 @@ use alloc::{
     vec::Vec
 };
 use core::fmt::{Debug, Pointer};
-use repr::{Pat, p, e, u, i, char::CharExt};
+use repr::{Repr, p, e, u, i, char::CharExt};
 
 use crate::{
     ast::{Node, Scalar},
@@ -17,13 +17,13 @@ use crate::{
     span::Span
 };
 
-fn comment_begin<'a>(which: char) -> Pat {
+fn comment_begin<'a>(which: char) -> Repr<char> {
     (p!(/).map_err(|e: ParseError| e.with_no_expected())
     & which
     ).map_slice(|| ())
 }
 
-fn newline<'a>() -> Pat {
+fn newline<'a>() -> Repr<char> {
     (e!(r)? & e!(n)
     | e!(r)  // Carriage return
     | '\x0C'  // Form feed
@@ -33,7 +33,7 @@ fn newline<'a>() -> Pat {
     ).map_err(|e: ParseError| e.with_expected_kind("newline"))
 }
 
-fn ws_char<'a>() -> Pat {
+fn ws_char<'a>() -> Repr<char> {
     !(e!(t) | ' ' | u!(00a0) | u!(1680)
     | u!(2000)..u!(200A)
     | u!(202F) | u!(205F) | u!(3000)
@@ -41,7 +41,7 @@ fn ws_char<'a>() -> Pat {
     )
 }
 
-fn id_char<'a>() -> Pat {
+fn id_char<'a>() -> Repr<char> {
     !(u!(0000)..u!(0021)
     | '\\' | '/' | '(' | ')' | '{' | '}' | '<' | '>' | ';' | '[' | ']'
     | '=' | ',' | '"'
@@ -54,26 +54,26 @@ fn id_char<'a>() -> Pat {
     ).map_err(|e: ParseError| e.with_expected_kind("letter"))
 }
 
-fn id_sans_dig<'a>() -> Pat {
+fn id_sans_dig<'a>() -> Repr<char> {
     (id_char() - p!(0..9))
     .map_err(|e: ParseError| e.with_expected_kind("letter"))
 }
 
-fn id_sans_sign_dig<'a>() -> Pat {
+fn id_sans_sign_dig<'a>() -> Repr<char> {
     (id_sans_dig() - p!(-|+))
     .map_err(|e: ParseError| e.with_expected_kind("letter"))
 }
 
-fn ws<'a>() -> Pat {
+fn ws<'a>() -> Repr<char> {
     (ws_char() * (1..) | ml_comment())
     .map_err(|e| e.with_expected_kind("whitespace"))
 }
 
-fn comment<'a>() -> Pat {
+fn comment<'a>() -> Repr<char> {
     comment_begin('/') & [any()] & (newline() | end())
 }
 
-fn ml_comment<'a>() -> Pat {
+fn ml_comment<'a>() -> Repr<char> {
     recursive(|comment| {
         comment_begin('*')
         & [comment | !p!('*') | p!('*') & ignore((!p!('/')).rewind())]
@@ -100,7 +100,7 @@ fn ml_comment<'a>() -> Pat {
 }
 
 // TODO(rnarkk) `then_with` method has been removed. We have to compensate it with either `then_with_ctx`, `with_ctx`, `map_ctx`, `configure`, or combination of them. https://github.com/zesterer/chumsky/pull/269
-fn raw_string<'a>() -> Pat {
+fn raw_string<'a>() -> Repr<char> {
     e!(r)
     & ['#'].map_slice(str::len)
     & '"'
@@ -125,7 +125,7 @@ fn raw_string<'a>() -> Pat {
     )
 }
 
-fn string<'a>() -> Pat {
+fn string<'a>() -> Repr<char> {
     // TODO(rnarkk) recover this
     // raw_string().or(escaped_string())
     escaped_string()
@@ -135,7 +135,7 @@ fn expected_kind(s: &'static str) -> BTreeSet<TokenFormat> {
     [TokenFormat::Kind(s)].into_iter().collect()
 }
 
-fn esc_char<'a>() -> Pat {
+fn esc_char<'a>() -> Repr<char> {
     any().try_map(|c, span| match c {
         '"' | '\\' | '/' => Ok(c),
         'b' => Ok(u!(0008)),
@@ -182,7 +182,7 @@ fn esc_char<'a>() -> Pat {
             .recover_with(skip_until((p!('}') | '"' | '\\').map(|_| '\0')))))
 }
 
-fn escaped_string<'a>() -> Pat {
+fn escaped_string<'a>() -> Repr<char> {
     (
         p!('"')
         & [!(p!('"') | '\\') | ignore('\\') & esc_char()]
@@ -207,7 +207,7 @@ fn escaped_string<'a>() -> Pat {
 }
 
 // TODO(ranrkk)
-fn bare_ident<'a>() -> Pat {
+fn bare_ident<'a>() -> Repr<char> {
     let sign = p!(+|-);
     (sign & id_sans_dig() & [id_char()]
     | sign
@@ -215,21 +215,21 @@ fn bare_ident<'a>() -> Pat {
     ).map_slice(|s| own!(s))
 }
 
-fn ident<'a>() -> Pat {
+fn ident<'a>() -> Repr<char> {
     bare_ident() | string()
 }
 
-fn literal<'a>() -> Pat {
+fn literal<'a>() -> Repr<char> {
     string()
     | (!p(' ' | '{' | '}' | '\n' | '(' | ')' | '\\' | '=' | '"') * (1..))
         .map_slice(|s| own!(s))
 }
 
-fn type_name<'a>() -> Pat {
+fn type_name<'a>() -> Repr<char> {
     (p!('(') & ident() & ')').map_slice(|(_, s, _)| s)
 }
 
-fn spanned<'a, T>(p: Pat) -> Pat
+fn spanned<'a, T>(p: Repr<char>) -> Repr<char>
     where T: Pointer + Debug,
 {
     p.map_with_state(|value, span, ctx| {
@@ -238,15 +238,15 @@ fn spanned<'a, T>(p: Pat) -> Pat
     })
 }
 
-fn esc_line<'a>() -> Pat {
+fn esc_line<'a>() -> Repr<char> {
     p!('\\') & [ws()] & (comment() | newline())
 }
 
-fn node_space<'a>() -> Pat {
+fn node_space<'a>() -> Repr<char> {
     ws() | esc_line()
 }
 
-fn node_terminator<'a>() -> Pat {
+fn node_terminator<'a>() -> Repr<char> {
     newline() | comment() | ignore(';') | end()
 }
 
@@ -259,30 +259,30 @@ enum PropOrArg {
 
 use PropOrArg::*;
 
-fn type_name_value<'a>() -> Pat {
+fn type_name_value<'a>() -> Repr<char> {
     (type_name() & literal()).map(|(ty, lit)| Scalar::new(ty, lit))
 }
 
-fn scalar<'a>() -> Pat {
+fn scalar<'a>() -> Repr<char> {
     type_name_value() | literal().map(|lit| Scalar::from(lit))
 }
 
-fn prop_or_arg_inner<'a>() -> Pat {
+fn prop_or_arg_inner<'a>() -> Repr<char> {
     (bare_ident() & '=' & scalar()).map(|(name, _, scalar)| Prop(name, scalar))
     | (string() & '=' & scalar()).map(|(name, _, scalar)| Prop(name, scalar))
     | scalar().map(Arg)
 }
 
-fn prop_or_arg<'a>() -> Pat {
+fn prop_or_arg<'a>() -> Repr<char> {
     (comment_begin('-') & [node_space()] & prop_or_arg_inner()).map(|_| Ignore)
     | prop_or_arg_inner()
 }
 
-fn line_space<'a>() -> Pat {
+fn line_space<'a>() -> Repr<char> {
     newline() | ws() | comment()
 }
 
-fn nodes<'a>() -> Pat {
+fn nodes<'a>() -> Repr<char> {
     recursive(|nodes| {
         let braced_nodes =
             (p!('{') & nodes & '}')
@@ -365,7 +365,7 @@ fn nodes<'a>() -> Pat {
     })
 }
 
-pub(crate) fn document<'a>() -> Pat {
+pub(crate) fn document<'a>() -> Repr<char> {
     nodes() & end()
 }
 
@@ -375,7 +375,7 @@ mod test {
     extern crate std;
     use alloc::{borrow::ToOwned, string::String, vec::Vec};
     use miette::NamedSource;
-    use repr::Pat;
+    use repr::Repr;
     use crate::ast::Scalar;
     use crate::context::Context;
     use crate::errors::{Error, ParseError};

@@ -7,7 +7,7 @@ use alloc::{
 };
 use core::str::FromStr;
 
-use repr::{p, i, Pat, char::CharExt};
+use repr::{i, Repr, char::CharExt};
 
 use crate::{
     ast::Scalar,
@@ -16,21 +16,23 @@ use crate::{
     traits::{DecodeScalar, EncodeScalar}
 };
 
-fn digit<'a>(radix: u32) -> Pat {
+
+
+fn digit(radix: u32) -> Repr<char> {
     match radix {
-        2 => p!(0..1),
-        8 => p!(0..7),
-        10 => p!(0..9),
-        16 => p!(0..9|A..F|a..f),
+        2 => Repr::from('0'..'1'),
+        8 => Repr::from('0'..'7'),
+        10 => Repr::from(0..9),
+        16 => Repr::from(0..9|A..F|a..f),
         _ => panic!()
     }
 }
 
-fn digits<'a>(radix: u32) -> Pat {
-    repeat!(i!(_) | digit())
+fn digits(radix: u32) -> Repr<char> {
+    (i!('_') | digit(radix)).exp()
 }
 
-fn decimal_number<'a>() -> Pat {
+fn decimal_number() -> Repr<char> {
     p!(-|+)?
     & digit(10) & digits(10)
     & (p!(.) & digit(10) & digits(10))?
@@ -38,7 +40,7 @@ fn decimal_number<'a>() -> Pat {
     .map_slice(|s| (10, s.to_owned().into_boxed_str()))
 }
 
-fn radix_number<'a>() -> Pat {
+fn radix_number() -> Repr<char> {
     // sign
     p!(-|+)?
     & i!(0)
@@ -53,7 +55,7 @@ fn radix_number<'a>() -> Pat {
     })
 }
 
-fn number<'a>() -> Pat {
+fn number() -> Repr<char> {
     radix_number() | decimal_number()
 }
 

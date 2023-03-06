@@ -9,8 +9,6 @@ use core::{
     marker::Destruct,
 };
 
-use crate::unicode;
-
 // TODO(rnarkk) Debug specilisation
 // TODO(rnarkk) Seq (class) as `or` for char, &str as `and` for char?
 #[derive_const(Clone)]
@@ -32,9 +30,9 @@ pub enum Repr<I: ~const Integral> {
 }
 
 impl<I: ~const Integral> Repr<I> {
-    pub const fn new<const N: usize>(seqs: [Seq<I>; N]) -> Self {
+    // pub const fn new<const N: usize>(seqs: [Seq<I>; N]) -> Self {
 
-    }
+    // }
 
     pub const fn empty() -> Self {
         Self::Zero(Default::default())
@@ -208,60 +206,6 @@ impl<I: ~const Integral> Seq<I> {
 }
 
 impl Seq<char> {
-    /// Expand this character class such that it contains all case folded
-    /// characters, according to Unicode's "simple" mapping. For example, if
-    /// this class consists of the range `a-z`, then applying case folding will
-    /// result in the class containing both the ranges `a-z` and `A-Z`.
-    ///
-    /// # Panics
-    ///
-    /// This routine panics when the case mapping data necessary for this
-    /// routine to complete is unavailable. This occurs when the `unicode-case`
-    /// feature is not enabled.
-    /// 
-    /// # Error
-    ///
-    /// This routine returns an error when the case mapping data necessary
-    /// for this routine to complete is unavailable. This occurs when the
-    /// `unicode-case` feature is not enabled.
-    ///
-    /// Callers should prefer using `try_case_fold_simple` instead, which will
-    /// return an error instead of panicking.
-    /// =======================================================================
-    /// Apply simple case folding to this Unicode scalar value range.
-    ///
-    /// Additional ranges are appended to the given vector. Canonical ordering
-    /// is *not* maintained in the given vector.
-    fn case_fold_simple(
-        &self,
-        ranges: &mut Vec<Self>,
-    ) -> Result<(), ()> {
-        if !unicode::contains_simple_case_mapping(self.0, self.1)? {
-            return Ok(());
-        }
-        let start = self.0 as u32;
-        let end = (self.1 as u32).saturating_add(1);
-        let mut next_simple_cp = None;
-        for cp in (start..end).filter_map(char::from_u32) {
-            if let Some(next) = next_simple_cp {
-                if cp < next {
-                    continue;
-                }
-            }
-            let it = match unicode::simple_fold(cp)? {
-                Ok(it) => it,
-                Err(next) => {
-                    next_simple_cp = next;
-                    continue;
-                }
-            };
-            for cp_folded in it {
-                ranges.push(Seq::new(cp_folded, cp_folded));
-            }
-        }
-        Ok(())
-    }
-    
     /// Returns true if and only if this character class will either match
     /// nothing or only ASCII bytes. Stated differently, this returns false
     /// if and only if this class contains a non-ASCII codepoint.
@@ -399,7 +343,8 @@ impl Range {
 /// The high-level intermediate representation for an anchor assertion.
 ///
 /// A matching anchor assertion is always zero-length.
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive_const(Default)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Zero {
     #[default]
     Any,

@@ -30,6 +30,14 @@ let re = (wh | '.') * 1.. & '@' & (wh * 1.. & '.') * 1.. & wh * 2..4;
 #![feature(const_try)]
 #![feature(const_for)]
 #![feature(const_box)]
+#![feature(const_cmp)]
+#![feature(const_discriminant)]
+#![feature(const_clone)]
+#![feature(const_reverse)]
+#![feature(const_slice_index)]
+#![feature(const_mut_refs)]
+#![feature(const_option)]
+#![feature(const_refs_to_cell)]
 // #![feature(const_iter)]
 // #![feature(negative_impls)]
 // #![feature(specialization)]
@@ -46,7 +54,6 @@ pub mod consts;
 // pub mod literal;
 pub mod macros;
 pub mod repr;
-// pub mod unicode;
 
 pub use consts::{DIGIT, SPACE, WORD};
 pub use repr::{Repr, Seq, Range};

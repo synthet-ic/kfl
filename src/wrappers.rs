@@ -6,7 +6,7 @@ use alloc::{
     vec::Vec
 };
 use core::fmt::{Debug, Write};
-use chumsky::zero_copy::Parser;
+use chumsky::Parser;
 use miette::NamedSource;
 
 use crate::{

@@ -83,8 +83,8 @@ impl Into<SourceSpan> for Span {
     }
 }
 
-impl From<chumsky::zero_copy::span::SimpleSpan<usize>> for Span {
-    fn from(value: chumsky::zero_copy::span::SimpleSpan<usize>) -> Self {
+impl From<chumsky::span::SimpleSpan<usize>> for Span {
+    fn from(value: chumsky::span::SimpleSpan<usize>) -> Self {
         Self(value.start, value.end)
     }
 }
@@ -110,9 +110,21 @@ impl Into<SourceSpan> for LineSpan {
     }
 }
 
-impl chumsky::zero_copy::span::Span for Span {
+impl chumsky::span::Span for Span {
     type Context = ();
     type Offset = usize;
+    fn new(_context: Self::Context, range: Range<Self::Offset>) -> Self {
+        Self(range.start, range.end)
+    }
+    fn context(&self) -> Self::Context {
+        ()
+    }
+    fn start(&self) -> Self::Offset {
+        self.0
+    }
+    fn end(&self) -> Self::Offset {
+        self.1
+    }
 }
 
 // #[allow(missing_debug_implementations)]
@@ -169,12 +181,21 @@ impl chumsky::zero_copy::span::Span for Span {
 //     // }
 // }
 
-impl chumsky::zero_copy::span::Span for LineSpan {
+impl chumsky::span::Span for LineSpan {
     type Context = ();
     type Offset = LinePos;
-    // fn new(_context: (), range: std::ops::Range<LinePos>) -> Self {
-    //     LineSpan(range.start, range.end)
-    // }
+    fn new(_context: Self::Context, range: Range<Self::Offset>) -> Self {
+        Self(range.start, range.end)
+    }
+    fn context(&self) -> Self::Context {
+        ()
+    }
+    fn start(&self) -> Self::Offset {
+        self.0
+    }
+    fn end(&self) -> Self::Offset {
+        self.1
+    }
 }
 
 // #[cfg(feature = "line-numbers")]

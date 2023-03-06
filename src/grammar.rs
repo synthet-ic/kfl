@@ -7,7 +7,7 @@ use alloc::{
 };
 use core::fmt::{Debug, Pointer};
 
-use chumsky::zero_copy::{
+use chumsky::{
     extra::Full,
     input::Input,
     prelude::*,

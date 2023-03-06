@@ -346,9 +346,9 @@ impl ParseError {
     }
 }
 
-use chumsky::zero_copy::input::Input;
+use chumsky::input::Input;
 
-impl<'a> chumsky::zero_copy::error::Error<'a, &'a str> for ParseError {
+impl<'a> chumsky::error::Error<'a, &'a str> for ParseError {
     fn expected_found<E>(expected: E, found: Option<char>, span: <&'a str as Input<'a>>::Span)
         -> Self
         where E: IntoIterator<Item = Option<char>>

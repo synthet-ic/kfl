@@ -7,7 +7,7 @@ use alloc::{
 };
 use core::str::FromStr;
 
-use chumsky::zero_copy::{
+use chumsky::{
     extra::Full,
     prelude::*,
 };

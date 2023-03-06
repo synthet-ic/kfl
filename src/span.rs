@@ -83,12 +83,6 @@ impl Into<SourceSpan> for Span {
     }
 }
 
-impl From<chumsky::zero_copy::span::SimpleSpan<usize>> for Span {
-    fn from(value: chumsky::zero_copy::span::SimpleSpan<usize>) -> Self {
-        Self(value.start, value.end)
-    }
-}
-
 impl From<Range<usize>> for Span {
     fn from(r: Range<usize>) -> Span {
         Span(r.start, r.end)
@@ -108,11 +102,6 @@ impl Into<SourceSpan> for LineSpan {
     fn into(self) -> SourceSpan {
         (self.0.offset, self.1.offset.saturating_sub(self.0.offset)).into()
     }
-}
-
-impl chumsky::zero_copy::span::Span for Span {
-    type Context = ();
-    type Offset = usize;
 }
 
 // #[allow(missing_debug_implementations)]
@@ -168,14 +157,6 @@ impl chumsky::zero_copy::span::Span for Span {
 //     //     )
 //     // }
 // }
-
-impl chumsky::zero_copy::span::Span for LineSpan {
-    type Context = ();
-    type Offset = LinePos;
-    // fn new(_context: (), range: std::ops::Range<LinePos>) -> Self {
-    //     LineSpan(range.start, range.end)
-    // }
-}
 
 // #[cfg(feature = "line-numbers")]
 // impl traits::sealed::SpanTracker for sealed::LineTracker {

@@ -67,7 +67,7 @@ impl<I: ~const Integral> Repr<I> {
     }
 }
 
-impl<'a> Repr<char> {
+impl Repr<char> {
     /// `.` expression that matches any character except for `\n`. To build an
     /// expression that matches any character, including `\n`, use the `any`
     /// method.

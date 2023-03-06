@@ -15,22 +15,24 @@ use crate::unicode;
 // TODO(rnarkk) Seq (class) as `or` for char, &str as `and` for char?
 #[derive_const(Clone)]
 #[derive(Eq, PartialEq)]
-pub enum Repr<S, I: ~const Integral<S>> {
+pub enum Repr<I: ~const Integral> {
     Zero(Zero),
-    One(S),  // TODO(rnarkk)  Seq(I, I)
-    Seq(Seq<S, I>),  // TODO(rnarkk)
-    Not(Box<Repr<S, I>>),
-    Or(Box<Repr<S, I>>, Box<Repr<S, I>>),
-    And(Box<Repr<S, I>>, Box<Repr<S, I>>),
-    Xor(Box<Repr<S, I>>, Box<Repr<S, I>>),
-    Add(Box<Repr<S, I>>, Box<Repr<S, I>>),
-    Sub(Box<Repr<S, I>>, Seq<S, I>),  // TODO(rnarkk)
-    Mul(Box<Repr<S, I>>, Range),  // TODO(rnarkk) should use for intersection?
-    // Map(Box<Repr<S, I>>, Fn(Box<Repr<S, I>>), Fn(Box<Repr<S, I>>))
+    One(I::S),  // TODO(rnarkk)  Seq(I, I)
+    Seq(Seq<I>),  // TODO(rnarkk)
+    Not(Box<Repr<I>>),
+    Or(Box<Repr<I>>, Box<Repr<I>>),
+    And(Box<Repr<I>>, Box<Repr<I>>),
+    Xor(Box<Repr<I>>, Box<Repr<I>>),
+    Add(Box<Repr<I>>, Box<Repr<I>>),
+    Sub(Box<Repr<I>>, Seq<I>),  // TODO(rnarkk)
+    // Mul(Box<Repr<I>>, Box<Repr<I>>),  // TODO(rnarkk) intersection
+    // Div(Box<Repr<I>>, Box<Repr<I>>),
+    Exp(Box<Repr<S, I>>, Range),
+    // Map(Box<Repr<I>>, Fn(Box<Repr<I>>), Fn(Box<Repr<I>>))
 }
 
-impl<S, I: ~const Integral<S>> Repr<S, I> {
-    pub const fn new<const N: usize>(seqs: [Seq<S, I>; N]) -> Self {
+impl<I: ~const Integral> Repr<I> {
+    pub const fn new<const N: usize>(seqs: [Seq<I>; N]) -> Self {
 
     }
 
@@ -58,16 +60,16 @@ impl<S, I: ~const Integral<S>> Repr<S, I> {
         Self::Add(box self, box other)
     }
     
-    pub const fn sub(self, seq: Seq<S, I>) -> Self {
+    pub const fn sub(self, seq: Seq<I>) -> Self {
         Self::Sub(box self, seq)
     }
     
     pub const fn mul(self, range: Range) -> Self {
-        Self::Mul(box self, range)
+        Self::Exp(box self, range)
     }
 }
 
-impl Repr<&'static str, char> {
+impl<'a> Repr<char> {
     /// `.` expression that matches any character except for `\n`. To build an
     /// expression that matches any character, including `\n`, use the `any`
     /// method.
@@ -84,18 +86,7 @@ impl Repr<&'static str, char> {
     }
 }
 
-impl Repr<&[u8], u8> {
-    pub const fn dot() -> Self {
-        Self::Or(box Self::Seq(Seq(b'\0', b'\x09')),
-                 box Self::Seq(Seq(b'\x0B', b'\xFF')))
-    }
-
-    pub const fn any() -> Self {
-        Self::Seq(Seq(b'\0', b'\xFF'))
-    }
-}
-
-// impl<const N: usize, I: ~const Integral> const Into<[I; N]> for Repr<S, I> {
+// impl<const N: usize, I: ~const Integral> const Into<[I; N]> for Repr<I> {
 //     fn into(self) -> [I; N] {
 //         match self {
 //             Repr::Zero => [],
@@ -108,7 +99,7 @@ impl Repr<&[u8], u8> {
 //     }
 // }
 
-// impl<S, I: ~const Integral<S>> const IntoIterator for Repr<S, I> {
+// impl<I: ~const Integral> const IntoIterator for Repr<I> {
 //     type Item = I;
 //     type IntoIter: IntoIter<'a, I>;
 
@@ -122,10 +113,9 @@ impl Repr<&[u8], u8> {
 
 #[derive(Copy, Eq)]
 #[derive_const(Clone, Default, PartialEq, PartialOrd, Ord)]
-pub struct Seq<S, I: ~const Integral<S>>(pub I, pub I);
-    // where S: Clone;
+pub struct Seq<I: ~const Integral>(pub I, pub I);
 
-impl<S, I: ~const Integral<S>> Seq<S, I> {
+impl<I: ~const Integral> Seq<I> {
     pub const fn new(from: I, to: I) -> Self {
         if from <= to {
             Seq(from, to)
@@ -173,7 +163,7 @@ impl<S, I: ~const Integral<S>> Seq<S, I> {
     ///
     /// If subtraction would result in an empty Seq, then no Seqs are
     /// returned.
-    fn sub(self, other: Self) -> (Option<Self>, Option<Self>) {
+    pub const fn sub(self, other: Self) -> (Option<Self>, Option<Self>) {
         if self.le(&other) {
             return (None, None);
         }
@@ -219,7 +209,7 @@ impl<S, I: ~const Integral<S>> Seq<S, I> {
 //     pub fn case_fold_simple(&mut self);
 }
 
-impl<S> Seq<S, char> {
+impl Seq<char> {
     /// Expand this character class such that it contains all case folded
     /// characters, according to Unicode's "simple" mapping. For example, if
     /// this class consists of the range `a-z`, then applying case folding will
@@ -305,7 +295,7 @@ impl<S> Seq<S, char> {
     // }
 }
 
-impl<S> Debug for Seq<S, char> {
+impl Debug for Seq<char> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let start = if !self.0.is_whitespace() && !self.0.is_control() {
             self.0.to_string()
@@ -321,65 +311,6 @@ impl<S> Debug for Seq<S, char> {
             .field("0", &start)
             .field("1", &end)
             .finish()
-    }
-}
-
-impl<S> Seq<S, u8> {
-    /// Expand this character class such that it contains all case folded
-    /// characters. For example, if this class consists of the range `a-z`,
-    /// then applying case folding will result in the class containing both the
-    /// ranges `a-z` and `A-Z`.
-    ///
-    /// Note that this only applies ASCII case folding, which is limited to the
-    /// characters `a-z` and `A-Z`.
-    /// =======================================================================
-    /// Apply simple case folding to this byte range. Only ASCII case mappings
-    /// (for a-z) are applied.
-    ///
-    /// Additional ranges are appended to the given vector. Canonical ordering
-    /// is *not* maintained in the given vector.
-    fn case_fold_simple(
-        &self,
-        ranges: &mut Vec<Self>,
-    ) -> Result<(), ()> {
-        if !Seq::new(b'a', b'z').and(self).is_none() {
-            let lower = max(self.0, b'a');
-            let upper = min(self.1, b'z');
-            ranges.push(Seq::new(lower - 32, upper - 32));
-        }
-        if !Seq::new(b'A', b'Z').and(self).is_none() {
-            let lower = max(self.0, b'A');
-            let upper = min(self.1, b'Z');
-            ranges.push(Seq::new(lower + 32, upper + 32));
-        }
-        Ok(())
-    }
-    
-    pub const fn is_always_utf8(&self) -> bool {
-        self.is_all_ascii()
-    }
-
-    /// If this character class will either match
-    /// nothing or only ASCII bytes. Or this class contains a non-ASCII byte.
-    pub const fn is_all_ascii(&self) -> bool {
-        self.1 <= 0x7F
-    }
-}
-
-impl<S> Debug for Seq<S, u8> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let mut debug = f.debug_struct("Seq<u8>");
-        if self.0 <= 0x7F {
-            debug.field("0", &(self.0 as char));
-        } else {
-            debug.field("0", &self.0);
-        }
-        if self.1 <= 0x7F {
-            debug.field("1", &(self.1 as char));
-        } else {
-            debug.field("1", &self.1);
-        }
-        debug.finish()
     }
 }
 
@@ -404,23 +335,23 @@ impl<S> Debug for Seq<S, u8> {
 /// case insensitive matching. For example, `(?i)k` and `(?i-u)k` will not
 /// match the same set of strings.
 #[const_trait]
-pub trait Integral<S>: Copy + ~const Clone + Debug
-                       + ~const PartialEq + Eq
-                       + ~const PartialOrd + ~const Ord
-                       + ~const Destruct
-    // where I: ~const Iterator<Item = Self>,
-    //       S: ~const Into<I>
+pub trait Integral: Copy + ~const Clone + Debug
+                    + ~const PartialEq + Eq
+                    + ~const PartialOrd + ~const Ord
+                    + ~const Destruct
 {
+    type S: ~const IntoIterator<Item = Self>;
     const MIN: Self;
     const MAX: Self;
     fn succ(self) -> Self;
     fn pred(self) -> Self;
-    // (rnarkk) use in crate::literal
+    // (rnarkk) use this in crate::literal
     fn as_bytes(self, reverse: bool) -> [u8];
 }
 
 /// Unicode scalar values
-impl<S> const Integral<S> for char {
+impl<'a> const Integral for char {
+    type S = Str<'a>;
     const MIN: Self = '\x00';
     const MAX: Self = '\u{10FFFF}';
     fn succ(self) -> Self {
@@ -446,18 +377,14 @@ impl<S> const Integral<S> for char {
     }
 }
 
-/// Arbitrary bytes
-impl<S> const Integral<S> for u8 {
-    const MIN: Self = u8::MIN;
-    const MAX: Self = u8::MAX;
-    fn succ(self) -> Self {
-        self.checked_add(1).unwrap()
-    }
-    fn pred(self) -> Self {
-        self.checked_sub(1).unwrap()
-    }
-    fn as_bytes(self, _: bool) -> [u8] {
-        [self]
+pub struct Str<'a>(&'a str);
+
+impl<'a> IntoIterator for Str<'a> {
+    type Item = char;
+    type IntoIter = core::str::Chars<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.chars()
     }
 }
 

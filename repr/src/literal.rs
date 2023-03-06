@@ -1,4 +1,5 @@
-//! Provides routines for extracting literal prefixes and suffixes from an `Repr<S, I>`.
+//! TODO(rnarkk) Accomodate the content here in crate::derivative
+//! Provides routines for extracting literal prefixes and suffixes from an `Repr<I>`.
 
 use core::{
     char::from_u32,
@@ -28,7 +29,7 @@ use crate::repr::{Repr, Seq, Range, Integral, Zero};
 /// be tweaked.
 ///
 /// **WARNING**: Literal extraction uses stack space proportional to the size
-/// of the `Repr<S, I>` expression. At some point, this drawback will be eliminated.
+/// of the `Repr<I>` expression. At some point, this drawback will be eliminated.
 /// To protect yourself, set a reasonable
 /// [`nest_limit` on your `Parser`](../../struct.ParserBuilder.html#method.nest_limit).
 /// This is done for you by default.
@@ -73,15 +74,15 @@ impl Literals {
         Literals { lits: vec![], limit_size: 250, limit_class: 10 }
     }
 
-    /// Returns a set of literal prefixes extracted from the given `Repr<S, I>`.
-    pub fn prefixes<S, I: ~const Integral<S>>(expr: &Repr<S, I>) -> Literals {
+    /// Returns a set of literal prefixes extracted from the given `Repr<I>`.
+    pub fn prefixes<I: ~const Integral>(expr: &Repr<I>) -> Literals {
         let mut lits = Literals::empty();
         lits.union_prefixes(expr);
         lits
     }
 
-    /// Returns a set of literal suffixes extracted from the given `Repr<S, I>`.
-    pub fn suffixes<S, I: ~const Integral<S>>(expr: &Repr<S, I>) -> Literals {
+    /// Returns a set of literal suffixes extracted from the given `Repr<I>`.
+    pub fn suffixes<I: ~const Integral>(expr: &Repr<I>) -> Literals {
         let mut lits = Literals::empty();
         lits.union_suffixes(expr);
         lits
@@ -288,7 +289,7 @@ impl Literals {
     /// Note that prefix literals extracted from `expr` are said to be complete
     /// if and only if the literal extends from the beginning of `expr` to the
     /// end of `expr`.
-    pub fn union_prefixes<S, I: ~const Integral<S>>(&mut self, expr: &Repr<S, I>) -> bool {
+    pub fn union_prefixes<I: ~const Integral>(&mut self, expr: &Repr<I>) -> bool {
         let mut lits = self.to_empty();
         prefixes(expr, &mut lits);
         !lits.is_empty() && !lits.contains_empty() && self.union(lits)
@@ -303,7 +304,7 @@ impl Literals {
     /// Note that prefix literals extracted from `expr` are said to be complete
     /// if and only if the literal extends from the end of `expr` to the
     /// beginning of `expr`.
-    pub fn union_suffixes<S, I: ~const Integral<S>>(&mut self, expr: &Repr<S, I>) -> bool {
+    pub fn union_suffixes<I: ~const Integral>(&mut self, expr: &Repr<I>) -> bool {
         let mut lits = self.to_empty();
         suffixes(expr, &mut lits);
         lits.reverse();
@@ -432,8 +433,8 @@ impl Literals {
     /// Extends each literal in this set with the Seq given, writing the bytes of each character in reverse when `Seq<_, char>`.
     ///
     /// Returns false if the Seq was too big to add.
-    pub fn add_seq<S, I>(&mut self, seq: &Seq<S, I>, reverse: bool) -> bool
-        where I: ~const Integral<S>
+    pub fn add_seq<S, I>(&mut self, seq: &Seq<I>, reverse: bool) -> bool
+        where I: ~const Integral
     {
         if self.class_exceeds_limits(seq_count(seq)) {
             return false;
@@ -518,8 +519,8 @@ impl Literals {
     }
 }
 
-const fn prefixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
-    where I: ~const Integral<S>,
+const fn prefixes<S, I>(expr: &Repr<I>, lits: &mut Literals)
+    where I: ~const Integral,
 {
     match *expr {
         Repr::Zero(_) => {}
@@ -585,8 +586,8 @@ const fn prefixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
     }
 }
 
-const fn suffixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
-    where I: ~const Integral<S>,
+const fn suffixes<S, I>(expr: &Repr<I>, lits: &mut Literals)
+    where I: ~const Integral,
 {
     match *expr {
         Repr::One(c) => {
@@ -653,12 +654,12 @@ const fn suffixes<S, I>(expr: &Repr<S, I>, lits: &mut Literals)
 }
 
 const fn repeat_zero_or_more_literals<S, I, F>(
-    e: &Repr<S, I>,
+    e: &Repr<I>,
     lits: &mut Literals,
     mut f: F,
 )
-    where I: ~const Integral<S>,
-          F: FnMut(&Repr<S, I>, &mut Literals)
+    where I: ~const Integral,
+          F: FnMut(&Repr<I>, &mut Literals)
 {
     let (mut lits2, mut lits3) = (lits.clone(), lits.to_empty());
     lits3.limit_size = lits.limit_size / 2;
@@ -680,13 +681,13 @@ const fn repeat_zero_or_more_literals<S, I, F>(
 // treat this as a finite set of alternations. For now, we
 // just treat it as `e*`.
 const fn repeat_range_literals<S, I, F>(
-    e: &Repr<S, I>,
+    e: &Repr<I>,
     min: u32,
     lits: &mut Literals,
     mut f: F,
 )
-    where I: ~const Integral<S>,
-          F: FnMut(&Repr<S, I>, &mut Literals)
+    where I: ~const Integral,
+          F: FnMut(&Repr<I>, &mut Literals)
 {
     let n = cmp::min(lits.limit_size, min as usize);
     let es = iter::repeat(e.clone()).take(n).collect();
@@ -697,13 +698,13 @@ const fn repeat_range_literals<S, I, F>(
 }
 
 const fn alternate_literals<S, I, F>(
-    lhs: &Repr<S, I>,
-    rhs: &Repr<S, I>,
+    lhs: &Repr<I>,
+    rhs: &Repr<I>,
     lits: &mut Literals,
     mut f: F,
 )
-    where I: ~const Integral<S>,
-          F: FnMut(&Repr<S, I>, &mut Literals)
+    where I: ~const Integral,
+          F: FnMut(&Repr<I>, &mut Literals)
 {
     let mut lits2 = lits.to_empty();
     for e in reprs {
@@ -847,7 +848,7 @@ const fn escape_byte(byte: u8) -> String {
     String::from_utf8_lossy(&escaped).into_owned()
 }
 
-const fn seq_count<S, I: ~const Integral<S>>(seq: &Seq<S, I>) -> usize {
+const fn seq_count<I: ~const Integral>(seq: &Seq<I>) -> usize {
     seq.iter().map(|&r| 1 + (r.end as u32) - (r.start as u32)).sum::<u32>()
         as usize
 }
@@ -926,11 +927,11 @@ const fn seq_count<S, I: ~const Integral<S>>(seq: &Seq<S, I>) -> usize {
 //         ULiteral { v: s.to_owned(), cut: false }
 //     }
 
-//     fn prefixes<S, I: ~const Integral<S>>(lits: &mut Literals, expr: &Repr<S, I>) {
+//     fn prefixes<I: ~const Integral>(lits: &mut Literals, expr: &Repr<I>) {
 //         lits.union_prefixes(expr);
 //     }
 
-//     fn suffixes<S, I: ~const Integral<S>>(lits: &mut Literals, expr: &Repr<S, I>) {
+//     fn suffixes<I: ~const Integral>(lits: &mut Literals, expr: &Repr<I>) {
 //         lits.union_suffixes(expr);
 //     }
 
